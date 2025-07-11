@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "fastify start server.ts",
+    "hello": "node hello.ts",
     "dev": ""
   },
   "keywords": [],

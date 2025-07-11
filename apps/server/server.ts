@@ -1,13 +1,11 @@
 import { Effect } from 'effect/index'
 import Fastify from 'fastify'
 
-function test() {
+async function test() {
   //const newDate = Effect.succeed(new Date())
   const newDate = Effect.sync(() => Math.random())
-  console.log(Effect.runSync(newDate))
-  console.log(Effect.runSync(newDate))
-  console.log(Effect.runSync(newDate))
-  console.log(Effect.runSync(newDate))
+  const value = await Promise.resolve(32)
+  console.log(value)
 }
 test()
 
