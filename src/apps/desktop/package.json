@@ -1,0 +1,35 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "frontend": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "dev": "pnpm tauri dev"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.6",
+    "@electric-sql/pglite-react": "^0.2.24",
+    "@electric-sql/pglite-socket": "^0.0.11",
+    "@electric-sql/pglite-sync": "^0.3.9",
+    "@tailwindcss/vite": "^4.1.11",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-fs": "~2.4.1",
+    "@tauri-apps/plugin-opener": "^2",
+    "live": "link:@electric-sql/pglite/live",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "latest",
+    "worker": "link:@electric-sql/pglite/worker"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}

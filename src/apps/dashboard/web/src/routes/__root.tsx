@@ -1,27 +1,27 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { PGliteProvider } from "@electric-sql/pglite-react"
-import { PGlite } from "@electric-sql/pglite"
 import { live } from "@electric-sql/pglite/live"
+import { PGliteWorker } from '@electric-sql/pglite/worker'
 
-const db = await PGlite.create({
-  extensions: { live }
-})
+const db = await PGliteWorker.create(
+  new Worker(new URL('../db/pglite-worker.ts', import.meta.url), {
+    type: 'module',
+  }),
+  { extensions: { live } }
+)
 await db.exec(`
-CREATE TABLE IF NOT EXISTS todos (
+CREATE TABLE IF NOT EXISTS products (
   id serial PRIMARY KEY,
-  todo text
+  title varchar(255)
 )`)
 
-const todos = await db.exec(`SELECT * FROM todos`)
-console.log("todos : ", todos)
 
 export const Route = createRootRoute({
   component: () => (
     <>
       <PGliteProvider db={db}>
         <Outlet />
-        <TanStackRouterDevtools />
       </PGliteProvider>
     </>
   ),

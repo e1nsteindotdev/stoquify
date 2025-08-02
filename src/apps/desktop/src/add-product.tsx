@@ -1,13 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import '../App.css'
 import { useLiveQuery, usePGlite } from '@electric-sql/pglite-react'
 import { useState } from 'react'
 
-export const Route = createFileRoute('/')({
-  component: App,
-})
-
-function App() {
+export function AddProduct() {
   const [input, setInput] = useState("")
   const db = usePGlite()
 
@@ -43,7 +37,7 @@ function App() {
         {products?.rows.map((p, i) => (
           <li
             key={i}
-            className={`cursor-pointer px-3 py-2 rounded bg-gray-100 hover:bg-gray-200}`} >
+            className={`cursor-pointer px-3 py-2 rounded bg-slate-900 hover:bg-gray-200}`} >
             {p.title}
           </li>
         ))}

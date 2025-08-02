@@ -8,7 +8,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "dev:expo": "pnpm --filter ./apps/dashboard dev",
+    "dev:expo": "pnpm --filter ./apps/dashboard/mobile dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
@@ -22,7 +22,7 @@
     "turbo": "^2.5.4",
     "typescript": "5.8.2"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.13.1",
   "engines": {
     "node": ">=18"
   }
