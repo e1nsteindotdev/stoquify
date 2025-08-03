@@ -1,5 +1,5 @@
 {
-  "projectName": "tsr-pglite",
+  "projectName": "web",
   "mode": "file-router",
   "typescript": true,
   "tailwind": false,
