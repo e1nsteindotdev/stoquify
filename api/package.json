@@ -1,0 +1,17 @@
+{
+  "name": "hono-cf",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20250803.0",
+    "@livestore/sync-cf": "^0.3.1",
+    "hono": "^4.8.12"
+  },
+  "devDependencies": {
+    "wrangler": "^4.4.0"
+  }
+}
