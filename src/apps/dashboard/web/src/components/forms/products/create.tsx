@@ -22,6 +22,10 @@ export function CreateProductForm() {
       desc: '',
     },
     onSubmit: async ({ value }) => {
+      await fetch("http://localhost:8787/admin/products/create", {
+        method: "POST",
+        body: JSON.stringify(value)
+      })
       console.log(value)
     },
   })
