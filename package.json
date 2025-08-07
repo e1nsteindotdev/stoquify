@@ -13,17 +13,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },
-  "dependencies": {
-    "react": "19.0.0",
-    "react-dom": "19.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "prettier": "^3.6.0",
     "turbo": "^2.5.4",
     "typescript": "5.8.2"
   },
-  "packageManager": "pnpm@10.13.1",
-  "engines": {
-    "node": ">=18"
-  }
+  "packageManager": "pnpm@10.13.1"
 }

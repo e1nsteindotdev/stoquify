@@ -1,9 +1,8 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { ThemeProvider } from "@/components/theme-provider"
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import "../App.css"
 
-console.log(import.meta.env)
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
 if (!CONVEX_URL) {
   console.error("missing envar VITE_CONVEX_URL");
@@ -13,12 +12,10 @@ const convex = new ConvexReactClient(CONVEX_URL);
 export const Route = createRootRoute({
   component: () => (
     <>
-      <ThemeProvider>
-        <ConvexProvider client={convex}>
-          <Outlet />
-          <TanStackRouterDevtools />
-        </ConvexProvider>
-      </ThemeProvider>
+      <ConvexProvider client={convex}>
+        <Outlet />
+      </ConvexProvider>
+      <TanStackRouterDevtools />
     </>
   ),
 })

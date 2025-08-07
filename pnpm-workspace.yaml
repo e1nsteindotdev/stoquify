@@ -1,7 +1,7 @@
 packages:
-  - src/apps/dashboard/*
-  - src/apps/web/*
   - src/apps/*
+  - src/apps/dashboard/*
+  - src/apps/storefronts/*
   - src/packages/*
 
 nodeLinker: hoisted

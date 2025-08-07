@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label"
 
 import { Input } from "@/components/ui/input"
 import { Textarea } from '@/components/ui/textarea'
+import { useMutation } from "convex/react";
+import { api } from "api/convex"
 
 function FieldInfo({ field }: { field: AnyFieldApi }) {
   return (
@@ -16,16 +18,20 @@ function FieldInfo({ field }: { field: AnyFieldApi }) {
   )
 }
 export function CreateProductForm() {
+
+  const productMutation = useMutation(api.products.createTestProduct)
   const form = useForm({
     defaultValues: {
       title: '',
       desc: '',
     },
     onSubmit: async ({ value }) => {
-      await fetch("http://localhost:8787/admin/products/create", {
-        method: "POST",
-        body: JSON.stringify(value)
-      })
+      const response = await productMutation({ title: value.title, desc: value.desc })
+      console.log(response)
+      // await fetch("http://localhost:8787/admin/products/create", {
+      //   method: "POST",
+      //   body: JSON.stringify(value)
+      // })
       console.log(value)
     },
   })
@@ -50,13 +56,6 @@ export function CreateProductForm() {
                     : value.length < 3
                       ? 'First name must be at least 3 characters'
                       : undefined,
-                onChangeAsyncDebounceMs: 500,
-                onChangeAsync: async ({ value }) => {
-                  await new Promise((resolve) => setTimeout(resolve, 1000))
-                  return (
-                    value.includes('error') && 'No "error" allowed in first name'
-                  )
-                },
               }}
               children={(field) => {
                 // Avoid hasty abstractions. Render props are great!
@@ -85,13 +84,6 @@ export function CreateProductForm() {
                     : value.length < 3
                       ? 'Description must be at least 3 characters'
                       : undefined,
-                onChangeAsyncDebounceMs: 500,
-                onChangeAsync: async ({ value }) => {
-                  await new Promise((resolve) => setTimeout(resolve, 1000))
-                  return (
-                    value.includes('error') && 'No "error" allowed in first name'
-                  )
-                },
               }}
               children={(field) => {
                 // Avoid hasty abstractions. Render props are great!
