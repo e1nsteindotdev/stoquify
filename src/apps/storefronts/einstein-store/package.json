@@ -10,11 +10,13 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-router": "^1.130.2",
     "@tanstack/react-router-devtools": "^1.130.2",
     "@tanstack/router-plugin": "^1.121.2",
     "convex": "^1.25.4",
+    "postcss": "^8.5.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.1.11"
@@ -30,6 +32,7 @@
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
     "vitest": "^3.0.5",
-    "web-vitals": "^4.2.4"
+    "web-vitals": "^4.2.4",
+    "wrangler": "^4.28.1"
   }
 }
