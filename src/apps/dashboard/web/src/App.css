@@ -42,10 +42,13 @@
 }
 
 :root {
+
+  --input-border: #D6D6D6;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: #F2F2F2;
+  --card-border: #FBFAFD;
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
