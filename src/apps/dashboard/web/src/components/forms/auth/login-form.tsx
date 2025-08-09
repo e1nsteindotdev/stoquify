@@ -9,42 +9,29 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "@tanstack/react-router";
-import { useConvexAuth } from "convex/react";
+import { useAuth } from '@workos-inc/authkit-react';
 
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  console.log("login form rendered: ");
-
-  const { signIn } = useAuthActions();
-  const router = useRouter();
+export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+  const { signIn } = useAuth();
 
   const form = useForm({
     defaultValues: {
       email: "einstein@gmail.com",
-      password: "admin#123",
+      password: "&c_jJC}<Tw!&_)4g",
     },
+
     onSubmit: async ({ value }) => {
       try {
-        await signIn("password", {
-          email: value.email,
-          password: value.password,
-          flow: "signIn",
-        });
-        console.log("signed in, waiting for redirect");
+        void signIn().then(value => console.log("then value :", value)).catch(e => console.log("error : ", e))
+
       } catch (error) {
-        console.error("Login failed:", error);
+        console.log(error)
       }
     },
   });
 
-  const { isAuthenticated } = useConvexAuth();
-  console.log("isAuthenticated: ", isAuthenticated);
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">

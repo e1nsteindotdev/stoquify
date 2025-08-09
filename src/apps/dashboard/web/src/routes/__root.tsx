@@ -1,18 +1,19 @@
-import { Outlet, createRootRoute, useRouter } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { ConvexProvider, ConvexReactClient, useConvexAuth } from "convex/react";
-import { ConvexAuthProvider } from "@convex-dev/auth/react";
-import { LoginForm } from "@/components/forms/auth/login-form";
+import { ConvexReactClient } from "convex/react";
+import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 import "@/App.css";
+
+import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react";
+import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
 
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
 if (!CONVEX_URL) {
-  console.error("missing envar VITE_CONVEX_URL");
+  throw new Error("convex url doesn't exist in env")
 }
-const convex = new ConvexReactClient(CONVEX_URL, { verbose: true });
+const convex = new ConvexReactClient(CONVEX_URL);
 const queryClient = new QueryClient();
 
 export const Route = createRootRoute({
@@ -20,16 +21,20 @@ export const Route = createRootRoute({
     return (
       <>
         <ThemeProvider>
+
           <QueryClientProvider client={queryClient}>
-            <ConvexProvider client={convex}>
-              <ConvexAuthProvider client={convex}>
+            <AuthKitProvider clientId={import.meta.env.VITE_WORKOS_CLIENT_ID} redirectUri={import.meta.env.VITE_WORKOS_REDIRECT_URI} >
+              <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
                 <AuthWrapper>
                   <Outlet />
                 </AuthWrapper>
-                <TanStackRouterDevtools />
-              </ConvexAuthProvider>
-            </ConvexProvider>
+              </ConvexProviderWithAuthKit>
+            </AuthKitProvider>
           </QueryClientProvider>
+
+          {/* 
+          <TanStackRouterDevtools />
+          */}
         </ThemeProvider>
       </>
     );
@@ -37,26 +42,25 @@ export const Route = createRootRoute({
 });
 
 function AuthWrapper({ children }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  const router = useRouter();
-  const pathname = router.state.location.pathname;
+  const { user, signIn, signOut } = useAuth();
+  return (
+    <>
+      <AuthLoading> <LoadingScreen /> </AuthLoading>
+      <Unauthenticated>
+        <div className="h-screen flex items-center justify-center">
+          <button onClick={() => (user ? signOut() : void signIn())}>{user ? 'Sign out' : 'Sign in'}</button>
+        </div>
+      </Unauthenticated>
+      <Authenticated>{children}</Authenticated>
+    </>
+  );
+}
 
-  useEffect(() => {
-    if (isLoading) return;
-    if (isAuthenticated) {
-      if (pathname === "/sign-in") {
-        router.navigate({ to: "/", replace: true });
-      }
-    } else {
-      if (pathname !== "/sign-in") {
-        router.navigate({ to: "/sign-in", replace: true });
-      }
-    }
-  }, [isAuthenticated, isLoading, pathname, router]);
+function LoadingScreen() {
+  return (
+    <div className="h-screen center">
+      <p className="italic font-bold text-4xl">Loading BITCH....</p>
+    </div>
 
-  if (isLoading) {
-    return <h1>Loading... </h1>;
-  }
-
-  return <>{children}</>;
+  )
 }

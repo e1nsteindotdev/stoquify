@@ -21,7 +21,7 @@ export const columns: ColumnDef<ProductRow>[] = [
   {
     accessorKey: "price",
     header: "Price",
-    cell: ({ row }) => `$${row.original.price.toFixed(2)}`,
+    //  cell: ({ row }) => `$${row.original.price.toFixed(2)}`,
   },
   {
     id: "actions",

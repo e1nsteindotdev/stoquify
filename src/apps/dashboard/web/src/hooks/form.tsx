@@ -1,28 +1,33 @@
-import { createFormHook } from '@tanstack/react-form'
-import { lazy } from 'react'
-import { fieldContext, formContext, useFormContext } from './form-context.tsx'
-const TextField = lazy(() => import('@/components/ui/text-field.tsx'))
-const TextAreaField = lazy(() => import('@/components/ui/textarea-field.tsx'))
-const ImageField = lazy(() => import('@/components/ui/images-field.tsx'))
+import { createFormHook } from "@tanstack/react-form";
+import { lazy } from "react";
+import { fieldContext, formContext, useFormContext } from "./form-context.tsx";
+
+const TextField = lazy(() => import("@/components/ui/text-field.tsx"));
+const TextAreaField = lazy(() => import("@/components/ui/textarea-field.tsx"));
+const ImageField = lazy(() => import("@/components/ui/images-field.tsx"));
+const CategoriesField = lazy(() => import("@/components/ui/categories-field.tsx"));
+const VariantsField = lazy(() => import("@/components/ui/variants-field.tsx"));
 
 function SubscribeButton({ label }: { label: string }) {
-  const form = useFormContext()
+  const form = useFormContext();
   return (
     <form.Subscribe selector={(state) => state.isSubmitting}>
       {(isSubmitting) => <button disabled={isSubmitting}>{label}</button>}
     </form.Subscribe>
-  )
+  );
 }
 
 export const { useAppForm, withForm, withFieldGroup } = createFormHook({
   fieldComponents: {
     TextField,
     TextAreaField,
-    ImageField
+    ImageField,
+    CategoriesField,
+    VariantsField
   },
   formComponents: {
     SubscribeButton,
   },
   fieldContext,
   formContext,
-})
+});

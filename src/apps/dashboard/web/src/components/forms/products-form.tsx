@@ -1,17 +1,10 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
-import {
-  type AnyFieldApi,
-} from "@tanstack/react-form";
+import { type AnyFieldApi } from "@tanstack/react-form";
 import { useMutation, useQuery, useConvex } from "convex/react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -21,35 +14,49 @@ import {
 } from "@/components/ui/select";
 import { InputsContainer, InputsTitle } from "../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
+import { type Id, type Doc } from "api/data-model";
 
 export function ProductForm({ slug }: { slug?: string }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
-  const productId = isNew ? "" : slug
-
-  const product = useQuery(
-    api.products.getProductById,
-    isNew ? ("skip" as any) : { id: slug as any }
-  );
-
+  const productId = isNew ? "" : slug;
   const categories = useQuery(api.products.listCategories) ?? [];
   const createProduct = useMutation(api.products.createProduct);
   const updateProduct = useMutation(api.products.updateProduct);
 
-  const defaultValues = useMemo(
-    () => ({
-      categoryId: product?.categoryId ?? "",
-      title: product?.title ?? "",
-      desc: product?.desc ?? "",
-      price: product?.price ?? 0,
-      discount: product?.discount ?? undefined,
-      oldPrice: product?.oldPrice ?? undefined,
-      stockingStrategy: product?.stockingStrategy ?? "on_demand",
-      status: product?.status ?? "active",
-      images: (product as any)?.images ?? [],
-    }),
-    [product]
-  );
+  let product: Doc<"products"> | null = null;
+  if (productId) {
+    product = useQuery(api.products.getProductById, {
+      id: slug as Id<"products">,
+    }) as Doc<"products">;
+  }
+
+  const defaultValues = useMemo(() => {
+    if (product) {
+      return {
+        categoryId: product?.categoryId ?? "",
+        title: product?.title ?? "",
+        desc: product?.desc ?? "",
+        price: product?.price ?? 0,
+        discount: product?.discount ?? undefined,
+        oldPrice: product?.oldPrice ?? undefined,
+        stockingStrategy: product?.stockingStrategy ?? "on_demand",
+        status: product?.status ?? "active",
+        images: product?.images ?? [],
+      };
+    } else
+      return {
+        categoryId: "",
+        title: "",
+        desc: "",
+        price: 0,
+        discount: undefined,
+        oldPrice: undefined,
+        stockingStrategy: "on_demand",
+        status: "active",
+        images: [],
+      };
+  }, [product]);
 
   const form = useAppForm({
     defaultValues,
@@ -102,24 +109,48 @@ export function ProductForm({ slug }: { slug?: string }) {
         >
           {/* Left column: main product info */}
           <div className="space-y-6">
+
             <div className="flex flex-col gap-3">
-              <InputsTitle>Produtis</InputsTitle>
+              <InputsTitle>Produits</InputsTitle>
               <InputsContainer>
                 <form.AppField
                   name="title"
-                  children={(field) => <field.TextField placeholder="Hoodie noire oversize" label="Title" />}
+                  children={(field) => (
+                    <field.TextField
+                      placeholder="Hoodie noire oversize"
+                      label="Title"
+                    />
+                  )}
                 />
                 <form.AppField
                   name="desc"
-                  children={(field) =>
-                    <field.TextAreaField placeholder="this is ltrly the best product in the entire world..." label="Desc" />}
+                  children={(field) => (
+                    <field.TextAreaField
+                      placeholder="this is ltrly the best product in the entire world..."
+                      label="Desc"
+                    />
+                  )}
                 />
 
                 <form.AppField
                   name="images"
-                  children={(field) =>
-                    <field.ImageField productId={productId} label="Photos" />}
+                  children={(field) => (
+                    <field.ImageField productId={productId} label="Photos" />
+                  )}
                 />
+
+                <form.AppField
+                  name="categoryId"
+                  children={(field) => (
+                    <field.CategoriesField label="Category" />
+                  )}
+                />
+              </InputsContainer>
+            </div>
+            <div className="flex flex-col gap-3">
+              <InputsTitle>Variants</InputsTitle>
+              <InputsContainer>
+
 
               </InputsContainer>
             </div>
