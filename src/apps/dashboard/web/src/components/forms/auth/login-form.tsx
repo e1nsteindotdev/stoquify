@@ -1,43 +1,50 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react"
-import { useConvexAuth, } from "convex/react"
+import { useRouter } from "@tanstack/react-router";
+import { useConvexAuth } from "convex/react";
 
-import { useForm, type AnyFieldApi } from '@tanstack/react-form'
+import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  console.log("login form rendered: ");
 
   const { signIn } = useAuthActions();
-  const [step, setStep] = useState<"signUp" | "signIn">("signUp");
+  const router = useRouter();
 
   const form = useForm({
     defaultValues: {
-      email: 'einstein@gmail.com',
-      password: 'admin#123',
-      flow: "signUp",
-      organizationId: "mn793ktmcctvv2pm9g2ng7sb5d7n66jq"
+      email: "einstein@gmail.com",
+      password: "admin#123",
     },
     onSubmit: async ({ value }) => {
-      console.log(value)
-      void signIn("password", value);
+      try {
+        await signIn("password", {
+          email: value.email,
+          password: value.password,
+          flow: "signIn",
+        });
+        console.log("signed in, waiting for redirect");
+      } catch (error) {
+        console.error("Login failed:", error);
+      }
     },
-  })
+  });
 
-  const { isAuthenticated } = useConvexAuth()
-  console.log(isAuthenticated)
+  const { isAuthenticated } = useConvexAuth();
+  console.log("isAuthenticated: ", isAuthenticated);
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -52,20 +59,20 @@ export function LoginForm({
             <CardContent>
               <form
                 onSubmit={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  form.handleSubmit()
-                }}>
-
+                  e.preventDefault();
+                  e.stopPropagation();
+                  form.handleSubmit();
+                }}
+              >
                 <div className="flex flex-col gap-6">
                   <form.Field
                     name="email"
                     validators={{
                       onChange: ({ value }) =>
                         !value
-                          ? 'A first name is required'
+                          ? "A first name is required"
                           : value.length < 3
-                            ? 'First name must be at least 3 characters'
+                            ? "First name must be at least 3 characters"
                             : undefined,
                     }}
                     children={(field) => {
@@ -82,7 +89,7 @@ export function LoginForm({
                           />
                           <FieldInfo field={field} />
                         </div>
-                      )
+                      );
                     }}
                   />
                   <div className="grid gap-3">
@@ -101,9 +108,9 @@ export function LoginForm({
                       validators={{
                         onChange: ({ value }) =>
                           !value
-                            ? 'A first name is required'
+                            ? "A first name is required"
                             : value.length < 3
-                              ? 'First name must be at least 3 characters'
+                              ? "First name must be at least 3 characters"
                               : undefined,
                       }}
                       children={(field) => {
@@ -116,11 +123,13 @@ export function LoginForm({
                               value={field.state.value}
                               onBlur={field.handleBlur}
                               type="password"
-                              onChange={(e) => field.handleChange(e.target.value)}
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
                             />
                             <FieldInfo field={field} />
                           </div>
-                        )
+                        );
                       }}
                     />
                   </div>
@@ -145,17 +154,16 @@ export function LoginForm({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function FieldInfo({ field }: { field: AnyFieldApi }) {
   return (
     <>
       {field.state.meta.isTouched && !field.state.meta.isValid ? (
-        <em>{field.state.meta.errors.join(', ')}</em>
+        <em>{field.state.meta.errors.join(", ")}</em>
       ) : null}
-      {field.state.meta.isValidating ? 'Validating...' : null}
+      {field.state.meta.isValidating ? "Validating..." : null}
     </>
-  )
+  );
 }
-

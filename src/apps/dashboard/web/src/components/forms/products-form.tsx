@@ -25,7 +25,7 @@ import { useAppForm } from "@/hooks/form";
 export function ProductForm({ slug }: { slug?: string }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
-  const productId = slug ?? ""
+  const productId = isNew ? "" : slug
 
   const product = useQuery(
     api.products.getProductById,
