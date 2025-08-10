@@ -76,9 +76,9 @@ export default function CategoriesField({ label }: Props) {
           <Button
             type="button"
             variant="ghost"
-            className="justify-start pl-2 py-0 htext-[15px] text-foreground/90 hover:text-foreground w-fit"
+            className="flex gap-1 justify-start pl-2 py-0 htext-[15px] text-foreground/90 hover:text-foreground w-fit"
           >
-            <div className="rounded-full border-[1.5px] border-black center p-[4px]">
+            <div className="rounded-full scale-70 border-[1.5px] border-black center p-[4px]">
               <AddIcon />
             </div>
             <p className="text-[16px]">

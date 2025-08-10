@@ -16,6 +16,18 @@ import { InputsContainer, InputsTitle } from "../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { type Id, type Doc } from "api/data-model";
 
+type TProduct = Doc<"products"> & {
+  variants: {
+    order: number,
+    parentVariantId?: string,
+    name: string,
+    elements: {
+      variantId: string,
+      name: string
+    }
+  }[]
+}
+
 export function ProductForm({ slug }: { slug?: string }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
@@ -24,11 +36,11 @@ export function ProductForm({ slug }: { slug?: string }) {
   const createProduct = useMutation(api.products.createProduct);
   const updateProduct = useMutation(api.products.updateProduct);
 
-  let product: Doc<"products"> | null = null;
+  let product: TProduct | null = null;
   if (productId) {
     product = useQuery(api.products.getProductById, {
       id: slug as Id<"products">,
-    }) as Doc<"products">;
+    }) as TProduct;
   }
 
   const defaultValues = useMemo(() => {
@@ -43,6 +55,7 @@ export function ProductForm({ slug }: { slug?: string }) {
         stockingStrategy: product?.stockingStrategy ?? "on_demand",
         status: product?.status ?? "active",
         images: product?.images ?? [],
+        variants: product.variants,
       };
     } else
       return {
@@ -55,6 +68,7 @@ export function ProductForm({ slug }: { slug?: string }) {
         stockingStrategy: "on_demand",
         status: "active",
         images: [],
+        variants: []
       };
   }, [product]);
 
@@ -150,8 +164,12 @@ export function ProductForm({ slug }: { slug?: string }) {
             <div className="flex flex-col gap-3">
               <InputsTitle>Variants</InputsTitle>
               <InputsContainer>
-
-
+                <form.AppField
+                  name="variants"
+                  children={(field) => (
+                    <field.VariantsField />
+                  )}
+                />
               </InputsContainer>
             </div>
           </div>
