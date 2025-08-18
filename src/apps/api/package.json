@@ -1,0 +1,29 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "convex dev"
+  },
+  "exports": {
+    "./convex": {
+      "types": "./convex/_generated/api.js",
+      "default": "./convex/_generated/api.js"
+    },
+    "./data-model": {
+      "types": "./convex/_generated/dataModel.d.ts",
+      "default": "./convex/_generated/dataModel.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "@auth/core": "0.37.0",
+    "@convex-dev/auth": "^0.0.88",
+    "convex": "^1.25.4"
+  }
+}
