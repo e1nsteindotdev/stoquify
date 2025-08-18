@@ -7,7 +7,7 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  const products = useQuery(api.products.getTestProducts)
+  const products = useQuery(api.products.listProducts)
   console.log(products)
   return (
     <div className="p-2 h-screen bg-neutral-950 flex items-center justify-center">

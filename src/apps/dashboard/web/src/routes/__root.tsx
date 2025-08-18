@@ -21,7 +21,6 @@ export const Route = createRootRoute({
     return (
       <>
         <ThemeProvider>
-
           <QueryClientProvider client={queryClient}>
             <AuthKitProvider clientId={import.meta.env.VITE_WORKOS_CLIENT_ID} redirectUri={import.meta.env.VITE_WORKOS_REDIRECT_URI} >
               <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
@@ -31,10 +30,7 @@ export const Route = createRootRoute({
               </ConvexProviderWithAuthKit>
             </AuthKitProvider>
           </QueryClientProvider>
-
-          {/* 
-          <TanStackRouterDevtools />
-          */}
+          {/* <TanStackRouterDevtools /> */}
         </ThemeProvider>
       </>
     );
