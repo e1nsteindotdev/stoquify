@@ -18,21 +18,21 @@ import { type Id, type Doc } from "api/data-model";
 
 type TProduct = Doc<"products"> & {
   variants: {
-    order: number,
-    parentVariantId?: string,
-    name: string,
+    order: number;
+    parentVariantId?: string;
+    name: string;
     elements: {
-      variantId: string,
-      name: string
-    }
-  }[]
-}
+      variantId: string;
+      name: string;
+    };
+  }[];
+};
 
 export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
-  const categories = useQuery(api.products.listCategories) ?? [];
+  const categories = useQuery(api.categories.listCategories) ?? [];
   const createProduct = useMutation(api.products.createProduct);
   const updateProduct = useMutation(api.products.updateProduct);
 
@@ -46,41 +46,58 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const defaultValues = useMemo(() => {
     if (product) {
       return {
-        categoryId: product?.categoryId ?? "",
+        categoryId: product?.categoryId ?? null,
         title: product?.title ?? "",
         desc: product?.desc ?? "",
         price: product?.price ?? 0,
         discount: product?.discount ?? undefined,
         oldPrice: product?.oldPrice ?? undefined,
         stockingStrategy: product?.stockingStrategy ?? "on_demand",
-        status: product?.status ?? "active",
+        status: product?.status ?? "incomplete",
         images: product?.images ?? [],
         variants: product.variants,
       };
     } else
       return {
-        categoryId: "",
+        categoryId: null,
         title: "",
         desc: "",
         price: 0,
         discount: undefined,
         oldPrice: undefined,
-        stockingStrategy: "on_demand",
-        status: "active",
+        stockingStrategy: "by_sizes",
+        status: "incomplete",
         images: [],
-        variants: []
+        variants: [],
       };
   }, [product]);
 
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
+      let formatedValues = {};
+      for (let v of Object.keys(value)) {
+        if (value[v]) {
+          formatedValues[v] = value[v]
+        }
+      }
+      // const formatedValues = {
+      //   title: value.title ?? null,
+      //   desc: value.desc ?? null,
+      //   price: Number(value.price) ?? null,
+      //   discount: Number(value.discount) ?? 0,
+      //   oldPrice: Number(value.oldPrice) ?? null,
+      //   categoryId: value.categoryId ?? null,
+      //   status: value.status ?? "incomplete",
+      //   images: value.images ?? [],
+      //   stockingStrategy: value.stockingStrategy ?? "by_sizes"
+      // }
       if (isNew) {
         const id = await createProduct({
           title: value.title,
           desc: value.desc,
           price: Number(value.price),
-          discount: value.discount ?? undefined,
+          discount: value.discount ?? 0,
           oldPrice: value.oldPrice ?? undefined,
           categoryId: value.categoryId as any,
           status: value.status as any,
@@ -89,26 +106,31 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
         });
         router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
       } else {
-        await updateProduct({
-          id: slug as any,
-          title: value.title,
-          desc: value.desc,
-          price: Number(value.price),
-          discount: value.discount ?? undefined,
-          oldPrice: value.oldPrice ?? undefined,
-          categoryId: value.categoryId as any,
-          status: value.status as any,
-          images: value.images as any,
-          stockingStrategy: value.stockingStrategy as any,
-        });
+        if (productId) {
+          console.log("goint to insert htis :", formatedValues);
+          formatedValues['id'] = productId
+          await updateProduct(formatedValues);
+          // await updateProduct({
+          //   id: productId,
+          //   title: value.title,
+          //   desc: value.desc,
+          //   price: Number(value.price),
+          //   discount: value.discount ?? 0,
+          //   oldPrice: value.oldPrice ?? undefined,
+          //   categoryId: value.categoryId as Id<'categories'> ?? null,
+          //   status: value.status as any,
+          //   images: value.images as any,
+          //   stockingStrategy: value.stockingStrategy as any,
+          // });
+        }
       }
     },
   });
 
   // Keep form in sync when product loads
-  useEffect(() => {
-    form.reset(defaultValues);
-  }, [defaultValues]);
+  // useEffect(() => {
+  //   form.reset(defaultValues);
+  // }, [defaultValues]);
 
   return (
     <div className="h-screen w-full flex items-start justify-center p-6">
@@ -123,7 +145,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
         >
           {/* Left column: main product info */}
           <div className="space-y-6">
-
             <div className="flex flex-col gap-3">
               <InputsTitle>Produits</InputsTitle>
               <InputsContainer>
@@ -166,9 +187,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
               <InputsContainer>
                 <form.AppField
                   name="variants"
-                  children={(field) => (
-                    <field.VariantsField />
-                  )}
+                  children={(field) => <field.VariantsField />}
                 />
               </InputsContainer>
             </div>
@@ -223,7 +242,11 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
             <form.Subscribe
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
-                <Button type="submit" className="w-full text-[16px] py-5" disabled={!canSubmit}>
+                <Button
+                  type="submit"
+                  className="w-full text-[16px] py-5"
+                  disabled={!canSubmit}
+                >
                   {isSubmitting ? "..." : "Enregistrer"}
                 </Button>
               )}

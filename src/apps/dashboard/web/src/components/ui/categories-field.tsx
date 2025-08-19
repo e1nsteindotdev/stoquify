@@ -27,8 +27,8 @@ type Props = {
 
 export default function CategoriesField({ label }: Props) {
   const field = useFieldContext<string>();
-  const categories = useQuery(api.products.listCategories) ?? [];
-  const createCategory = useMutation(api.products.createCategory as any);
+  const categories = useQuery(api.categories.listCategories) ?? [];
+  const createCategory = useMutation(api.categories.createCategory as any);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "./button";
 import { ArrowDown, ArrowUp, EyeOff, Loader2, Trash2 } from "lucide-react";
-import type { Id } from "api/data-model";
 import type { Image } from "./images-field";
 
 export type ImageItemProps = {
@@ -34,7 +33,7 @@ export function ImageItem({ index, value, actions }: ImageItemProps) {
           {image?.url ? (
             <img
               src={image?.url}
-              className="size-full  object-contain"
+              className="size-fullobject-contain"
               alt={`photo-${index + 1}`}
             />
           ) : (
@@ -47,7 +46,7 @@ export function ImageItem({ index, value, actions }: ImageItemProps) {
           )}
         </div>
         <div className="h-[16px] rounded-md py-0.5 bg-[#684FCA]/22 w-[2.5px]" />
-        <span className="rounded-md bg-[#6A4FFF]/15 px-2.5 py-1.5 text-[16px] font-bold text-[#6A4FFF]">
+        <span className="rounded-md bg-[#6A4FFF]/15 px-2.5 py-1.5 text-[16px] font-semibold text-[#6A4FFF]">
           {index + 1}
         </span>
       </div>
