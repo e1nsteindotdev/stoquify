@@ -9,23 +9,24 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from '@workos-inc/authkit-react';
 
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
+import { useAuthActions } from "@convex-dev/auth/react";
+import type { Dispatch, SetStateAction } from "react";
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
-  const { signIn } = useAuth();
+export function SignUpForm({ step, setStep, className, ...props }: { step: string, setStep: Dispatch<SetStateAction<string>> } & React.ComponentProps<"div">) {
+  const { signIn } = useAuthActions();
 
   const form = useForm({
     defaultValues: {
+      organizationName: "nezt",
       email: "einstein@gmail.com",
       password: "&c_jJC}<Tw!&_)4g",
     },
-
     onSubmit: async ({ value }) => {
       try {
-        void signIn().then(value => console.log("then value :", value)).catch(e => console.log("error : ", e))
-
+        void signIn("password", { ...value, step });
+        //void signIn().then(value => console.log("then value :", value)).catch(e => console.log("error : ", e))
       } catch (error) {
         console.log(error)
       }
@@ -33,14 +34,14 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   });
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <div className="flex w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <div className={cn("flex flex-col gap-6", className)} {...props}>
           <Card>
             <CardHeader>
-              <CardTitle>Login to your account</CardTitle>
+              <CardTitle className="text-[20px]">Create a new account</CardTitle>
               <CardDescription>
-                Enter your email below to login to your account
+                Fill the form below to create a new account
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -66,7 +67,34 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                       // Avoid hasty abstractions. Render props are great!
                       return (
                         <div className="grid gap-3">
-                          <Label htmlFor={field.name}>Product Title</Label>
+                          <Label htmlFor={field.name}>Email</Label>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                          />
+                          <FieldInfo field={field} />
+                        </div>
+                      );
+                    }}
+                  />
+                  <form.Field
+                    name="organizationName"
+                    validators={{
+                      onChange: ({ value }) =>
+                        !value
+                          ? "A first name is required"
+                          : value.length < 3
+                            ? "First name must be at least 3 characters"
+                            : undefined,
+                    }}
+                    children={(field) => {
+                      // Avoid hasty abstractions. Render props are great!
+                      return (
+                        <div className="grid gap-3">
+                          <Label htmlFor={field.name}>Name of your business</Label>
                           <Input
                             id={field.name}
                             name={field.name}
@@ -82,12 +110,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                   <div className="grid gap-3">
                     <div className="flex items-center">
                       <Label htmlFor={"password"}>Password</Label>
-                      <a
-                        href="#"
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                      >
-                        Forgot your password?
-                      </a>
                     </div>
 
                     <form.Field
@@ -95,9 +117,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                       validators={{
                         onChange: ({ value }) =>
                           !value
-                            ? "A first name is required"
+                            ? "A password is required"
                             : value.length < 3
-                              ? "First name must be at least 3 characters"
+                              ? "A password must be at least 4 characters"
                               : undefined,
                       }}
                       children={(field) => {
@@ -122,18 +144,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                   </div>
                   <div className="flex flex-col gap-3">
                     <Button type="submit" className="w-full">
-                      Login
-                    </Button>
-                    <Button variant="outline" className="w-full">
-                      Login with Google
+                      Sign Up
                     </Button>
                   </div>
                 </div>
                 <div className="mt-4 text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <a href="#" className="underline underline-offset-4">
-                    Sign up
-                  </a>
+                  Already have an Account?{" "}
+                  <button onClick={() => setStep("signIn")} className="underline underline-offset-4">
+                    Sign In
+                  </button>
                 </div>
               </form>
             </CardContent>

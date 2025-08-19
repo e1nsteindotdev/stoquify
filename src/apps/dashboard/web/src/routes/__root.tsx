@@ -1,20 +1,22 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { Outlet, createRootRoute, redirect } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { ConvexReactClient } from "convex/react";
+import { ConvexReactClient, useConvexAuth } from "convex/react";
 import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
-import "@/App.css";
 
-import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react";
-import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
+import { ConvexAuthProvider, useAuthActions } from "@convex-dev/auth/react";
+import "@/App.css";
+import { AuthForm } from "@/components/forms/auth/auth-form";
+
 
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
 if (!CONVEX_URL) {
   throw new Error("convex url doesn't exist in env")
 }
-const convex = new ConvexReactClient(CONVEX_URL);
+
 const queryClient = new QueryClient();
+const convex = new ConvexReactClient(CONVEX_URL);
 
 export const Route = createRootRoute({
   component: () => {
@@ -22,30 +24,32 @@ export const Route = createRootRoute({
       <>
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
-            <AuthKitProvider clientId={import.meta.env.VITE_WORKOS_CLIENT_ID} redirectUri={import.meta.env.VITE_WORKOS_REDIRECT_URI} >
-              <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
-                <AuthWrapper>
-                  <Outlet />
-                </AuthWrapper>
-              </ConvexProviderWithAuthKit>
-            </AuthKitProvider>
+            <ConvexAuthProvider client={convex}>
+              <AuthWrapper>
+                <Outlet />
+              </AuthWrapper>
+            </ConvexAuthProvider>
           </QueryClientProvider>
           {/* <TanStackRouterDevtools /> */}
-        </ThemeProvider>
+        </ThemeProvider >
       </>
     );
   },
 });
 
 function AuthWrapper({ children }) {
-  const { user, signIn, signOut } = useAuth();
+  const { signIn, signOut } = useAuthActions();
+  const { isLoading, isAuthenticated } = useConvexAuth()
   return (
     <>
       <AuthLoading> <LoadingScreen /> </AuthLoading>
       <Unauthenticated>
-        <div className="h-screen flex items-center justify-center">
-          <button onClick={() => (user ? signOut() : void signIn())}>{user ? 'Sign out' : 'Sign in'}</button>
-        </div>
+        <AuthForm />
+        {/* <div className="h-screen flex items-center justify-center"> */}
+        {/*   <button onClick={() => (isAuthenticated ? signOut() : redirect({ to: "/sign-in" }))}> */}
+        {/*     {isAuthenticated ? 'Sign out' : 'Sign in'} */}
+        {/*   </button> */}
+        {/* </div> */}
       </Unauthenticated>
       <Authenticated>{children}</Authenticated>
     </>

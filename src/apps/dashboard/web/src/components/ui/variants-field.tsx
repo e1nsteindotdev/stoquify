@@ -78,10 +78,10 @@ export default function VariantsField({ label }: Props) {
 
   if (isModifying) {
     return (
-      <div className="grid gap-4 rounded-2xl border border-black/5 bg-muted/30 p-4">
+      <div className="grid gap-4" >
         {label && <Label className="font-semibold">{label}</Label>}
 
-        <div className="grid gap-2">
+        <div className="grid gap-3">
           <Label className="font-semibold">Variant name</Label>
           <Input
             placeholder="Color"

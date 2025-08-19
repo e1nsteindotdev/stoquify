@@ -3,9 +3,7 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import {
   SidebarProvider,
   SidebarInset,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+
 export const Route = createFileRoute("/_dashboard")({
   component: PathlessLayoutComponent,
 });
@@ -23,10 +22,8 @@ function PathlessLayoutComponent() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 bg-sidebar items-center gap-2 border-b">
+        <header className="flex py-4 px-6 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-3">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">

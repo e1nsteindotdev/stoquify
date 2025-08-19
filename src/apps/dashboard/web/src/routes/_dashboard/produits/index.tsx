@@ -9,11 +9,6 @@ export const Route = createFileRoute("/_dashboard/produits/")({
 function Page() {
   return (
     <div className="p-4 pt-0 w-full h-full flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Link to="/produits/$slug" params={{ slug: "new" }}>
-          <Button variant="default">New Product</Button>
-        </Link>
-      </div>
       <div className="flex-1">
         <ProductsTable />
       </div>

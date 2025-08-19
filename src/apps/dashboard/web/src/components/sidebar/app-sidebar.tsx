@@ -29,6 +29,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
 import { NavDocuments } from "./nav-documents";
@@ -155,16 +156,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
+          <SidebarMenuItem className="flex items-center">
+            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5" >
               <a href="#">
                 <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">Acme Inc.</span>
               </a>
             </SidebarMenuButton>
+            <SidebarTrigger />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

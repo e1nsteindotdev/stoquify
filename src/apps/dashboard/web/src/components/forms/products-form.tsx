@@ -175,13 +175,13 @@ export function ProductForm({ slug }: { slug?: string }) {
           </div>
 
           {/* Right column: meta */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-2">
+          <div className="flex flex-col justify-between items-between pt-11.5">
+            <div className="space-y-4">
+              <Card className="gap-2">
+                <CardHeader>
+                  <CardTitle>Status</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <form.Field
                     name="status"
                     children={(field) => (
@@ -192,46 +192,45 @@ export function ProductForm({ slug }: { slug?: string }) {
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-card">
                           <SelectItem value="active">Active</SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Produit Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-1">
-                <div>
-                  Ventes : <span className="text-foreground">—</span>
-                </div>
-                <div>
-                  Money generated : <span className="text-foreground">—</span>
-                </div>
-                <div>
-                  Classement : <span className="text-foreground">—</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <Card className="gap-2">
+                <CardHeader>
+                  <CardTitle>Produit Statistics</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground space-y-1">
+                  <div>
+                    Ventes : <span className="text-foreground">—</span>
+                  </div>
+                  <div>
+                    Money generated : <span className="text-foreground">—</span>
+                  </div>
+                  <div>
+                    Classement : <span className="text-foreground">—</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Submit button aligned to bottom right like the screenshot */}
-          <div className="lg:col-span-2 flex justify-end">
             <form.Subscribe
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
-                <Button type="submit" disabled={!canSubmit}>
+                <Button type="submit" className="w-full text-[16px] py-5" disabled={!canSubmit}>
                   {isSubmitting ? "..." : "Enregistrer"}
                 </Button>
               )}
             />
           </div>
+
+          {/* Submit button aligned to bottom right like the screenshot */}
         </form>
       </div>
     </div>

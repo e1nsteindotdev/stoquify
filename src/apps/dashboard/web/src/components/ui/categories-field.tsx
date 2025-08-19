@@ -49,14 +49,14 @@ export default function CategoriesField({ label }: Props) {
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-1">
       <div className="flex flex-col gap-3">
         {label && <Label className="font-semibold">{label}</Label>}
         <Select
           value={(field.state.value as string) ?? ""}
           onValueChange={(v) => field.handleChange(v as any)}
         >
-          <SelectTrigger className="w-full py-4">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select an option" />
           </SelectTrigger>
           <SelectContent className="bg-card">
@@ -69,26 +69,26 @@ export default function CategoriesField({ label }: Props) {
         </Select>
       </div>
 
-      <div className="h-[1px] w-[98%] bg-black/10 justify-self-center mt-1" />
+      <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-1" />
 
       <Popover>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="ghost"
-            className="flex gap-1 justify-start pl-2 py-0 htext-[15px] text-foreground/90 hover:text-foreground w-fit"
+            className="flex gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
           >
-            <div className="rounded-full scale-70 border-[1.5px] border-black center p-[4px]">
+            <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
               <AddIcon />
             </div>
-            <p className="text-[16px]">
+            <p className="text-[14px]">
               Add another category
             </p>
           </Button>
-        </PopoverTrigger>
+        </PopoverTrigger >
         <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
           <div className="flex flex-col gap-2">
-            <p>Create New category</p>
+            <p className="text-[14px] font-medium">Category name:</p>
             <Input
               placeholder="e.g. Pants"
               value={name}
@@ -103,7 +103,7 @@ export default function CategoriesField({ label }: Props) {
             {isCreating ? "Creating..." : "Create"}
           </Button>
         </PopoverContent>
-      </Popover>
+      </Popover >
     </div >
   );
 }
