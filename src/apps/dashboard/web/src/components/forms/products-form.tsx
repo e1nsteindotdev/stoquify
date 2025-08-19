@@ -28,10 +28,10 @@ type TProduct = Doc<"products"> & {
   }[]
 }
 
-export function ProductForm({ slug }: { slug?: string }) {
+export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
-  const productId = isNew ? "" : slug;
+  const productId: Id<"products"> | null = isNew ? null : slug;
   const categories = useQuery(api.products.listCategories) ?? [];
   const createProduct = useMutation(api.products.createProduct);
   const updateProduct = useMutation(api.products.updateProduct);

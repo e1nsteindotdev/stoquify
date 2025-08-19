@@ -11,107 +11,44 @@ import { useMutation as useTanstackMutation } from "@tanstack/react-query";
 import { api } from "api/convex";
 import ImageItem from "./image-item";
 import { useImageActions } from "@/hooks/useImageActions";
-import { useInitiateProduct, useNavigateToProduct } from "@/hooks/products";
+import { useGetImageUrl, useInitiateProduct, useNavigateToProduct } from "@/hooks/products";
 
 type PropsType = {
-  productId: string;
+  productId: Id<"products"> | null;
   label?: string;
 } & React.ComponentProps<"input">;
 
-type Image = {
+export type Image = {
   order: number;
   url?: string;
   hidden?: boolean;
   status: "uploaded" | "uploading" | "error";
   storageId?: Id<"_storage">;
 };
+
 type ImagesMap = Map<string, Image>;
 
-export default function ImageField({
-  productId,
-  label,
-  className,
-  type,
-  ...props
-}: PropsType) {
+export default function ImageField({ productId, label, className, type, ...props }: PropsType) {
+
   const imagesInputRef = useRef<HTMLInputElement>(null);
   const field = useFieldContext<ImagesMap>();
-  const [currentProductId, setCurrentProductId] = useState<string>(productId);
+  const [currentProductId, setCurrentProductId] = useState<Id<"products"> | null>(productId);
 
   const errors = useStore(field.store, (state) => state.meta.errors);
-  const [images, setImages] = useState<
-    Record<
-      string,
-      {
-        order: number;
-        status: "uploading" | "uploaded" | "error";
-        url?: string;
-      }
-    >
-  >({});
+  const [images, setImages] = useState<Record<string, {
+    order: number;
+    status: "uploading" | "uploaded" | "error";
+    url?: string;
+  }>>({});
 
-  // const convexSiteUrl = (import.meta as any).env.VITE_CONVEX_URL as string;
   const initiateProduct = useInitiateProduct();
   const navigateToProduct = useNavigateToProduct();
-
-  function handleClick() {
-    imagesInputRef?.current?.click();
-  }
-
-  // const uploadMutation = useMutation({
-  //   mutationKey: ["upload-image"],
-  //   mutationFn: async (args: {
-  //     file: File;
-  //     order: number;
-  //     productId: string;
-  //   }) => {
-  //     const { file, order, productId } = args;
-  //     const sendImageUrl = new URL(`${convexSiteUrl}/sendImage`);
-  //     sendImageUrl.searchParams.set("productId", productId);
-  //     sendImageUrl.searchParams.set("order", String(order));
-  //     // Hidden is optional at the API, defaults false if not provided
-  //     const res = await fetch(sendImageUrl, {
-  //       method: "POST",
-  //       headers: { "Content-Type": file.type },
-  //       body: file,
-  //     });
-  //     if (!res.ok) throw new Error("Upload failed");
-  //     const data = await res.json();
-  //     return data as { url: string };
-  //   },
-  // });
-  function fingerprint(file: File): string {
-    return `${file.name}-${file.size}-${file.lastModified}`;
-  }
-
-  const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
+  const getImageUrl = useGetImageUrl()
+  const generateUploadUrl = useMutation(api.images.generateUploadUrl);
   const sendImage = useMutation(api.products.sendImage);
 
-  // const uploadMutation = useMutation({
-  //   mutationKey: ["upload-image"],
-  //   mutationFn: async (args: {
-  //     file: File;
-  //     order: number;
-  //     productId: string;
-  //     fp: string,
-  //   }) => {
-  //     const { fp, file, order, productId } = args;
-  //     const sendImageUrl = new URL(`${convexSiteUrl}/sendImage`);
-  //     sendImageUrl.searchParams.set("productId", productId);
-  //     sendImageUrl.searchParams.set("order", String(order));
-  //     // Hidden is optional at the API, defaults false if not provided
-  //     const res = await fetch(sendImageUrl, {
-  //       method: "POST",
-  //       headers: { "Content-Type": file.type },
-  //       body: file,
-  //     });
-  //     if (!res.ok) throw new Error("Upload failed");
-  //     const data: { url: string } = await res.json();
-  //     return { url: data.url, fp }
-  //   },
-  // });
-  //
-  //
+  function handleClick() { imagesInputRef?.current?.click(); }
+
   const uploadMutation = useTanstackMutation({
     mutationKey: ["upload-image"],
     mutationFn: async (args: {
@@ -139,39 +76,37 @@ export default function ImageField({
     let ensuredProductId = currentProductId;
     let createdNew = false;
     if (!ensuredProductId || ensuredProductId.trim() === "") {
-      ensuredProductId = await initiateProduct();
+      const newProductId = await initiateProduct();
+      if (!newProductId) {
+        console.log("couldn't initiate new product", newProductId);
+        return
+      }
+      ensuredProductId = newProductId
       setCurrentProductId(ensuredProductId);
       createdNew = true;
     }
 
     const list = Array.from(files);
-    const existingValues = Object.values(
-      (field.state.value as any) ?? {}
-    ) as Image[];
-    const baseOrder = existingValues.length
-      ? Math.max(...existingValues.map((i) => i.order ?? 0))
-      : 0;
 
-    const uploadTasks: Promise<{
-      storageId: Id<"_storage">;
-      fp: string;
-      order: number;
-    }>[] = [];
+    //get exisitng images 
+    const existingValues = Object.values(field.state.value ?? {}) as Image[];
 
+    // get the base order
+    const baseOrder = existingValues.length ? Math.max(...existingValues.map((i) => i.order ?? 0)) : 0;
+
+    const uploadTasks: Promise<{ storageId: Id<"_storage">; fp: string; order: number; }>[] = [];
+
+    // loop through all the uploaded images
     list.forEach((file, idx) => {
       const fp = fingerprint(file);
       if (!file.type || images[fp]) return;
 
       const order = baseOrder + 1 + idx;
-      field.setValue((prev) => ({
-        ...prev,
-        [fp]: {
-          status: "uploading",
-          url: "",
-          order,
-        },
-      }));
 
+      // add the image to form field
+      field.setValue((prev) => ({ ...prev, [fp]: { status: "uploading", url: "", order } }));
+
+      // prepare the task to upload the image to convex's generated postUrl and add it to the other tasks
       const task = (async () => {
         const postUrl = await generateUploadUrl();
         const res = await uploadMutation.mutateAsync({
@@ -185,22 +120,26 @@ export default function ImageField({
       uploadTasks.push(task);
     });
 
+    // fire all the tasks concurrently
     const results = await Promise.all(uploadTasks);
 
-    const sendTasks: Promise<{ url: string | null }>[] = results.map((r) =>
+    // prepare the task to attach the image to it's respective product
+    const sendTasks: Promise<string | null>[] = results.map(async (r) =>
       sendImage({
         storageId: r.storageId,
-        hidden: false,
         productId: ensuredProductId as unknown as Id<"products">,
         order: r.order,
       })
     );
 
+    // fire all the tasks concurrently and store the served images urls to show them to the user
     const urlResults = await Promise.all(sendTasks);
-    for (let i = 0; i < results.length; i++) {
-      const url = urlResults[i].url ?? "";
+
+    for (let i = 0; i < urlResults.length; i++) {
+      const url = urlResults[i] ?? "";
       const fp = results[i].fp;
       if (url) {
+        // update the state in the form field (status becomes uploaded and we give the newly generated image url)
         field.setValue((prev) => ({
           ...prev,
           [fp]: {
@@ -221,22 +160,26 @@ export default function ImageField({
       return Object.fromEntries(entries) as any;
     });
 
+    // if a new product was initiated during this form event, we navigate to it
     if (createdNew && ensuredProductId) {
       navigateToProduct(ensuredProductId);
     }
   }
 
-  const imagesEntries = Object.entries(
-    field.state.value as unknown as Record<string, Image>
-  ).sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
-  const imagesList = imagesEntries.map(([, v]) => v);
+  // order images and get their url if it doesn't exists
+  const imagesEntries = Object
+    .entries(field.state.value as unknown as Record<string, Image>)
+    .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
 
-  // navigateToProduct(ensuredProductId);
-  //
-  const { deleteImage, hideImage, imageUp, imageDown } = useImageActions(
-    currentProductId,
-    field as any
-  );
+  const imagesList: Promise<Image & { fp: string }>[] = imagesEntries.map(async ([fp, image]) => {
+    if (!image.url && image.storageId) {
+      const url = await getImageUrl(image.storageId) ?? ""
+      return { ...image, url, fp }
+    }
+    return { ...image, fp }
+  });
+
+  const actions = useImageActions(currentProductId, field as any);
 
   return (
     <div className="grid gap-2">
@@ -251,29 +194,24 @@ export default function ImageField({
         {...props}
       />
 
-      {imagesList.length === 0 ? (
+      {(imagesList.length === 0) ? (
         <div className="border-1 border-black/30 rounded-[12px] border-dashed flex items-center justify-center h-[120px]">
           <Button
             type="button"
             className="bg-transparent text-[14px] text-[#6A4FFF] border-[#6A4FFF]/30 border-1 hover:bg-transparent"
-            onClick={handleClick}
-          >
+            onClick={handleClick}>
             Add Photos
           </Button>
         </div>
-      ) : (
+      ) : actions !== null && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-3">
-            {imagesEntries.map(([key, value], index) => (
+            {imagesList.map((image, index) => (
               <ImageItem
-                key={key}
-                imageKey={key}
+                key={index}
                 index={index}
-                value={value}
-                onDelete={deleteImage}
-                onHide={hideImage}
-                onUp={imageUp}
-                onDown={imageDown}
+                value={image}
+                actions={actions}
               />
             ))}
           </div>
@@ -296,4 +234,8 @@ export default function ImageField({
       ))}
     </div>
   );
+}
+
+function fingerprint(file: File): string {
+  return `${file.name}-${file.size}-${file.lastModified}`;
 }

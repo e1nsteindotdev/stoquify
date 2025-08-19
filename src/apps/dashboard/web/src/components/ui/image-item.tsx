@@ -1,38 +1,39 @@
+import { useState, useEffect } from "react";
 import { Button } from "./button";
 import { ArrowDown, ArrowUp, EyeOff, Loader2, Trash2 } from "lucide-react";
+import type { Id } from "api/data-model";
+import type { Image } from "./images-field";
 
 export type ImageItemProps = {
   index: number;
-  imageKey: string;
-  value: {
-    url?: string;
-    hidden?: boolean;
-    status: "uploaded" | "uploading" | "error";
+  value: Promise<Image & { fp: string }>;
+  actions: {
+    readonly deleteImage: (key: string) => Promise<void>;
+    readonly hideImage: (key: string) => Promise<void>;
+    readonly imageUp: (key: string) => Promise<void>;
+    readonly imageDown: (key: string) => Promise<void>;
   };
-  onDelete: (key: string) => void;
-  onHide: (key: string) => void;
-  onUp: (key: string) => void;
-  onDown: (key: string) => void;
 };
 
-export function ImageItem({
-  index,
-  imageKey,
-  value,
-  onDelete,
-  onHide,
-  onUp,
-  onDown,
-}: ImageItemProps) {
-  const isLoading = value.status === "uploading";
+export function ImageItem({ index, value, actions }: ImageItemProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [image, setImage] = useState<Image & { fp: string }>();
+  const { deleteImage, hideImage, imageUp, imageDown } = actions;
+
+  useEffect(() => {
+    value.then((image) => {
+      setImage(image);
+      setIsLoading(image.status === "uploading" ? true : false);
+    });
+  }, [value]);
 
   return (
     <div className="flex items-center justify-between rounded-2xl bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
       <div className="flex items-center gap-2.5">
         <div className="relative size-12 h-[60px] overflow-hidden rounded-lg bg-black/10">
-          {value.url ? (
+          {image?.url ? (
             <img
-              src={value.url}
+              src={image?.url}
               className="size-full  object-contain"
               alt={`photo-${index + 1}`}
             />
@@ -51,54 +52,57 @@ export function ImageItem({
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 rounded-xl p-1">
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            disabled={isLoading}
-            className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
-            onClick={() => onDown(imageKey)}
-          >
-            <ArrowDown className="size-5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            disabled={isLoading}
-            className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
-            onClick={() => onUp(imageKey)}
-          >
-            <ArrowUp className="size-5" />
-          </Button>
+      {image?.fp && (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-xl p-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              disabled={isLoading}
+              className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
+              onClick={async () => await imageDown(image.fp)}
+            >
+              <ArrowDown className="size-5" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              disabled={isLoading}
+              className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
+              onClick={async () => await imageUp(image.fp)}
+            >
+              <ArrowUp className="size-5" />
+            </Button>
+          </div>
+          <span className="mx-1 h-6 w-px bg-black/10" />
+          <div className="flex items-center gap-2 rounded-xl p-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              disabled={isLoading}
+              className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${image?.hidden ? "bg-black/20" : "bg-[#DADADA]"
+                }`}
+              onClick={async () => hideImage(image.fp)}
+            >
+              <EyeOff
+                className={`size-5 ${image?.hidden ? "opacity-70" : ""}`}
+              />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              className="border-transparent w-11 h-11 bg-[#DADADA] shadow-none hover:bg-black/10"
+              disabled={isLoading}
+              onClick={async () => deleteImage(image.fp)}
+            >
+              <Trash2 color="red" className="size-5" />
+            </Button>
+          </div>
         </div>
-        <span className="mx-1 h-6 w-px bg-black/10" />
-        <div className="flex items-center gap-2 rounded-xl p-1">
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            disabled={isLoading}
-            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${
-              value.hidden ? "bg-black/20" : "bg-[#DADADA]"
-            }`}
-            onClick={() => onHide(imageKey)}
-          >
-            <EyeOff className={`size-5 ${value.hidden ? "opacity-70" : ""}`} />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            className="border-transparent w-11 h-11 bg-[#DADADA] shadow-none hover:bg-black/10"
-            disabled={isLoading}
-            onClick={() => onDelete(imageKey)}
-          >
-            <Trash2 color="red" className="size-5" />
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

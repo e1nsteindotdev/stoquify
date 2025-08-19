@@ -1,18 +1,12 @@
 import { useRouter } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { api } from "api/convex";
+import type { Id } from "api/data-model";
 
 export function useInitiateProduct() {
-  const createProduct = useMutation(api.products.createProduct);
+  const mutation = useMutation(api.products.initiateProduct);
   return async function initiateProduct() {
-    const id = await createProduct({
-      title: "",
-      desc: "",
-      stockingStrategy: "on_demand" as const,
-      status: "inactive" as const,
-      images: [],
-    } as any);
-    return String(id);
+    return await mutation();
   };
 }
 
@@ -23,5 +17,12 @@ export function useNavigateToProduct() {
       to: "/produits/$slug",
       params: { slug: productId },
     });
+  };
+}
+
+export function useGetImageUrl() {
+  const mutation = useMutation(api.images.getUrl);
+  return async function getImageUrl(storageId: Id<"_storage">) {
+    return await mutation({ storageId });
   };
 }

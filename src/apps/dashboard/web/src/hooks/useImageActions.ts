@@ -38,9 +38,12 @@ function reindexSequential(images: ImagesRecord): ImagesRecord {
   return Object.fromEntries(entries);
 }
 
-export function useImageActions(productId: string, field: FieldLike) {
-  const updateProduct = useMutation(api.products.updateProduct);
+export function useImageActions(
+  productId: Id<"products"> | null,
+  field: FieldLike
+) {
 
+  const updateProduct = useMutation(api.products.updateProduct);
   const persist = useCallback(
     async (images: ImagesRecord) => {
       await updateProduct({
@@ -61,6 +64,7 @@ export function useImageActions(productId: string, field: FieldLike) {
       });
       await persist(nextImages);
     },
+
     [field, persist]
   );
 
