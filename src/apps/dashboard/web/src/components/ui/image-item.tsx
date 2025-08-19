@@ -10,8 +10,8 @@ export type ImageItemProps = {
   actions: {
     readonly deleteImage: (key: string) => Promise<void>;
     readonly hideImage: (key: string) => Promise<void>;
-    readonly imageUp: (key: string) => Promise<void>;
-    readonly imageDown: (key: string) => Promise<void>;
+    readonly imageUp: (key: string) => void;
+    readonly imageDown: (key: string) => void;
   };
 };
 
@@ -61,7 +61,7 @@ export function ImageItem({ index, value, actions }: ImageItemProps) {
               variant="outline"
               disabled={isLoading}
               className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
-              onClick={async () => await imageDown(image.fp)}
+              onClick={async () => imageDown(image.fp)}
             >
               <ArrowDown className="size-5" />
             </Button>
@@ -71,7 +71,7 @@ export function ImageItem({ index, value, actions }: ImageItemProps) {
               variant="outline"
               disabled={isLoading}
               className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
-              onClick={async () => await imageUp(image.fp)}
+              onClick={async () => imageUp(image.fp)}
             >
               <ArrowUp className="size-5" />
             </Button>

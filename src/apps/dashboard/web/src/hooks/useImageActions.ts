@@ -55,21 +55,21 @@ export function useImageActions(
   );
 
   const deleteImage = useCallback(
-    async (key: string) => {
+    (key: string) => {
       let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         const { [key]: _, ...rest } = prev;
         nextImages = reindexSequential(rest);
         return nextImages;
       });
-      await persist(nextImages);
+      (async () => { persist(nextImages) })()
     },
 
     [field, persist]
   );
 
   const hideImage = useCallback(
-    async (key: string) => {
+    (key: string) => {
       let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         nextImages = {
@@ -78,13 +78,13 @@ export function useImageActions(
         };
         return nextImages;
       });
-      await persist(nextImages);
+      (async () => { persist(nextImages) })()
     },
     [field, persist]
   );
 
   const imageUp = useCallback(
-    async (key: string) => {
+    (key: string) => {
       let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         const sorted = Object.entries(prev).sort(
@@ -102,13 +102,15 @@ export function useImageActions(
         nextImages = reindexSequential(Object.fromEntries(sorted));
         return nextImages;
       });
-      await persist(nextImages);
+      persist(nextImages)
+
+      //      (async () => { persist(nextImages) })()
     },
     [field, persist]
   );
 
   const imageDown = useCallback(
-    async (key: string) => {
+    (key: string) => {
       let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         const sorted = Object.entries(prev).sort(
@@ -126,7 +128,8 @@ export function useImageActions(
         nextImages = reindexSequential(Object.fromEntries(sorted));
         return nextImages;
       });
-      await persist(nextImages);
+      persist(nextImages)
+      //(async () => { persist(nextImages) })()
     },
     [field, persist]
   );
