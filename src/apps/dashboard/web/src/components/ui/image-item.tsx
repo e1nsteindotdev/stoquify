@@ -8,8 +8,8 @@ export type ImageItemProps = {
   index: number;
   value: Promise<Image & { fp: string }>;
   actions: {
-    readonly deleteImage: (key: string) => Promise<void>;
-    readonly hideImage: (key: string) => Promise<void>;
+    readonly deleteImage: (key: string) => void;
+    readonly hideImage: (key: string) => void;
     readonly imageUp: (key: string) => void;
     readonly imageDown: (key: string) => void;
   };

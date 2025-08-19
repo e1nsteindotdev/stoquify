@@ -204,7 +204,7 @@ export default function ImageField({ productId, label, className, type, ...props
           </Button>
         </div>
       ) : actions !== null && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 border border-neutral-300 rounded-[15px] p-3">
           <div className="flex flex-col gap-3">
             {imagesList.map((image, index) => (
               <ImageItem
