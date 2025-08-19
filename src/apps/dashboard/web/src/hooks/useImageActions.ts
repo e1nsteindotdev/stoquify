@@ -1,6 +1,4 @@
 import { useCallback } from "react";
-import { useMutation } from "convex/react";
-import { api } from "api/convex";
 import { type Id } from "api/data-model";
 
 export type LocalImage = {
@@ -18,18 +16,18 @@ type FieldLike = {
   setValue: (updater: (prev: ImagesRecord) => ImagesRecord) => void;
 };
 
-function normalizeForServer(images: ImagesRecord) {
-  // Include any image that has a storageId (regardless of local status),
-  // otherwise it would be dropped from the server when we patch.
-  return Object.values(images)
-    .filter((img) => !!img.storageId)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((img) => ({
-      storageId: img.storageId as Id<"_storage">,
-      hidden: !!img.hidden,
-      order: img.order ?? 0,
-    }));
-}
+// function normalizeForServer(images: ImagesRecord) {
+//   // Include any image that has a storageId (regardless of local status),
+//   // otherwise it would be dropped from the server when we patch.
+//   return Object.values(images)
+//     .filter((img) => !!img.storageId)
+//     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+//     .map((img) => ({
+//       storageId: img.storageId as Id<"_storage">,
+//       hidden: !!img.hidden,
+//       order: img.order ?? 0,
+//     }));
+// }
 
 function reindexSequential(images: ImagesRecord): ImagesRecord {
   const entries = Object.entries(images)
@@ -38,54 +36,42 @@ function reindexSequential(images: ImagesRecord): ImagesRecord {
   return Object.fromEntries(entries);
 }
 
-export function useImageActions(
-  productId: Id<"products"> | null,
-  field: FieldLike
-) {
-
-  const updateProduct = useMutation(api.products.updateProduct);
-  const persist = useCallback(
-    async (images: ImagesRecord) => {
-      await updateProduct({
-        id: productId as Id<"products">,
-        images: normalizeForServer(images),
-      });
-    },
-    [productId, updateProduct]
-  );
+export function useImageActions(productId: any | null, field: FieldLike) {
+  // const updateProduct = useMutation(api.products.updateProduct);
+  // const persist = useCallback(
+  //   async (images: ImagesRecord) => {
+  //     await updateProduct({
+  //       productId: productId as Id<"products">,
+  //       images: normalizeForServer(images),
+  //     });
+  //   },
+  //   [productId, updateProduct]
+  // );
 
   const deleteImage = useCallback(
     (key: string) => {
-      let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         const { [key]: _, ...rest } = prev;
-        nextImages = reindexSequential(rest);
-        return nextImages;
+        return reindexSequential(rest);
       });
-      (async () => { persist(nextImages) })()
     },
-
-    [field, persist]
+    [field]
   );
 
   const hideImage = useCallback(
     (key: string) => {
-      let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
-        nextImages = {
+        return {
           ...prev,
           [key]: { ...prev[key], hidden: !prev[key].hidden },
         };
-        return nextImages;
       });
-      (async () => { persist(nextImages) })()
     },
-    [field, persist]
+    [field]
   );
 
   const imageUp = useCallback(
     (key: string) => {
-      let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         const sorted = Object.entries(prev).sort(
           ([, a], [, b]) => a.order - b.order
@@ -99,19 +85,14 @@ export function useImageActions(
           sorted[idx - 1] = [prevKey, a];
           sorted[idx] = [curKey, b];
         }
-        nextImages = reindexSequential(Object.fromEntries(sorted));
-        return nextImages;
+        return reindexSequential(Object.fromEntries(sorted));
       });
-      persist(nextImages)
-
-      //      (async () => { persist(nextImages) })()
     },
-    [field, persist]
+    [field]
   );
 
   const imageDown = useCallback(
     (key: string) => {
-      let nextImages: ImagesRecord = {};
       field.setValue((prev) => {
         const sorted = Object.entries(prev).sort(
           ([, a], [, b]) => a.order - b.order
@@ -125,13 +106,10 @@ export function useImageActions(
           sorted[idx] = [curKey, a];
           sorted[idx + 1] = [nextKey, b];
         }
-        nextImages = reindexSequential(Object.fromEntries(sorted));
-        return nextImages;
+        return reindexSequential(Object.fromEntries(sorted));
       });
-      persist(nextImages)
-      //(async () => { persist(nextImages) })()
     },
-    [field, persist]
+    [field]
   );
 
   return { deleteImage, hideImage, imageUp, imageDown } as const;

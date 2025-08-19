@@ -28,9 +28,6 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
         data.set("email", value.email)
         data.set("password", value.password)
         data.set("flow", "signUp")
-        for (let value of data.values()) {
-          console.log(value)
-        }
 
         void signIn("password", data);
       } catch (error) {

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "../../ui/button";
 import { ArrowDown, ArrowUp, EyeOff, Loader2, Trash2 } from "lucide-react";
 import type { Image } from "./images-field";
+import { UpArrow } from "@/components/icons/up-arrow";
+import { DownArrow } from "@/components/icons/down-arrow";
 
 export type ImageItemProps = {
   index: number;
@@ -62,7 +64,7 @@ export function ImageItem({ index, value, actions }: ImageItemProps) {
               className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
               onClick={async () => imageDown(image.fp)}
             >
-              <ArrowDown className="size-5" />
+              <DownArrow />
             </Button>
             <Button
               type="button"
@@ -72,7 +74,7 @@ export function ImageItem({ index, value, actions }: ImageItemProps) {
               className="border-transparent w-11 h-11 bg-[#F4F4F4] shadow-none hover:bg-black/5"
               onClick={async () => imageUp(image.fp)}
             >
-              <ArrowUp className="size-5" />
+              <UpArrow />
             </Button>
           </div>
           <span className="mx-1 h-6 w-px bg-black/10" />

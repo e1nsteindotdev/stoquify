@@ -20,7 +20,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
-  const createProduct = useMutation(api.products.createProduct);
+  const initiateProduct = useMutation(api.products.initiateProduct);
   const updateProduct = useMutation(api.products.updateProduct);
 
   const product = isNew
@@ -47,21 +47,21 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const truthyValues = Object.fromEntries(
-        Object.entries(value)
-          .filter(([k, v]) => k !== "variants")
-          .map(([k, v]) => {
-            if (v) return [k, v];
-            else return [k, undefined];
-          })
+      const dirtyValues = Object.fromEntries(
+        Object.entries(value).filter(([k]) => {
+          const decision = form.getFieldMeta(k as any)?.isDefaultValue
+          return !decision
+        })
       );
+
       if (isNew) {
-        const id = await createProduct(truthyValues as any);
+        const id = await initiateProduct();
+        await updateProduct({ ...dirtyValues, productId: id } as any);
         router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
       } else {
         if (productId) {
-          truthyValues["id"] = productId;
-          await updateProduct(truthyValues as any);
+          dirtyValues["productId"] = productId;
+          await updateProduct(dirtyValues as any);
         }
       }
     },
@@ -71,9 +71,10 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   useEffect(() => {
     form.reset(defaultValues);
   }, [defaultValues]);
+  console.log("is default", form.state.isDefaultValue)
 
   return (
-    <div className="h-screen w-full flex items-start justify-center p-6">
+    <div className="w-full flex items-start justify-center p-6 pb-20">
       <div className="w-full max-w-6xl space-y-6">
         <form
           onSubmit={(e) => {
@@ -124,10 +125,10 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
             </div>
             <div className="flex flex-col gap-3">
               <InputsTitle>Variants</InputsTitle>
-              <InputsContainer>
+              <InputsContainer className="">
                 <form.AppField
                   name="variants"
-                  children={(field) => <field.VariantsField stockingStrat={form.getFieldValue("stockingStrategy")} />}
+                  children={(field) => <field.VariantsField />}
                 />
               </InputsContainer>
             </div>
@@ -137,7 +138,11 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
               <InputsContainer>
                 <form.AppField
                   name="stockingStrategy"
-                  children={(field) => <field.StockageField variants={form.getFieldValue("variants")} />}
+                  children={(field) => (
+                    <field.StockageField
+                      variants={form.getFieldValue("variants")}
+                    />
+                  )}
                 />
               </InputsContainer>
             </div>
