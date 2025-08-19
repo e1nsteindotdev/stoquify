@@ -4,8 +4,7 @@ import { Label } from "@radix-ui/react-label";
 import { useRef, useState } from "react";
 
 import { type Id } from "api/data-model";
-import { Button } from "./button";
-import { Skeleton } from "./skeleton";
+import { Button } from "@/components/ui/button";
 import { useMutation } from "convex/react";
 import { useMutation as useTanstackMutation } from "@tanstack/react-query";
 import { api } from "api/convex";
@@ -170,7 +169,6 @@ export default function ImageField({ productId, label, className, type, ...props
   const imagesEntries = Object
     .entries(field.state.value as unknown as Record<string, Image>)
     .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
-
   const imagesList: Promise<Image & { fp: string }>[] = imagesEntries.map(async ([fp, image]) => {
     if (!image.url && image.storageId) {
       const url = await getImageUrl(image.storageId) ?? ""

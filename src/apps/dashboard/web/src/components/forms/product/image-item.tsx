@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "./button";
+import { Button } from "../../ui/button";
 import { ArrowDown, ArrowUp, EyeOff, Loader2, Trash2 } from "lucide-react";
 import type { Image } from "./images-field";
 

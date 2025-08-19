@@ -12,125 +12,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { InputsContainer, InputsTitle } from "../ui/inputs-container";
+import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
-import { type Id, type Doc } from "api/data-model";
-
-type TProduct = Doc<"products"> & {
-  variants: {
-    order: number;
-    parentVariantId?: string;
-    name: string;
-    elements: {
-      variantId: string;
-      name: string;
-    };
-  }[];
-};
+import { type Id } from "api/data-model";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
-  const categories = useQuery(api.categories.listCategories) ?? [];
   const createProduct = useMutation(api.products.createProduct);
   const updateProduct = useMutation(api.products.updateProduct);
 
-  let product: TProduct | null = null;
-  if (productId) {
-    product = useQuery(api.products.getProductById, {
-      id: slug as Id<"products">,
-    }) as TProduct;
-  }
+  const product = isNew
+    ? null
+    : (useQuery(api.products.getProductById, { id: slug as Id<"products"> }) ??
+      null);
 
-  const defaultValues = useMemo(() => {
-    if (product) {
-      return {
-        categoryId: product?.categoryId ?? null,
-        title: product?.title ?? "",
-        desc: product?.desc ?? "",
-        price: product?.price ?? 0,
-        discount: product?.discount ?? undefined,
-        oldPrice: product?.oldPrice ?? undefined,
-        stockingStrategy: product?.stockingStrategy ?? "on_demand",
-        status: product?.status ?? "incomplete",
-        images: product?.images ?? [],
-        variants: product.variants,
-      };
-    } else
-      return {
-        categoryId: null,
-        title: "",
-        desc: "",
-        price: 0,
-        discount: undefined,
-        oldPrice: undefined,
-        stockingStrategy: "by_sizes",
-        status: "incomplete",
-        images: [],
-        variants: [],
-      };
-  }, [product]);
+  const defaultValues = useMemo(
+    () => ({
+      categoryId: product?.categoryId ?? "",
+      title: product?.title ?? "",
+      desc: product?.desc ?? "",
+      price: product?.price ?? 0,
+      discount: product?.discount ?? undefined,
+      oldPrice: product?.oldPrice ?? undefined,
+      stockingStrategy: product?.stockingStrategy ?? "on_demand",
+      status: product?.status ?? "incomplete",
+      images: product?.images ?? [],
+      variants: product?.variants ?? [],
+    }),
+    [product]
+  );
 
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      let formatedValues = {};
-      for (let v of Object.keys(value)) {
-        if (value[v]) {
-          formatedValues[v] = value[v]
-        }
-      }
-      // const formatedValues = {
-      //   title: value.title ?? null,
-      //   desc: value.desc ?? null,
-      //   price: Number(value.price) ?? null,
-      //   discount: Number(value.discount) ?? 0,
-      //   oldPrice: Number(value.oldPrice) ?? null,
-      //   categoryId: value.categoryId ?? null,
-      //   status: value.status ?? "incomplete",
-      //   images: value.images ?? [],
-      //   stockingStrategy: value.stockingStrategy ?? "by_sizes"
-      // }
+      const truthyValues = Object.fromEntries(
+        Object.entries(value)
+          .filter(([k, v]) => k !== "variants")
+          .map(([k, v]) => {
+            if (v) return [k, v];
+            else return [k, undefined];
+          })
+      );
       if (isNew) {
-        const id = await createProduct({
-          title: value.title,
-          desc: value.desc,
-          price: Number(value.price),
-          discount: value.discount ?? 0,
-          oldPrice: value.oldPrice ?? undefined,
-          categoryId: value.categoryId as any,
-          status: value.status as any,
-          images: value.images as any,
-          stockingStrategy: value.stockingStrategy as any,
-        });
+        const id = await createProduct(truthyValues as any);
         router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
       } else {
         if (productId) {
-          console.log("goint to insert htis :", formatedValues);
-          formatedValues['id'] = productId
-          await updateProduct(formatedValues);
-          // await updateProduct({
-          //   id: productId,
-          //   title: value.title,
-          //   desc: value.desc,
-          //   price: Number(value.price),
-          //   discount: value.discount ?? 0,
-          //   oldPrice: value.oldPrice ?? undefined,
-          //   categoryId: value.categoryId as Id<'categories'> ?? null,
-          //   status: value.status as any,
-          //   images: value.images as any,
-          //   stockingStrategy: value.stockingStrategy as any,
-          // });
+          truthyValues["id"] = productId;
+          await updateProduct(truthyValues as any);
         }
       }
     },
   });
 
   // Keep form in sync when product loads
-  // useEffect(() => {
-  //   form.reset(defaultValues);
-  // }, [defaultValues]);
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues]);
 
   return (
     <div className="h-screen w-full flex items-start justify-center p-6">
@@ -187,7 +127,17 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
               <InputsContainer>
                 <form.AppField
                   name="variants"
-                  children={(field) => <field.VariantsField />}
+                  children={(field) => <field.VariantsField stockingStrat={form.getFieldValue("stockingStrategy")} />}
+                />
+              </InputsContainer>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <InputsTitle>Stockage</InputsTitle>
+              <InputsContainer>
+                <form.AppField
+                  name="stockingStrategy"
+                  children={(field) => <field.StockageField variants={form.getFieldValue("variants")} />}
                 />
               </InputsContainer>
             </div>
@@ -240,12 +190,16 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
             </div>
 
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-              children={([canSubmit, isSubmitting]) => (
+              selector={(state) => [
+                state.canSubmit,
+                state.isSubmitting,
+                state.isDirty,
+              ]}
+              children={([canSubmit, isSubmitting, isDirty]) => (
                 <Button
                   type="submit"
                   className="w-full text-[16px] py-5"
-                  disabled={!canSubmit}
+                  disabled={!canSubmit || !isDirty}
                 >
                   {isSubmitting ? "..." : "Enregistrer"}
                 </Button>

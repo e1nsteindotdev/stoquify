@@ -2,24 +2,23 @@ import { useState } from "react";
 import { useFieldContext } from "@/hooks/form-context.tsx";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
-import { Label } from "./label";
-import { Button } from "./button";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
-import { Input } from "./input";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./select";
+} from "@/components/ui/select";
 
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-
+} from "@/components/ui/popover";
 
 type Props = {
   label?: string;
@@ -61,7 +60,11 @@ export default function CategoriesField({ label }: Props) {
           </SelectTrigger>
           <SelectContent className="bg-card">
             {categories.map((c) => (
-              <SelectItem key={c._id} className="focus:bg-black/5" value={String(c._id)}>
+              <SelectItem
+                key={c._id}
+                className="focus:bg-black/5"
+                value={String(c._id)}
+              >
                 {c.name}
               </SelectItem>
             ))}
@@ -80,11 +83,9 @@ export default function CategoriesField({ label }: Props) {
               <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
                 <AddIcon />
               </div>
-              <p className="text-[14px]">
-                Add another category
-              </p>
+              <p className="text-[14px]">Add another category</p>
             </Button>
-          </PopoverTrigger >
+          </PopoverTrigger>
           <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
             <div className="flex flex-col gap-2">
               <p className="text-[14px] font-medium">Category name:</p>
@@ -102,9 +103,9 @@ export default function CategoriesField({ label }: Props) {
               {isCreating ? "Creating..." : "Create"}
             </Button>
           </PopoverContent>
-        </Popover >
+        </Popover>
       </div>
-    </div >
+    </div>
   );
 }
 
@@ -124,5 +125,5 @@ function AddIcon() {
         d="M1.023 4.5h6.954M4.5 7.978V1.023"
       />
     </svg>
-  )
+  );
 }

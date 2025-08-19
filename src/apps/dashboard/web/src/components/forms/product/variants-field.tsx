@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFieldContext } from "@/hooks/form-context.tsx";
-import { Label } from "./label";
-import { Button } from "./button";
-import { Input } from "./input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import VariantItem from "./variant-item";
+import type { VariantElement } from "./variant-item";
 
 type TVariant = {
   order: number;
@@ -14,18 +16,53 @@ type TVariant = {
   }[];
 };
 
-type Props = { label?: string };
+type Props = {
+  label?: string;
+  stockingStrat: "on_demand" | "by_sizes" | "by_number";
+};
 
-export default function VariantsField({ label }: Props) {
+export default function VariantsField({ label, stockingStrat }: Props) {
   const field = useFieldContext<TVariant[]>();
+  console.log("[variants] stockage:", stockingStrat);
 
   const currentVariant: TVariant | undefined = useMemo(() => {
     const value = field.state.value ?? [];
     return Array.isArray(value) && value.length > 0 ? value[0] : undefined;
   }, [field.state.value]);
 
-  const [isModifying, setIsModifying] = useState<boolean>(() => !currentVariant);
-  const [variantName, setVariantName] = useState<string>(currentVariant?.name ?? "");
+  // Dummy data used only for UI preview of variant elements list
+  const dummyVariants: VariantElement[] = useMemo(
+    () => [
+      {
+        id: "v1",
+        name: "Couleur",
+        order: 0,
+        options: [{ name: "black" }, { name: "white" }, { name: "blue" }],
+      },
+      {
+        id: "v2",
+        name: "Texture",
+        order: 1,
+        parentVariantId: "v1",
+        options: [{ name: "harsh" }, { name: "soft" }],
+      },
+      {
+        id: "v3",
+        name: "Taille",
+        order: 2,
+        parentVariantId: "v2",
+        options: [{ name: "M" }, { name: "L" }, { name: "XS" }],
+      },
+    ],
+    []
+  );
+
+  const [isModifying, setIsModifying] = useState<boolean>(
+    () => !currentVariant
+  );
+  const [variantName, setVariantName] = useState<string>(
+    currentVariant?.name ?? ""
+  );
   const [options, setOptions] = useState<string[]>(
     currentVariant ? currentVariant.elements.map((e) => e.name) : [""]
   );
@@ -35,7 +72,9 @@ export default function VariantsField({ label }: Props) {
     const hasVariant = Boolean(currentVariant);
     setIsModifying(!hasVariant);
     setVariantName(currentVariant?.name ?? "");
-    setOptions(currentVariant ? currentVariant.elements.map((e) => e.name) : [""]);
+    setOptions(
+      currentVariant ? currentVariant.elements.map((e) => e.name) : [""]
+    );
   }, [currentVariant]);
 
   function handleAddOption() {
@@ -43,7 +82,9 @@ export default function VariantsField({ label }: Props) {
   }
 
   function handleRemoveOption(index: number) {
-    setOptions((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)));
+    setOptions((prev) =>
+      prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)
+    );
   }
 
   function handleOptionChange(index: number, value: string) {
@@ -51,7 +92,9 @@ export default function VariantsField({ label }: Props) {
   }
 
   function handleConfirm() {
-    const cleanedOptions = options.map((o) => o.trim()).filter((o) => o.length > 0);
+    const cleanedOptions = options
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
     const name = variantName.trim();
     if (!name || cleanedOptions.length === 0) return;
     const next: TVariant = {
@@ -76,9 +119,9 @@ export default function VariantsField({ label }: Props) {
     return nameOk && optsOk;
   }, [variantName, options]);
 
-  if (isModifying) {
+  if (!isModifying) {
     return (
-      <div className="grid gap-4" >
+      <div className="grid gap-4">
         {label && <Label className="font-semibold">{label}</Label>}
 
         <div className="grid gap-3">
@@ -105,7 +148,9 @@ export default function VariantsField({ label }: Props) {
                 <button
                   type="button"
                   onClick={() => handleRemoveOption(i)}
-                  className={`rounded-xl border px-3 py-2 ${options.length > 1 ? "text-red-500 border-red-200" : "text-muted-foreground/40 border-transparent"
+                  className={`rounded-xl border px-3 py-2 ${options.length > 1
+                    ? "text-red-500 border-red-200"
+                    : "text-muted-foreground/40 border-transparent"
                     }`}
                   disabled={options.length <= 1}
                   aria-label="Remove option"
@@ -115,7 +160,12 @@ export default function VariantsField({ label }: Props) {
               </div>
             ))}
             <div>
-              <Button type="button" variant="ghost" className="px-2" onClick={handleAddOption}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-2"
+                onClick={handleAddOption}
+              >
                 Add option
               </Button>
             </div>
@@ -137,49 +187,32 @@ export default function VariantsField({ label }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-muted/30 p-4">
-      <div className="flex items-center gap-3">
-        <DragIcon />
-        <div className="flex-1">
-          <div className="text-lg font-semibold">{currentVariant?.name}</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {currentVariant?.elements.map((el, i) => (
-              <span
-                key={`${el.name}-${i}`}
-                className="rounded-xl bg-primary/10 px-3 py-1 text-primary text-sm"
-              >
-                {el.name}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="rounded-xl"
-            onClick={() => setIsModifying(true)}
-          >
-            Modify
-          </Button>
-          <div className="h-6 w-px bg-black/10" />
-          <button
-            type="button"
-            onClick={handleDeleteVariant}
-            className="rounded-xl border px-3 py-2 text-red-500 border-red-200"
-            aria-label="Delete variant"
-          >
-            <TrashIcon />
-          </button>
-        </div>
-      </div>
+    <div className="grid gap-2">
+      {dummyVariants.map((v, i) => (
+        <VariantItem
+          key={v.id}
+          variant={v}
+          isFirst={i === 0}
+          isLast={i === dummyVariants.length - 1}
+        />
+      ))}
     </div>
   );
 }
 
 function TrashIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
       <path d="M10 11v6" />
@@ -191,7 +224,18 @@ function TrashIcon() {
 
 function DragIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-muted-foreground"
+    >
       <circle cx="9" cy="5" r="1" />
       <circle cx="15" cy="5" r="1" />
       <circle cx="9" cy="12" r="1" />
