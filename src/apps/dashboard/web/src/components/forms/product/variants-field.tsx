@@ -18,14 +18,19 @@ export default function VariantsField() {
       const newVariant: TVariant = {
         name,
         order,
-        options: options.map((o) => ({ name: o })),
+        options: options.filter(o => o !== "").map((o) => ({ name: o })),
       };
+      console.log("goign to add new optiosn :", newVariant.options)
       return [...prev, newVariant];
     });
   }
   const variants = field.state.value;
   return (
     <div className={cn("grid gap-3")}>
+      <div className="">
+        <p className="text-[20px] font-semibold">Exisiting Variants</p>
+        <p className="text-[16px] text-neutral-500">Know the order of the variants matter because it how you can manage your inventory</p>
+      </div>
       {variants?.length ? (
         <div className="grid gap-2">
           {variants?.map((v, i) => (

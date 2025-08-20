@@ -7,32 +7,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { StockageForm } from "./stockage-form";
+
+import { type VariantElement as TVariant, type TVariantsInventory } from "@/hooks/useVariantActions";
 
 type Props = {
-  label?: string;
-  variants: any
+  variants: TVariant[]
+  variantsInventory: TVariantsInventory
+  strat: string
 };
 
-export default function StockageField({ label, variants }: Props) {
+export default function StockageField({ variants, strat, variantsInventory }: Props) {
   const field = useFieldContext<string>();
   const strats = [
     {
-      key: "on_demand",
+      key: "by_demand",
       value: "Par commande"
     },
     {
-      key: "by_sizes",
+      key: "by_variants",
       value: "Par variantes",
     },
     {
       key: "by_number",
       value: "Quantite fix",
     },
-
   ]
 
   return (
-    <div>
+    <div className="space-y-4">
       <div className="grid gap-1">
         <Label className="font-semibold pb-[12px]">Starategy</Label>
         <div className="space-y-1">
@@ -57,6 +60,7 @@ export default function StockageField({ label, variants }: Props) {
           </Select>
         </div>
       </div>
+      <StockageForm variantsInventory={variantsInventory} variants={variants} strat={strat} />
     </div>
   );
 }

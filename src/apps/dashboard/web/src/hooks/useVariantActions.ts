@@ -13,6 +13,8 @@ export type VariantElement = {
   options: VariantOption[];
 };
 
+export type TVariantsInventory = Map<string, { _id?: string, _creationTime?: number, path: string[], quantity: number }>
+
 type FieldLike = {
   state: { value: VariantElement[] };
   setValue: (updater: (prev: VariantElement[]) => VariantElement[]) => void;
@@ -83,4 +85,24 @@ export function useVariantActions(field: FieldLike) {
   );
 
   return { deleteVariant, moveVariantUp, moveVariantDown } as const;
+}
+
+export function generateVIFingerPrint(path: string[]) {
+  let fp = ""
+  path.forEach(n => {
+    if (n) {
+      if (n != "") fp.concat("-")
+      fp.concat(n)
+    }
+  })
+  return fp
+}
+export function formatVariantsInventory(vis: { path: string[], quantity: number }[]) {
+  const result: TVariantsInventory = new Map()
+  vis.forEach(vi => result.set(
+    generateVIFingerPrint(vi.path),
+    vi
+  ))
+  return result
+
 }

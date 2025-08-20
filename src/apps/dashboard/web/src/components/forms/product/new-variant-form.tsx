@@ -51,7 +51,7 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
     if (options && variantName) {
       const cleanedOptions = options
         .map((o) => o.trim())
-        .filter((o) => o.length > 0);
+        .filter((o) => o !== "" && o);
       const name = variantName.trim();
       if (!name || cleanedOptions.length === 0) return;
       const next: TVariant = {

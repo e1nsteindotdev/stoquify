@@ -1,7 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
-import { useMutation, useQuery, useConvex } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { type Id } from "api/data-model";
+import { formatVariantsInventory } from "@/hooks/useVariantActions";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const router = useRouter();
@@ -36,10 +37,11 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
       price: product?.price ?? 0,
       discount: product?.discount ?? undefined,
       oldPrice: product?.oldPrice ?? undefined,
-      stockingStrategy: product?.stockingStrategy ?? "on_demand",
+      stockingStrategy: product?.stockingStrategy ?? "by_variants",
       status: product?.status ?? "incomplete",
       images: product?.images ?? [],
       variants: product?.variants ?? [],
+      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : null
     }),
     [product]
   );
@@ -71,7 +73,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   useEffect(() => {
     form.reset(defaultValues);
   }, [defaultValues]);
-  console.log("is default", form.state.isDefaultValue)
 
   return (
     <div className="w-full flex items-start justify-center p-6 pb-20">
@@ -136,14 +137,20 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
             <div className="flex flex-col gap-3">
               <InputsTitle>Stockage</InputsTitle>
               <InputsContainer>
-                <form.AppField
-                  name="stockingStrategy"
-                  children={(field) => (
-                    <field.StockageField
-                      variants={form.getFieldValue("variants")}
+                <form.Subscribe
+                  selector={(state) => ({ variantsInventory: state.values.variantsInventory, variants: state.values.variants, strat: state.values.stockingStrategy })}
+                  children={({ variants, strat, variantsInventory }) => (
+                    <form.AppField
+                      name="stockingStrategy"
+                      children={(field) => (
+                        <field.StockageField
+                          strat={strat}
+                          variantsInventory={variantsInventory}
+                          variants={variants}
+                        />
+                      )}
                     />
-                  )}
-                />
+                  )} />
               </InputsContainer>
             </div>
           </div>
