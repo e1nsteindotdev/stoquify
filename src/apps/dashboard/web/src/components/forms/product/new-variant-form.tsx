@@ -77,7 +77,7 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
     return (
       <div className={cn("grid gap-2",)}>
         <p className="font-semibold text-[18px]">Add new Variant</p>
-        <div className="grid gap-4 border border-neutral-300 bg-neutral-200 rounded-[15px] p-4">
+        <div className="grid gap-4 border border-neutral-300 rounded-[15px] p-4">
           <div className="grid gap-3">
             <Label className="font-semibold">Variant name</Label>
             <Input

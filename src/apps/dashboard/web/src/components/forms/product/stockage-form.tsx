@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { LittleItem } from "@/components/ui/little-item";
-import { type VariantElement as TVariant, type TVariantsInventory } from "@/hooks/useVariantActions";
+import { generateVIFingerPrint, type VariantElement as TVariant, type TVariantsInventory } from "@/hooks/useVariantActions";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
@@ -16,6 +16,7 @@ export function StockageForm({ strat, variants, variantsInventory }:
 
 function ByVariantForm({ variants, variantsInventory }: { variants: TVariant[], variantsInventory: TVariantsInventory }) {
   let data: string[][] = []
+
   function nest(result: string[], depth: number) {
     if (depth < variants.length - 1)
       return variants[depth].options.map(o => {
@@ -27,16 +28,20 @@ function ByVariantForm({ variants, variantsInventory }: { variants: TVariant[], 
     }
   }
 
-  variants[0].options.forEach(v => {
-    const result = nest([v.name], 1)
-    data.push(result)
-  })
-
-  if (variants.length < 1) {
-    return <div className="grid gap-0 border border-input rounded-[16px]">
-      TO DO LATER
-    </div>
+  if (!variants) {
+    return (
+      <div className="rounded-2xl border border-input-border p-4">
+        <p className="italic text-[14px] text-neutral-500">
+          No variants exist for this product yet.
+        </p>
+      </div>
+    )
   } else {
+    variants[0]?.options.forEach(v => {
+      const result = nest([v.name], 1)
+      data.push(result)
+    })
+
     const basePadding = 16
     const lastOption = variants.at(-1)?.options
 
@@ -69,6 +74,7 @@ function ByVariantForm({ variants, variantsInventory }: { variants: TVariant[], 
 }
 
 function QuantityInput({ path }: { path: string[] }) {
+  const fp = generateVIFingerPrint(path)
   return <div className="flex gap-2 items-center">
     <p className="text-[14px] text-neutral-700">Quantity</p>
     <Input placeholder="eg. 4" defaultValue={0} className="text-[14px] py-1" />

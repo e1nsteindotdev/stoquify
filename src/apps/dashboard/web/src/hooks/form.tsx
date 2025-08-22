@@ -8,6 +8,7 @@ const ImageField = lazy(() => import("@/components/forms/product/images-field.ts
 const CategoriesField = lazy(() => import("@/components/forms/product/categories-field.tsx"));
 const VariantsField = lazy(() => import("@/components/forms/product/variants-field.tsx"));
 const StockageField = lazy(() => import("@/components/forms/product/stockage-field.tsx"));
+const StockageStratField = lazy(() => import("@/components/forms/product/stockage-strat-field.tsx"));
 
 function SubscribeButton({ label }: { label: string }) {
   const form = useFormContext();
@@ -25,6 +26,7 @@ export const { useAppForm, withForm, withFieldGroup } = createFormHook({
     ImageField,
     CategoriesField,
     VariantsField,
+    StockageStratField,
     StockageField
   },
   formComponents: {

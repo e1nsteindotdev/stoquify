@@ -1,3 +1,4 @@
+import type { Doc } from "api/data-model";
 import { useCallback } from "react";
 
 export type VariantOption = {
@@ -91,18 +92,66 @@ export function generateVIFingerPrint(path: string[]) {
   let fp = ""
   path.forEach(n => {
     if (n) {
-      if (n != "") fp.concat("-")
-      fp.concat(n)
+      if (fp != "") fp = fp.concat("-")
+      fp = fp.concat(n)
     }
   })
   return fp
 }
-export function formatVariantsInventory(vis: { path: string[], quantity: number }[]) {
+export function formatVariantsInventory(vis: Doc<'variantsInventory'>[]) {
   const result: TVariantsInventory = new Map()
   vis.forEach(vi => result.set(
     generateVIFingerPrint(vi.path),
     vi
   ))
+  console.log('generated variants inventory :', vis)
   return result
 
+}
+
+
+function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true
+
+  // handle null and undefined
+  if (a == null || b == null) return a === b
+
+  // handle Map
+  if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) return false
+    for (const [key, valA] of a) {
+      if (!b.has(key)) return false
+      const valB = b.get(key)
+      if (!deepEqual(valA, valB)) return false
+    }
+    return true
+  }
+
+  // handle Array
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false
+    }
+    return true
+  }
+
+  // handle Object
+  if (typeof a === "object" && typeof b === "object") {
+    const keysA = Object.keys(a)
+    const keysB = Object.keys(b)
+    if (keysA.length !== keysB.length) return false
+    for (const key of keysA) {
+      if (!Object.prototype.hasOwnProperty.call(b, key)) return false
+      if (!deepEqual(a[key], b[key])) return false
+    }
+    return true
+  }
+
+  // fallback for primitives, functions, symbols, etc.
+  return false
+}
+
+export function mapsDeepEqual<K, V>(a: Map<K, V>, b: Map<K, V>): boolean {
+  return deepEqual(a, b)
 }

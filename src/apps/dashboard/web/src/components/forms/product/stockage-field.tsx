@@ -1,67 +1,140 @@
 import { useFieldContext } from "@/hooks/form-context.tsx";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { StockageForm } from "./stockage-form";
-
-import { type VariantElement as TVariant, type TVariantsInventory } from "@/hooks/useVariantActions";
+import { LittleItem } from "@/components/ui/little-item";
+import { cn } from "@/lib/utils";
+import { useMemo } from "react";
+import { generateVIFingerPrint, mapsDeepEqual, type VariantElement as TVariant, type TVariantsInventory } from "@/hooks/useVariantActions";
+import { Input } from "@/components/ui/input";
 
 type Props = {
   variants: TVariant[]
-  variantsInventory: TVariantsInventory
   strat: string
 };
 
-export default function StockageField({ variants, strat, variantsInventory }: Props) {
-  const field = useFieldContext<string>();
-  const strats = [
-    {
-      key: "by_demand",
-      value: "Par commande"
-    },
-    {
-      key: "by_variants",
-      value: "Par variantes",
-    },
-    {
-      key: "by_number",
-      value: "Quantite fix",
-    },
-  ]
+export default function StockageField({ variants, strat }: Props) {
+  console.log('rendered')
+  const field = useFieldContext<TVariantsInventory>();
+  const inventoryVariants = field.state.value
 
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-1">
-        <Label className="font-semibold pb-[12px]">Starategy</Label>
-        <div className="space-y-1">
-          <Select
-            value={(field.state.value) ?? ""}
-            onValueChange={(v) => field.handleChange(v as any)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select an option" />
-            </SelectTrigger>
-            <SelectContent className="bg-card">
-              {strats.map((c, k) => (
-                <SelectItem
-                  key={k}
-                  className="focus:bg-black/5"
-                  value={c.key}
-                >
-                  {c.value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+  variants = useMemo(() => variants.sort((a, b) => a.order - b.order), [variants])
+
+  switch (strat) {
+    case "by_variants":
+      const changeQuantity = function changeQuantity(fp: string, quantity: number) {
+        field.setValue(prev => {
+          const prevContent = prev.get(fp)
+          if (prevContent)
+            prev.set(fp, { ...prevContent, quantity })
+          return prev
+        })
+      }
+
+      // if variants changed, we re-calculate paths and fullPaths
+      const data = useMemo(() => {
+        const data: TVariantsInventory = new Map()
+        function nest(result: string[], depth: number) {
+          if (depth <= variants.length - 1)
+            return variants[depth].options.map(o => {
+              return nest([...result, o.name], depth + 1)
+            })
+          else {
+            const fp = generateVIFingerPrint(result)
+            console.log('new quantity :', inventoryVariants.get(fp)?.quantity, fp)
+            data.set(fp, { quantity: inventoryVariants.get(fp)?.quantity ?? 0, path: result })
+            return result
+          }
+        }
+
+
+        variants[0]?.options.forEach(v => {
+          nest([v.name], 1)
+        })
+
+        return data
+      }, [variants])
+
+      const paths = useMemo(() => {
+        const paths: string[][] = []
+        function gen_paths(result: string[], depth: number) {
+          if (depth < variants.length - 1)
+            return variants[depth].options.map(o => {
+              return gen_paths([...result, o.name], depth + 1)
+            })
+          else {
+            paths.push(result)
+            return result
+          }
+        }
+        variants[0]?.options.forEach(v => {
+          gen_paths([v.name], 1)
+        })
+        return paths
+      }, [data])
+
+      const basePadding = 16
+      const lastOption = variants.at(-1)?.options
+      if (!mapsDeepEqual(data, field.state.value)) {
+        console.log('updating the field value with :', data)
+        field.setValue(data)
+      }
+      return (
+        <div className="space-y-3 ">
+          {variants.length > 0 ?
+            paths.map((path, j) => (
+              <div className="flex flex-col  space-y-0 border rounded-[16px]" key={j}>
+                {variants.length > 1 ?
+                  path.map((leaf: string, q) => <div key={q}>
+                    <div className={cn("flex-1 py-3")} style={{ paddingLeft: `${(q + 1) * basePadding}px` }}>
+                      <LittleItem>{leaf}</LittleItem>
+                    </div>
+                    <div className="w-full flex-1 bg-border h-[1px]" />
+                  </div>
+                  ) :
+                  <div>
+                    <div className="flex items-center flex-1 py-3 gap-10" style={{ paddingLeft: `${(variants.length) * basePadding}px` }}>
+                      <LittleItem key={path[0]}>{path[0]}</LittleItem>
+                      <QuantityInput
+                        fp={generateVIFingerPrint([...path])}
+                        initialQuantity={data.get(generateVIFingerPrint([...path]))?.quantity ?? 0}
+                        changeQuantity={changeQuantity} path={[...path]} />
+                    </div>
+                  </div>
+                }
+
+                {variants.length > 1 &&
+                  lastOption?.map((p, q) => {
+                    const fp = generateVIFingerPrint([...path, p.name])
+                    return (
+                      <div key={fp}>
+                        <div className="flex items-center flex-1 py-3 gap-10" style={{ paddingLeft: `${(variants.length) * basePadding}px` }}>
+                          <LittleItem>{p.name}</LittleItem>
+                          <QuantityInput
+                            fp={generateVIFingerPrint([...path, p.name])}
+                            initialQuantity={data.get(generateVIFingerPrint([...path, p.name]))?.quantity ?? 0}
+                            changeQuantity={changeQuantity} path={[...path, p.name]} />
+                        </div>
+                        {q < lastOption?.length - 1 && <div className="w-full flex-1 bg-border h-[1px]" />}
+                      </div>
+                    )
+                  })}
+              </div>
+            )) :
+            <div className="rounded-2xl border border-input-border p-4">
+              <p className="italic text-[14px] text-neutral-500">
+                No variants exist for this product yet.
+              </p>
+            </div>
+          }
         </div>
-      </div>
-      <StockageForm variantsInventory={variantsInventory} variants={variants} strat={strat} />
-    </div>
-  );
+      )
+  }
 }
+
+
+function QuantityInput({ fp, initialQuantity, changeQuantity }: { initialQuantity: number, fp: string, changeQuantity: (a: string, b: number) => void, path: string[] }) {
+  return <div className="flex gap-2 items-center">
+    <p className="text-[14px] text-neutral-700">Quantity</p>
+    <Input onChange={(e) => changeQuantity(fp, Number(e.target.value))} placeholder="eg. 4" defaultValue={initialQuantity} className="text-[14px] py-1" />
+  </div>
+}
+
 

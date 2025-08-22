@@ -41,7 +41,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
       status: product?.status ?? "incomplete",
       images: product?.images ?? [],
       variants: product?.variants ?? [],
-      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : null
+      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : new Map()
     }),
     [product]
   );
@@ -49,6 +49,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
+      if (value.variantsInventory) {
+        value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any
+      }
       const dirtyValues = Object.fromEntries(
         Object.entries(value).filter(([k]) => {
           const decision = form.getFieldMeta(k as any)?.isDefaultValue
@@ -71,6 +74,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
 
   // Keep form in sync when product loads
   useEffect(() => {
+    console.log('synced product', product)
     form.reset(defaultValues);
   }, [defaultValues]);
 
@@ -137,20 +141,28 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
             <div className="flex flex-col gap-3">
               <InputsTitle>Stockage</InputsTitle>
               <InputsContainer>
-                <form.Subscribe
-                  selector={(state) => ({ variantsInventory: state.values.variantsInventory, variants: state.values.variants, strat: state.values.stockingStrategy })}
-                  children={({ variants, strat, variantsInventory }) => (
-                    <form.AppField
-                      name="stockingStrategy"
-                      children={(field) => (
-                        <field.StockageField
-                          strat={strat}
-                          variantsInventory={variantsInventory}
-                          variants={variants}
-                        />
-                      )}
-                    />
+
+                <form.AppField
+                  name="stockingStrategy"
+                  children={(field) => (
+                    <field.StockageStratField />
                   )} />
+
+                <form.Subscribe
+                  selector={(state) => ({ variants: state.values.variants, strat: state.values.stockingStrategy })}
+                  children={({ variants, strat, }) => {
+                    return (
+                      <form.AppField
+                        name="variantsInventory"
+                        children={(field) => (
+                          <field.StockageField
+                            strat={strat}
+                            variants={variants}
+                          />
+                        )}
+                      />
+                    )
+                  }} />
               </InputsContainer>
             </div>
           </div>
