@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <div className="pb-2 flex flex-1 w-full bg-primary relative">
       <div className="absolute h-full pt-8 w-[5000px] bg-primary -left-[1000px] z-10" />
-      <div className="flex flex-col w-full gap-80 border-l-1 border-r-1 border-black/20 z-50 px-6">
+      <div className="flex flex-col w-full gap-40 border-l-1 border-r-1 border-black/20 z-50 px-6">
         <div className="flex flex-col gap-4 pt-8 z-20">
           <div className="flex w-full justify-between items-start">
             <div className="flex gap-6">

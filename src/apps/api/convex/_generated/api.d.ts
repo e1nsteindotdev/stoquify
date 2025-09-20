@@ -13,8 +13,12 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as actions_product_actions from "../actions/product_actions.js";
 import type * as auth from "../auth.js";
+import type * as categories from "../categories.js";
 import type * as http from "../http.js";
+import type * as images from "../images.js";
+import type * as products from "../products.js";
 import type * as users from "../users.js";
 
 /**
@@ -26,8 +30,12 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "actions/product_actions": typeof actions_product_actions;
   auth: typeof auth;
+  categories: typeof categories;
   http: typeof http;
+  images: typeof images;
+  products: typeof products;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
