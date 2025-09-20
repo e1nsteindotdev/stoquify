@@ -27,7 +27,7 @@ importers:
         specifier: ^0.0.88
         version: 0.0.88(@auth/core@0.37.0)(convex@1.25.4(react@19.1.0))(react@19.1.0)
       convex:
-        specifier: latest
+        specifier: ^1.25.4
         version: 1.25.4(react@19.1.0)
 
   src/apps/dashboard/mobile:
@@ -283,6 +283,12 @@ importers:
 
   src/apps/storefronts/einstein-store:
     dependencies:
+      '@fontsource/inter':
+        specifier: ^5.2.6
+        version: 5.2.8
+      '@fontsource/montserrat':
+        specifier: ^5.2.6
+        version: 5.2.8
       '@tailwindcss/postcss':
         specifier: ^4.1.11
         version: 4.1.11
@@ -301,6 +307,9 @@ importers:
       convex:
         specifier: ^1.25.4
         version: 1.25.4(react@19.1.0)
+      lucide-react:
+        specifier: ^0.536.0
+        version: 0.536.0(react@19.1.0)
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -1748,6 +1757,12 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+
+  '@fontsource/inter@5.2.8':
+    resolution: {integrity: sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==}
+
+  '@fontsource/montserrat@5.2.8':
+    resolution: {integrity: sha512-xTjLxSbSfCycDB0pwmNsfNvdfWPaDaRQ2LC6yt/ZI7SdvXG52zHnzNYC/09mzuAuWNJyShkteutfCoDgym56hQ==}
 
   '@hookform/resolvers@5.2.1':
     resolution: {integrity: sha512-u0+6X58gkjMcxur1wRWokA7XsiiBJ6aK17aPZxhkoYiK5J+HcTx0Vhu9ovXe6H+dVpO6cjrn2FkJTryXEMlryQ==}
@@ -10488,6 +10503,10 @@ snapshots:
       react-dom: 19.1.0(react@19.1.0)
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@fontsource/inter@5.2.8': {}
+
+  '@fontsource/montserrat@5.2.8': {}
 
   '@hookform/resolvers@5.2.1(react-hook-form@7.62.0(react@19.1.0))':
     dependencies:
