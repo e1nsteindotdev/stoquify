@@ -13,7 +13,9 @@ export const Route = createRootRoute({
   component: () => (
     <>
       <ConvexProvider client={convex}>
-        <Outlet />
+        <div className='font-sans'>
+          <Outlet />
+        </div>
       </ConvexProvider>
       <TanStackRouterDevtools />
     </>
