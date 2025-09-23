@@ -4,7 +4,7 @@ import { type AnyFieldApi } from "@tanstack/react-form";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -17,7 +17,7 @@ import { useAppForm } from "@/hooks/form";
 import { type Id } from "api/data-model";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
 
-export function ProductForm({ slug }: { slug?: Id<"products"> }) {
+export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
@@ -49,9 +49,12 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
+      // because somehow value.images is an object
+      if (value.images) value.images = Object.values(value.images)
       if (value.variantsInventory) {
         value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any
       }
+      value.price = Number(value.price) ?? 0
       const dirtyValues = Object.fromEntries(
         Object.entries(value).filter(([k]) => {
           const decision = form.getFieldMeta(k as any)?.isDefaultValue
@@ -74,10 +77,17 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
 
   // Keep form in sync when product loads
   useEffect(() => {
-    console.log('synced product', product)
     form.reset(defaultValues);
   }, [defaultValues]);
 
+  const isCompleted = (form.getFieldValue('images') && form.getFieldValue('price') !== 0 && form.getFieldValue('title') && form.getFieldValue('categoryId')) ? true : false
+
+
+  console.log("images :", form.getFieldValue('images'))
+  console.log("price :", form.getFieldValue('price'))
+  console.log(form.getFieldValue('title'))
+  console.log(form.getFieldValue('categoryId'))
+  console.log("ready :", isCompleted)
   return (
     <div className="w-full flex items-start justify-center p-6 pb-20">
       <div className="w-full max-w-6xl space-y-6">
@@ -126,8 +136,17 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
                     <field.CategoriesField label="Category" />
                   )}
                 />
+
+                <form.AppField
+                  name="price"
+                  children={(field) => (
+                    <field.PricingField />
+                  )}
+                />
               </InputsContainer>
             </div>
+
+
             <div className="flex flex-col gap-3">
               <InputsTitle>Variants</InputsTitle>
               <InputsContainer className="">
@@ -170,32 +189,48 @@ export function ProductForm({ slug }: { slug?: Id<"products"> }) {
           {/* Right column: meta */}
           <div className="flex flex-col justify-between items-between pt-11.5">
             <div className="space-y-4">
-              <Card className="gap-2">
+              <Card className="gap-2 border-white">
                 <CardHeader>
                   <CardTitle>Status</CardTitle>
+                  <CardDescription>You have to fill important fields to be able to make the product active on the store</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form.Field
-                    name="status"
-                    children={(field) => (
-                      <Select
-                        value={field.state.value}
-                        onValueChange={(v) => field.handleChange(v as any)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card">
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                  <form.Subscribe
+                    selector={(state) => [
+                      state.values.categoryId,
+                      state.values.price,
+                      state.values.title,
+                      state.values.images,
+                    ]}
+                    children={([categoryId, title, price, images]) => {
+                      if (categoryId && title && price && images) {
+                        form.setFieldValue("status", "active")
+                      }
+                      return (
+                        <form.Field
+                          name="status"
+                          children={(field) => (
+                            <Select
+                              value={field.state.value}
+                              onValueChange={(v) => field.handleChange(v as any)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card">
+                                <SelectItem value="incomplete">incomplet</SelectItem>
+                                <SelectItem value="hidden" disabled={!isCompleted}>caché</SelectItem>
+                                <SelectItem value="active" disabled={!isCompleted}>actif</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />)
+                    }}
                   />
                 </CardContent>
               </Card>
 
-              <Card className="gap-2">
+              <Card className="gap-2 border-white">
                 <CardHeader>
                   <CardTitle>Produit Statistics</CardTitle>
                 </CardHeader>

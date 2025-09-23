@@ -26,7 +26,7 @@ type Props = {
 
 export default function CategoriesField({ label }: Props) {
   const field = useFieldContext<string>();
-  const categories = useQuery(api.categories.listCategories) ?? [];
+  const categories = useQuery(api.categories.listAllCategories) ?? [];
   const createCategory = useMutation(api.categories.createCategory as any);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -48,7 +48,7 @@ export default function CategoriesField({ label }: Props) {
   }
 
   return (
-    <div className="grid gap-1">
+    <div className="grid">
       {label && <Label className="font-semibold pb-[12px]">{label}</Label>}
       <div className="space-y-1 border border-neutral-300 rounded-[15px] p-3">
         <Select

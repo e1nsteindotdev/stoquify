@@ -16,11 +16,12 @@ export function CTA() {
 
         <button
           className="flex items-center text-[12px] lg:text-[16px] font-[600] gap-4 border-2
-          border-primary pb-1.5 pt-2 lg:py-3 px-8 lg:px-5 uppercase tracking-[0.1em] text-nowrap text-white mt-3">
-          <p className="leading-[1] pt-0.75 text-primary">
+          border-primary py-2.5 lg:pb-1.5 lg:pt-2 lg:py-3 px-8 lg:px-5 uppercase tracking-[0.1em] text-nowrap text-white mt-3">
+          <p className="leading-[1] pt-0.75 lg:pb-1 lg:pt-1.5 text-primary">
             Découvrez NOS collections
           </p>
-          <DownChevron color="#684FCA" size={14} />
+          <DownChevron color="#684FCA" size={16} className="hidden lg:inline" />
+          <DownChevron color="#684FCA" size={12} className="lg:hidden" />
         </button>
       </div>
 

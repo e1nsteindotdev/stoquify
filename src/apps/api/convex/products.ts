@@ -1,18 +1,46 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { deleteVariants, deleteVariantsInventory, getVariants, getVariantsInventory, insertVariants, insertVariantsInventory } from "./actions/product_actions";
-import { getUrl } from "./images";
 import { Id } from "./_generated/dataModel";
 
+export const listCollections = query({
+  handler: async (ctx) => {
+    return await ctx.db.query('collections').collect()
+  }
+})
 export const listProduts = query({
   handler: async (ctx) => {
     const storeId = (await ctx.db.query("stores").first())?._id
     let products = await ctx.db.query("products").filter(e => e.eq(e.field('storeId'), storeId)).collect();
+    products = products.filter(p => p.status === "active")
+
     const urls = new Map<Id<'_storage'>, string | undefined>()
     products.forEach(product => product?.images?.forEach(image => urls.set(image.storageId, undefined)))
     //const list = await Promise.all(Array.from(urls.keys()).map(async id => await ctx.storage.getUrl(id)))
     const list = await Promise.all(Array.from(urls.keys()).map(async id => urls.set(id, await ctx.storage.getUrl(id) ?? undefined)))
-    console.log("list :", list)
+    await Promise.all(products.forEach(async product => {
+      if (product.images) {
+        await Promise.all(product.images.map(async img => {
+          const url = await ctx.storage.getUrl(img.storageId)
+          urls.set(img.storageId, url ?? undefined)
+        }))
+      }
+    }) ?? [])
+
+    return products.map(product => {
+      return { ...product, images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) })) }
+    })
+  },
+});
+export const listAllProduts = query({
+  handler: async (ctx) => {
+    const storeId = (await ctx.db.query("stores").first())?._id
+    let products = await ctx.db.query("products").filter(e => e.eq(e.field('storeId'), storeId)).collect();
+
+    const urls = new Map<Id<'_storage'>, string | undefined>()
+    products.forEach(product => product?.images?.forEach(image => urls.set(image.storageId, undefined)))
+    //const list = await Promise.all(Array.from(urls.keys()).map(async id => await ctx.storage.getUrl(id)))
+    const list = await Promise.all(Array.from(urls.keys()).map(async id => urls.set(id, await ctx.storage.getUrl(id) ?? undefined)))
     await Promise.all(products.forEach(async product => {
       if (product.images) {
         await Promise.all(product.images.map(async img => {

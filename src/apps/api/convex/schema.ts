@@ -69,7 +69,12 @@ const schema = defineSchema({
     productId: v.id('products'),
     path: v.array(v.string()),
     quantity: v.number()
-  }).index("by_productId", ["productId"])
+  }).index("by_productId", ["productId"]),
+
+  collections: defineTable({
+    title: v.string(),
+    productIds: v.optional(v.array(v.id('products')))
+  })
 });
 
 export default schema;

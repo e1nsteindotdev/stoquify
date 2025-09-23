@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
 export function ProductsTable() {
-  const products = useQuery(api.products.listProduts) ?? [];
+  const products = useQuery(api.products.listAllProduts) ?? [];
   const deleteProduct = useMutation(api.products.removeProduct);
 
   const rows: ProductRow[] = products.map((p: any) => ({

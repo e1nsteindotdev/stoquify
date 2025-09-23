@@ -21,7 +21,7 @@
   --color-primary: #664CCC;
   --color-seperator: white;
   --spacing-ip: 16px;
-  --breakpoint-xs: 400px;
+  --breakpoint-xs: 375px;
 }
 
 body {

@@ -2,10 +2,12 @@ type IconProps = React.SVGProps<SVGSVGElement> & {
   size?: number;
   color?: string;
   stroke?: number;
+  smSize?: number;
 };
 
 export function DownChevron({
   size = 24,
+  smSize = 20,
   color = "#4D4D4D",
   stroke = 2,
   ...props

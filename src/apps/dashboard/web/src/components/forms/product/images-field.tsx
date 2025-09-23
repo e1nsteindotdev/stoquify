@@ -169,6 +169,7 @@ export default function ImageField({ productId, label, className, type, ...props
   const imagesEntries = Object
     .entries(field.state.value as unknown as Record<string, Image>)
     .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
+
   const imagesList: Promise<Image & { fp: string }>[] = imagesEntries.map(async ([fp, image]) => {
     if (!image.url && image.storageId) {
       const url = await getImageUrl(image.storageId) ?? ""

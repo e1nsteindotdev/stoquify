@@ -9,6 +9,7 @@ const CategoriesField = lazy(() => import("@/components/forms/product/categories
 const VariantsField = lazy(() => import("@/components/forms/product/variants-field.tsx"));
 const StockageField = lazy(() => import("@/components/forms/product/stockage-field.tsx"));
 const StockageStratField = lazy(() => import("@/components/forms/product/stockage-strat-field.tsx"));
+const PricingField = lazy(() => import("@/components/forms/product/pricing-field.tsx"));
 
 function SubscribeButton({ label }: { label: string }) {
   const form = useFormContext();
@@ -27,7 +28,8 @@ export const { useAppForm, withForm, withFieldGroup } = createFormHook({
     CategoriesField,
     VariantsField,
     StockageStratField,
-    StockageField
+    StockageField,
+    PricingField
   },
   formComponents: {
     SubscribeButton,

@@ -85,7 +85,9 @@ export function useImageActions(productId: any | null, field: FieldLike) {
           sorted[idx - 1] = [prevKey, a];
           sorted[idx] = [curKey, b];
         }
-        return reindexSequential(Object.fromEntries(sorted));
+        const result = reindexSequential(Object.fromEntries(sorted));
+        // console.log('result from re-ordering ,', result)
+        return result
       });
     },
     [field]
