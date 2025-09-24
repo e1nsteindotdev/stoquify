@@ -1,6 +1,5 @@
 import { ProductsTable } from "@/components/tables/products/table";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_dashboard/produits/")({
   component: Page,
