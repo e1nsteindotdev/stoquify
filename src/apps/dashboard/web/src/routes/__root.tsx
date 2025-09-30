@@ -5,13 +5,13 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ConvexReactClient } from "convex/react";
 import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 
+import { Toaster } from "@/components/ui/sonner"
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import "@/App.css";
 import { AuthForm } from "@/components/forms/auth/auth-form";
 
 
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
-console.log("----------------- CONVEX", CONVEX_URL)
 if (!CONVEX_URL) {
   throw new Error("convex url doesn't exist in env")
 }
@@ -28,6 +28,7 @@ export const Route = createRootRoute({
             <ConvexAuthProvider client={convex}>
               <AuthWrapper>
                 <Outlet />
+                <Toaster />
               </AuthWrapper>
             </ConvexAuthProvider>
           </QueryClientProvider>

@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/select";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
-import { type Id } from "api/data-model";
+import { type Doc, type Id } from "api/data-model";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
+import { Input } from "@/components/ui/input";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
@@ -28,6 +29,8 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
     ? null
     : (useQuery(api.products.getProductById, { id: slug as Id<"products"> }) ??
       null);
+  const allCollections = useQuery(api.collections.listCollections, {})
+  let productCollections = new Set(useQuery(api.collections.listSelectedCollectionsIds, { productId: product?._id }))
 
   const defaultValues = useMemo(
     () => ({
@@ -41,7 +44,8 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       status: product?.status ?? "incomplete",
       images: product?.images ?? [],
       variants: product?.variants ?? [],
-      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : new Map()
+      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : new Map(),
+      collections: productCollections ?? []
     }),
     [product]
   );
@@ -83,11 +87,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const isCompleted = (form.getFieldValue('images') && form.getFieldValue('price') !== 0 && form.getFieldValue('title') && form.getFieldValue('categoryId')) ? true : false
 
 
-  console.log("images :", form.getFieldValue('images'))
-  console.log("price :", form.getFieldValue('price'))
-  console.log(form.getFieldValue('title'))
-  console.log(form.getFieldValue('categoryId'))
-  console.log("ready :", isCompleted)
   return (
     <div className="w-full flex items-start justify-center p-6 pb-20">
       <div className="w-full max-w-6xl space-y-6">
@@ -230,6 +229,13 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 </CardContent>
               </Card>
 
+
+              <form.AppField
+                name="collections"
+                children={(field) => (
+                  <field.CollectionsField />
+                )}
+              />
               <Card className="gap-2 border-white">
                 <CardHeader>
                   <CardTitle>Produit Statistics</CardTitle>

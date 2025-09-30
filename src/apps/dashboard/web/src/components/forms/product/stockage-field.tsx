@@ -11,7 +11,6 @@ type Props = {
 };
 
 export default function StockageField({ variants, strat }: Props) {
-  console.log('rendered')
   const field = useFieldContext<TVariantsInventory>();
   const inventoryVariants = field.state.value
 
@@ -38,7 +37,6 @@ export default function StockageField({ variants, strat }: Props) {
             })
           else {
             const fp = generateVIFingerPrint(result)
-            console.log('new quantity :', inventoryVariants.get(fp)?.quantity, fp)
             data.set(fp, { quantity: inventoryVariants.get(fp)?.quantity ?? 0, path: result })
             return result
           }
@@ -73,7 +71,6 @@ export default function StockageField({ variants, strat }: Props) {
       const basePadding = 16
       const lastOption = variants.at(-1)?.options
       if (!mapsDeepEqual(data, field.state.value)) {
-        console.log('updating the field value with :', data)
         field.setValue(data)
       }
       return (

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const products = useQuery(api.products.listProduts);
+  const products = useQuery(api.products.listProducts);
   console.log(products);
   return (
     <div className="overflow-clip">

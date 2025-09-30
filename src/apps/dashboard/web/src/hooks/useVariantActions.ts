@@ -104,7 +104,6 @@ export function formatVariantsInventory(vis: Doc<'variantsInventory'>[]) {
     generateVIFingerPrint(vi.path),
     vi
   ))
-  console.log('generated variants inventory :', vis)
   return result
 
 }

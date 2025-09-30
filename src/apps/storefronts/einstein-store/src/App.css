@@ -6,6 +6,9 @@
 @import "@fontsource/inter/700.css";
 @import "@fontsource/inter/900.css";
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
 /* put in your global CSS */
 .text-stroke {

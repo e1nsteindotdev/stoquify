@@ -3,12 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { deleteVariants, deleteVariantsInventory, getVariants, getVariantsInventory, insertVariants, insertVariantsInventory } from "./actions/product_actions";
 import { Id } from "./_generated/dataModel";
 
-export const listCollections = query({
-  handler: async (ctx) => {
-    return await ctx.db.query('collections').collect()
-  }
-})
-export const listProduts = query({
+export const listProducts = query({
   handler: async (ctx) => {
     const storeId = (await ctx.db.query("stores").first())?._id
     let products = await ctx.db.query("products").filter(e => e.eq(e.field('storeId'), storeId)).collect();

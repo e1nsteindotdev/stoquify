@@ -77,7 +77,6 @@ export default function ImageField({ productId, label, className, type, ...props
     if (!ensuredProductId || ensuredProductId.trim() === "") {
       const newProductId = await initiateProduct();
       if (!newProductId) {
-        console.log("couldn't initiate new product", newProductId);
         return
       }
       ensuredProductId = newProductId

@@ -20,7 +20,6 @@ export default function VariantsField() {
         order,
         options: options.filter(o => o !== "").map((o) => ({ name: o })),
       };
-      console.log("goign to add new optiosn :", newVariant.options)
       return [...prev, newVariant];
     });
   }
