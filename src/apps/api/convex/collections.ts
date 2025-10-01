@@ -21,7 +21,7 @@ export const listCollections = query({
 })
 
 export const listAllCollections = query({
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     return await ctx.db.query('collections').collect()
   }
 })
@@ -42,9 +42,9 @@ export const listSelectedCollectionsIds = query({
       }).map(c => c._id)
       return ids;
     }
-    else return;
+    else
+      return;
   }
-
 })
 
 export const createCollection = mutation({
@@ -68,12 +68,4 @@ export const createCollection = mutation({
   }
 })
 
-export const addProductToCollection = query({
-  args: {
-    productId: v.id('products'),
-    collectionId: v.id('collections')
-  },
-  handler: async (ctx, { productId, collectionId }) => {
 
-  }
-})

@@ -17,13 +17,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PlusIcon } from "lucide-react";
+import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox"
+import type { Id } from "api/data-model";
 
-export default function CollectionsField() {
+export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
   const field = useFieldContext<Set<string>>();
-  const selectedCollections = field.state.value
   console.log("selected collections :", selectedCollections)
   const createCollection = useMutation(api.collections.createCollection);
   const collections = useQuery(api.collections.listAllCollections, {})
@@ -62,7 +62,7 @@ export default function CollectionsField() {
         <CardContent>
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="bg-transparent border-1 border-black/20 text-black/70 hover:bg-transparent">
+              <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent">
                 <PlusIcon />
                 Add to a new collection</Button>
             </PopoverTrigger>
@@ -90,19 +90,24 @@ export default function CollectionsField() {
                     No collections exist, create a new collection first.
                   </div>
               }
-              <Button
-                onClick={handleCreate}
-                disabled={!name.trim() || isAdding}
-                className="rounded-[12px] bg-[#DDDAE7] text-primary"
-              >
-                {isAdding ? "Creating..." : "Create"}
-              </Button>
             </PopoverContent>
           </Popover>
 
-          {selectedCollections.values.length === 0 &&
-            <div className="py-2 text-red-400 italic text-[12px] uppercase">
+          {selectedCollections.size === 0 ?
+            <div className="pt-3 text-red-400 italic text-[12px] uppercase">
               Product is added to no collections
+            </div>
+            :
+            <div className="flex flex-col gap-2 pt-3">
+              {Array.from(selectedCollections).map(c => (
+                <div className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]">
+                  <p className="text-[12px]">{collections?.filter(i => i._id === c)?.[0].title}</p>
+                  <CircleX color="red" size={20} onClick={() => {
+                    field.setValue(prev => { prev.delete(c); return prev })
+                  }} />
+                </div>
+              ))}
+
             </div>
           }
           <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
@@ -112,7 +117,7 @@ export default function CollectionsField() {
               <Button
                 type="button"
                 variant="ghost"
-                className="flex gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
+                className="flex pt-3 gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
               >
                 <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
                   <AddIcon />

@@ -122,11 +122,12 @@ export const updateProduct = mutation({
         })
       )
     ),
+    collections: v.optional(v.array(v.id('collections'))),
     variantsInventory: v.optional(v.any())
   },
   handler: async (ctx, args) => {
     console.log("update product args :", args)
-    const { productId, variants, variantsInventory, ...updateData } = args;
+    const { productId, variants, variantsInventory, collections, ...updateData } = args;
     const cleanUpdateData = updateData
     await ctx.db.patch(productId, cleanUpdateData);
 
@@ -138,6 +139,64 @@ export const updateProduct = mutation({
       deleteVariantsInventory(ctx, productId)
       insertVariantsInventory(ctx, variantsInventory, productId)
     }
+
+    let past_collections = (await ctx.db.query('collections').collect())
+      .filter(c => {
+        const ids = c?.productIds?.filter(id => id === args.productId)?.length
+        if (ids && ids > 0)
+          return true
+        else
+          return false
+      })
+    const past_collection_ids = past_collections.map(c => c._id)
+    const new_collection_ids = collections ?? []
+    const removed_collections = past_collections.filter(c => {
+      let r = true;
+      collections?.forEach(cc => {
+        if (cc === c._id) r = false
+      })
+      return r
+    })
+
+    // add new collections
+    new_collection_ids
+      .filter(newId => {
+        return past_collection_ids.find(oldId => newId === oldId) ? false : true
+      })
+      .forEach(async id => {
+        const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
+        await ctx.db.patch(id, { productIds: [...past_product_ids, productId] })
+      })
+
+    // remove removed collections
+    past_collection_ids
+      .filter(oldId => {
+        return new_collection_ids.find(newId => newId === oldId) ? false : true
+      })
+      .forEach(async id => {
+        const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
+        await ctx.db.patch(id, { productIds: past_product_ids?.filter(id => id !== productId) })
+      })
+
+
+
+
+    // if (removedCollections) {
+    //   removedCollections.forEach(async c => {
+    //     const new_ids = c.productIds?.filter(id => id !== productId)
+    //     await ctx.db.patch(c._id, { title: c?.title, productIds: new_ids })
+    //   })
+    // }
+
+    // if (collections) {
+    //   collections.forEach(async c => {
+    //     const pastC = await ctx.db.get(c)
+    //     const pastIds = pastC?.productIds ?? []
+    //     await ctx.db.patch(c, { title: pastC?.title, productIds: [...pastIds, productId] })
+    //   })
+    // }
+
+    console.log('product updated')
     return productId;
   },
 });

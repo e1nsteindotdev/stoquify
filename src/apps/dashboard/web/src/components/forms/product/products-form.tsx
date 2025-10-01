@@ -16,7 +16,6 @@ import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { type Doc, type Id } from "api/data-model";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
-import { Input } from "@/components/ui/input";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
@@ -31,6 +30,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       null);
   const allCollections = useQuery(api.collections.listCollections, {})
   let productCollections = new Set(useQuery(api.collections.listSelectedCollectionsIds, { productId: product?._id }))
+  console.log('product collections : ', productCollections)
 
   const defaultValues = useMemo(
     () => ({
@@ -47,12 +47,12 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : new Map(),
       collections: productCollections ?? []
     }),
-    [product]
+    [product, productCollections]
   );
 
   const form = useAppForm({
     defaultValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value }: { value: any }) => {
       // because somehow value.images is an object
       if (value.images) value.images = Object.values(value.images)
       if (value.variantsInventory) {
@@ -65,6 +65,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           return !decision
         })
       );
+      if (value.collections) {
+        dirtyValues['collections'] = Array.from(value.collections)
+      }
 
       if (isNew) {
         const id = await initiateProduct();
@@ -230,11 +233,17 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               </Card>
 
 
-              <form.AppField
-                name="collections"
-                children={(field) => (
-                  <field.CollectionsField />
-                )}
+
+              <form.Subscribe
+                selector={(state) => [
+                  state.values.collections,
+                ]}
+                children={([collections]) => <form.AppField
+                  name="collections"
+                  children={(field) => (
+                    <field.CollectionsField selectedCollections={collections} />
+                  )}
+                />}
               />
               <Card className="gap-2 border-white">
                 <CardHeader>
