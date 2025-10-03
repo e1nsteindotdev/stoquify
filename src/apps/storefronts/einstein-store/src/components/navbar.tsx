@@ -10,10 +10,10 @@ import { OrderIcon } from "./icons/order-icon"
 export function Navbar() {
   const categories = useQuery(api.categories.listCategories)
   return <div className="flex w-full py-3 lg:py-4 px-ip border-b-1 border-seperator">
-    <Image src="logo.svg" className="mr-auto" />
+    <Image src="/logo.svg" className="mr-auto" />
     <div className="hidden lg:flex mx-auto gap-6">
       {categories?.map((c, i) => (
-        <Link to={"/"} className="text-[16px] font-bold font-inter uppercase tracking-[0.1em]" >{c.name}</Link>
+        <Link key={i} to={"/"} className="text-[16px] font-bold font-inter uppercase tracking-[0.1em]" >{c.name}</Link>
       ))}
     </div>
 
@@ -31,7 +31,7 @@ export function Navbar() {
 export function HeaderAnonc() {
   return <div className="py-2 bg-primary flex gap-[32px] overflow-clip px-4">
     {Array.from({ length: 10 }, (_, i) => i).map((_, i) => (
-      <div className="flex gap-1.5 lg:gap-2 items-center">
+      <div key={i} className="flex gap-1.5 lg:gap-2 items-center">
         <OrderIcon className="scale-[0.8] lg:scale-100" />
         <p className="font-inter font-medium text-white text-[9px] lg:text-[12px] uppercase text-nowrap">LIVRAISON GRATUITE à partir de 8000DA d'achats</p>
       </div>

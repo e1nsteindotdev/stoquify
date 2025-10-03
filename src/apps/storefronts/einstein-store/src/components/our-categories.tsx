@@ -4,6 +4,7 @@ import { RightChevron } from "./icons/right-chevron"
 import { DownChevron } from "./icons/down-chevron"
 import type { Doc } from "api/data-model"
 import { useEffect, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 
 export function OurCategories() {
   const categories = useQuery(api.categories.listCategories)
@@ -30,6 +31,7 @@ export function OurCategories() {
 
 function Category({ category, products, index, categoriesLength }:
   { categoriesLength: number, index: number, products: Doc<'products'>[] | undefined | null, category: Doc<'categories'> }) {
+  const navigate = useNavigate()
   const [selected, setSelected] = useState(0)
   const selectedProduct = products ? products[selected] : null
   const productsLength = products?.length
@@ -58,14 +60,16 @@ function Category({ category, products, index, categoriesLength }:
       <div className="flex justify-center h-[230px] xs:h-auto gap-3 lg:gap-5 xs:px-3 my-5 lg:px-5">
         {/* left side  */}
         <div className={`flex flex-col gap-1.5 lg:gap-3 min-w-[135px] lg:min-w-[300px] flex-1 ${index % 2 === 0 ? "order-1 items-end" : "order-2 item-start"}`}>
-          <div className="flex flex-col shrink-0 gap-0.5">
-            <p className={`text-[18px] font-[500] lg:text-[35px] tracking-[0.04em] uppercase leading-[1.1] ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>
+          <button
+            onClick={() => navigate({ to: `/categories/${category._id}` })}
+            className="flex  flex-col shrink-0 gap-0.5">
+            <p className={`text-[18px] font-[500] lg:text-[35px] tracking-[0.04em] uppercase cursor-pointer leading-[1.1] ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>
               {category.name}
             </p>
-            <p className={`text-primary italic text-[12px] lg:text-[16px] font-medium uppercase font-inter ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>
-              16 produits
+            <p className={`text-primary italic text-[12px] lg:text-[16px] font-medium cursor-pointer uppercase font-inter ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>
+              {productsLength} produits
             </p>
-          </div>
+          </button>
           <div className="flex flex-1 min-h-0 overflow-hidden flex-col justify-between gap-2 h-full">
             <div className={`text-black/20 font-inter font-semibold text-[10px] lg:text-[16px] flex flex-col gap-0.5 lg:gap-1.5 uppercase h-[160px] lg:h-[300px] overflow-clip
               ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>

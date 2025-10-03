@@ -177,26 +177,6 @@ export const updateProduct = mutation({
         const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
         await ctx.db.patch(id, { productIds: past_product_ids?.filter(id => id !== productId) })
       })
-
-
-
-
-    // if (removedCollections) {
-    //   removedCollections.forEach(async c => {
-    //     const new_ids = c.productIds?.filter(id => id !== productId)
-    //     await ctx.db.patch(c._id, { title: c?.title, productIds: new_ids })
-    //   })
-    // }
-
-    // if (collections) {
-    //   collections.forEach(async c => {
-    //     const pastC = await ctx.db.get(c)
-    //     const pastIds = pastC?.productIds ?? []
-    //     await ctx.db.patch(c, { title: pastC?.title, productIds: [...pastIds, productId] })
-    //   })
-    // }
-
-    console.log('product updated')
     return productId;
   },
 });
@@ -271,3 +251,12 @@ export const sendImage = mutation({
   },
 });
 
+
+export const getProductByCategory = query({
+  args: {
+    categoryId: v.id("categories")
+  },
+  handler: async (ctx, { categoryId }) => {
+    return await ctx.db.query('products').filter(q => q.eq(q.field('categoryId'), categoryId)).collect()
+  }
+})

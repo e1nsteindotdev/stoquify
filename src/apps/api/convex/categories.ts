@@ -25,10 +25,21 @@ export const createCategory = mutation({
   handler: async (ctx, args) => {
     const store = await ctx.db.query("stores").first()
     const categories = await ctx.db.query("categories").collect()
-
     if (!store) return;
     if (categories.filter(c => c.name === args.name).length > 0) return;
 
     return await ctx.db.insert("categories", { name: args.name, storeId: store?._id })
   },
 });
+
+export const getCategory = query({
+  args: {
+    categoryId: v.optional(v.string())
+  },
+  handler: async (ctx, { categoryId }) => {
+    if (categoryId) {
+      return await ctx.db.query('categories').filter(e => e.eq(e.field('_id'), categoryId)).unique()
+    }
+    else return;
+  }
+})

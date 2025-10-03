@@ -28,7 +28,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
     ? null
     : (useQuery(api.products.getProductById, { id: slug as Id<"products"> }) ??
       null);
-  const allCollections = useQuery(api.collections.listCollections, {})
   let productCollections = new Set(useQuery(api.collections.listSelectedCollectionsIds, { productId: product?._id }))
   console.log('product collections : ', productCollections)
 

@@ -1,11 +1,17 @@
+import { useNavigate } from "@tanstack/react-router";
 import type { Doc } from "api/data-model";
 
 export function Product({ data }: { data: Doc<'products'> | undefined }) {
+  const picture_url = data?.images?.find(img => img.order === 1)?.url ?? data?.images?.[0].url
+  console.log("pic :", picture_url, data?.images?.find(img => img.order === 1))
+  const navigate = useNavigate()
   return (
-    <div className="flex flex-col gap-3 shrink-0">
-      <img className="w-[320px] lg:w-[500px] border-[1px] border-white" src={data?.images?.[0]?.url} />
+    <div className="flex flex-col gap-3 shrink-0 w-[320px] lg:w-[480px] ">
+      <button onClick={() => navigate({ to: `/products/${data?._id}` })}>
+        <img className="w-[320px] h-[414px] lg:h-[600px] lg:w-[480px] border-[1px] border-white object-cover" src={picture_url} />
+      </button>
       <div className="flex flex-col gap-1.5">
-        <div className="w-full flex justify-between items-start">
+        <div className="flex justify-between items-start">
           <p className="font-black text-[20px] leading-[1] font-inter">{data?.price} DA</p>
           <button className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter">voir rapidement</button>
         </div>
