@@ -16,6 +16,7 @@ export default function TextField({ label, className, ...props }: TextFieldProps
         value={field.state.value}
         onChange={(e) => field.handleChange(e.target.value)}
         onBlur={field.handleBlur}
+        className='leading-[1.3]'
         {...props}
 
       />

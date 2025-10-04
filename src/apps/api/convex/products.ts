@@ -32,6 +32,7 @@ export const listProducts = query({
     })
   },
 });
+
 export const listAllProduts = query({
   handler: async (ctx) => {
     const storeId = (await ctx.db.query("stores").first())?._id
