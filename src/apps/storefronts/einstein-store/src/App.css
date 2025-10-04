@@ -10,6 +10,12 @@
   display: none;
 }
 
+p,
+span,
+button {
+  line-height: 1;
+}
+
 /* put in your global CSS */
 .text-stroke {
   color: black;

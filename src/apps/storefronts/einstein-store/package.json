@@ -17,6 +17,7 @@
     "@tanstack/react-router": "^1.130.2",
     "@tanstack/react-router-devtools": "^1.130.2",
     "@tanstack/router-plugin": "^1.121.2",
+    "@tanstack/zod-adapter": "^1.132.33",
     "convex": "^1.25.4",
     "lucide-react": "^0.536.0",
     "postcss": "^8.5.6",

@@ -29,7 +29,7 @@ export function OurCollections() {
               </div>
             </div>
             <div className="flex gap-8 flex-wrap">
-              {collection_products?.map(p => <Product key={p?._id} data={p} />)}
+              {collection_products?.map(p => <Product source={{ sourceType: "collections", sourceName: c.title }} key={p?._id} data={p} />)}
             </div>
             <div className="w-full h-[1px] bg-white" />
           </div>)

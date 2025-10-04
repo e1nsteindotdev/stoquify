@@ -6,24 +6,29 @@ import { Id } from "./_generated/dataModel";
 export const listProducts = query({
   handler: async (ctx) => {
     const storeId = (await ctx.db.query("stores").first())?._id
+
+    // get active all products
     let products = await ctx.db.query("products").filter(e => e.eq(e.field('storeId'), storeId)).collect();
     products = products.filter(p => p.status === "active")
 
-    const urls = new Map<Id<'_storage'>, string | undefined>()
-    products.forEach(product => product?.images?.forEach(image => urls.set(image.storageId, undefined)))
-    //const list = await Promise.all(Array.from(urls.keys()).map(async id => await ctx.storage.getUrl(id)))
-    const list = await Promise.all(Array.from(urls.keys()).map(async id => urls.set(id, await ctx.storage.getUrl(id) ?? undefined)))
-    await Promise.all(products.forEach(async product => {
-      if (product.images) {
-        await Promise.all(product.images.map(async img => {
-          const url = await ctx.storage.getUrl(img.storageId)
-          urls.set(img.storageId, url ?? undefined)
-        }))
+
+    // attach images urls to products' images 
+    const urls = new Map<Id<'_storage'>, string | null>()
+    await Promise.all(products.map(
+      async product => {
+        await Promise.all(
+          product?.images?.map(async image => {
+            const url = await ctx.storage.getUrl(image.storageId)
+            urls.set(image.storageId, url)
+          }) ?? [])
       }
-    }) ?? [])
+    ))
 
     return products.map(product => {
-      return { ...product, images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) })) }
+      return {
+        ...product,
+        images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) }))
+      }
     })
   },
 });
@@ -192,7 +197,24 @@ export const getProductById = query({
     const variants = await getVariants(ctx, product._id)
     const variantsInventory = await getVariantsInventory(ctx, product._id)
 
-    return { ...product, variants, variantsInventory }
+
+
+    // attach images urls to products' images 
+    const urls = new Map<Id<'_storage'>, string | undefined>()
+    product?.images?.forEach(image => urls.set(image.storageId, undefined))
+    if (product.images) {
+      await Promise.all(product.images.map(async img => {
+        const url = await ctx.storage.getUrl(img.storageId)
+        urls.set(img.storageId, url ?? undefined)
+      }))
+    }
+
+    return {
+      ...product,
+      variants,
+      variantsInventory,
+      images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) }))
+    }
   },
 });
 

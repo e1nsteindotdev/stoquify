@@ -13,7 +13,11 @@ export function Navbar() {
     <Image src="/logo.svg" className="mr-auto" />
     <div className="hidden lg:flex mx-auto gap-6">
       {categories?.map((c, i) => (
-        <Link key={i} to={"/"} className="text-[16px] font-bold font-inter uppercase tracking-[0.1em]" >{c.name}</Link>
+        <Link
+          key={i}
+          to={`/categories/$slug`}
+          params={{ slug: c._id as string }}
+          className="text-[16px] font-bold font-inter uppercase tracking-[0.1em]" >{c.name}</Link>
       ))}
     </div>
 
