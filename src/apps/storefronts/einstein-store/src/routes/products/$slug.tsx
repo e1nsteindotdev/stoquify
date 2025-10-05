@@ -1,13 +1,14 @@
 
 import { Footer } from '@/components/footer';
 import { HeaderAnonc, Navbar } from '@/components/navbar';
-import { createFileRoute, useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { api } from 'api/convex';
 import type { Id } from 'api/data-model';
 import { useQuery } from 'convex/react';
 import { z } from 'zod'
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { CartIcon } from '@/components/icons/cart-icon';
+import { useState } from 'react';
 
 
 export const Route = createFileRoute('/products/$slug')({
@@ -33,10 +34,10 @@ function RouteComponent() {
   else if (sourceType === "collections")
     sourceType = 'collections'
   else sourceType = ''
-
   const images = product?.images?.sort((a, b) => a.order - b.order) ?? []
-  console.log(sourceType)
-
+  const [selectedVariants, setSelectedVariants] = useState(new Map<string, null | string>(product?.variants.map(v => [v._id, null])))
+  const [selectedQuantity, setSelectedQuantity] = useState(1)
+  console.log('selected variants :', selectedVariants)
 
   if (!product) return <div> Loading ...</div>
   const header = (
@@ -52,40 +53,46 @@ function RouteComponent() {
       <p className='font-bold text-[20px] lg:text-[31px] leading-[1]'>{product.price} DZD</p>
     </div>
   )
+  function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
+
+  }
 
   return (
     <div className="overflow-clip">
-      <div className="px-3 lg:px-4 max-w-[1800px] mx-auto bg-[#E6E6E6]">
-        <HeaderAnonc />
-        <div className="flex flex-col gap-10 lg:gap-30 w-full border-l-1 border-r-1 border-seperator relative">
-          <div>
-            <Navbar />
-            {sourceType &&
-              <div className='font-inter uppercase text-[10px] lg:text-[14px] font-semibold flex items-start gap-2 pt-4 pb-2 lg:pb-10 px-3 w-full lg:justify-center'>
-                <button onClick={() => navigate({ to: "/" })} >
-                  HOME
-                </button>
-                <span>/</span>
-                <button>
-                  <span className='uppercase'>
-                    {sourceType}
-                  </span>
-                </button>
-                <span>/</span>
-                <button>
-                  <span className='uppercase'>
-                    {sourceName}
-                  </span>
-                </button>
-                <span>/</span>
+      <div className="px-3 lg:px-4 max-w-[1800px] mx-auto bg-[#E6E6E6] relative">
+        <div className='lg:h-[150px] border-l-1 border-r-1 border-white bg-[#E6E6E6] lg:sticky top-0 z-100'>
+          <HeaderAnonc />
+          <Navbar />
+          {sourceType &&
+            <div className='font-inter uppercase text-[10px] lg:text-[14px] font-semibold flex items-start gap-2 pt-4 pb-2 lg:pb-10 px-3 w-full lg:justify-center text-black/60 cursor-pointer'>
+              <Link to={"/"} >
+                HOME
+              </Link>
+              <span>/</span>
+              <button>
                 <span className='uppercase'>
-                  {product.title}
+                  {sourceType}
                 </span>
-              </div>
-            }
+              </button>
+              <span>/</span>
+              <button>
+                <span className='uppercase'>
+                  {sourceName}
+                </span>
+              </button>
+              <span>/</span>
+              <span className='uppercase'>
+                {product.title}
+              </span>
+            </div>
+          }
+        </div>
+        <div
+          className="flex flex-col gap-10 lg:gap-30 w-full border-l-1 border-r-1 border-seperator relative">
+          <div className='relative'>
 
 
-            <div className='flex flex-col lg:flex-row w-full lg:justify-center gap-x-4'>
+            <div className='flex flex-col lg:flex-row w-full lg:justify-center gap-x-4 lg:pb-100'>
               <div className='flex flex-col gap-3 px-3'>
                 {/* first part */}
                 <div className='flex flex-col gap-1 lg:hidden'>
@@ -104,8 +111,7 @@ function RouteComponent() {
                     src={images?.[0].url} />
                   {images.length >= 2 &&
                     <div
-                      className='flex lg:flex-col justify-start gap-1 h-[200px] scrollbar-hide overflow-scroll lg:overflow-ellipsis
-                      '>
+                      className=''>
                       {images?.slice(1)?.map(img => <img
                         className='border-1 border-white mt-2 lg:w-[800px]'
                         src={img.url} />
@@ -116,69 +122,99 @@ function RouteComponent() {
               </div>
 
               {/* third part */}
-              <div className='flex flex-col gap-6'>
+              <div className='relative'>
+                <div className='flex flex-col gap-6 lg:sticky lg:top-[150px]'>
+                  {header}
 
-                {header}
+                  <div className='flex flex-col gap-4 px-3'>
+                    <div className='flex flex-col border-white border-1'>
 
-                <div className='flex flex-col gap-4 px-3'>
-                  <div className='flex flex-col border-white border-1'>
-                    <div className='flex flex-col gap-2 p-3'>
-                      <p className='text-primary text-[18px] font-bold uppercase'>Taille</p>
-                      <div className='flex gap-3'>
-                        {Array.from([1, 2, 3, 4]).map(i =>
+                      {product?.variants.map(variant => {
+                        return (
+                          <div key={variant._id}>
+                            <div className='flex flex-col gap-2 p-3'>
+                              <p className='text-primary text-[18px] font-bold uppercase'>{variant.name}</p>
+                              <div className='flex gap-3'>
+                                {variant.options.map(option =>
+                                  <button
+                                    key={option._id}
+                                    onClick={() => {
+                                      setSelectedVariants(prev => {
+                                        prev.set(variant._id, option.name)
+                                        return new Map(prev)
+                                      })
+                                    }}
+                                    className={`p-[10px] leading-[1] bg-black/1 rounded-[4px] border-[1px] text-[14px] font-semibold font-inter uppercase min-w-[40px]
+                                  ${selectedVariants.get(variant._id) === option.name
+                                        ? "text-primary border-primary bg-primary/5 border-[2px]" : "border-white"} `}
+                                  >
+                                    {option.name}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div className='w-full h-[1px] bg-white' />
+                          </div>
+                        )
+                      })}
+
+                      {/* seperator */}
+                      <div className='flex flex-col gap-2 p-3'>
+                        <p className='text-primary text-[18px] font-bold uppercase'>Quantity</p>
+                        <div className='flex gap-4 items-center'>
                           <button
-                            onClick={() => { }}
-                            className='p-[10px] leading-[1] rounded-[4px] border-1 border-white text-[14px] font-semibold font-inter'
+                            onClick={() => { setSelectedQuantity(prev => prev === 0 ? 0 : prev - 1) }}
+                            className='border-black border-[1px] flex items-center justify-center h-[26px] w-[26px]'
                           >
-                            40
+                            <MinusIcon size={16} />
                           </button>
-                        )}
+                          <p className='rounded-[4px] w-[40px] text-center font-inter border-1- border-white text-[18px] font-semibold' > {selectedQuantity} </p>
+
+                          <button
+                            onClick={() => { setSelectedQuantity(prev => prev + 1) }}
+                            className='border-black border-[1px] flex items-center justify-center h-[26px] w-[26px]'
+                          >
+                            <PlusIcon size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* seperator */}
-                    <div className='w-full h-[1px] bg-white' />
+                    <div className='flex flex-col gap-1 py-2'>
 
-                    <div className='flex flex-col gap-2 p-3'>
-                      <p className='text-primary text-[18px] font-bold uppercase'>Quantity</p>
-                      <div className='flex gap-4 items-center'>
-                        <button
-                          onClick={() => { }}
-                          className='border-black border-[1px] flex items-center justify-center h-[26px] w-[26px]'
-                        >
-                          <PlusIcon size={16} />
-                        </button>
+                      <div>
+                        <p className='text-[18px] leading-[1] text-black/80'>
+                          TOTAL COST:
+                        </p>
+                        <p className='text-[16px] pt-2 leading-[1] text-black/40'>
+                          {selectedQuantity} * {product.price} + 400 (livraison)
+                        </p>
 
-                        <p className='rounded-[4px] font-inter border-1- border-white text-[18px] font-semibold' > 5 </p>
-
-                        <button
-                          onClick={() => { }}
-                          className='border-black border-[1px] flex items-center justify-center h-[26px] w-[26px]'
-                        >
-                          <MinusIcon size={16} />
-                        </button>
                       </div>
+                      <p className='text-[30px] pt-4 leading-[0.9] uppercase font-bold'>
+                        {selectedQuantity * (product.price ?? 1) + 400} DZD
+                      </p>
                     </div>
-                  </div>
 
-                  <div className='flex flex-col gap-1 py-2'>
-                    <p className='text-[18px] text-black/80'>TOTAL COST:</p>
-                    <p className='text-[25px] leading-[0.9] uppercase font-bold'>{product.price ? 5 * product.price : 0} DZD</p>
-                  </div>
+                    <div className='mb-20 flex flex-col gap-4 lg:pt-20'>
+                      <button
+                        onClick={() => handleSubmit('BUY_IT_NOW')}
+                        className='font-semibold uppercase text-white pt-[11px] pb-[12px] w-full rounded-[12px] bg-primary'>
+                        <p className='leading-[1] pt-1.25'>
+                          BUY IT NOW
+                        </p>
+                      </button>
 
-                  <div className='mb-20 flex flex-col gap-4 lg:pt-20'>
-                    <button className='font-semibold uppercase text-white pt-[11px] pb-[12px] w-full rounded-[12px] bg-primary'>
-                      <p className='leading-[1] pt-1.25'>
-                        BUY IT NOW
-                      </p>
-                    </button>
-
-                    <button className='font-semibold uppercase text-primary pt-[11px] pb-[12px] w-full rounded-[12px] bg-primary/5 ring-[1.5px] ring-primary flex items-center justify-center gap-3'>
-                      <p className='leading-[1] pt-1.25'>
-                        ADD TO CART
-                      </p>
-                      <CartIcon color='#684FCA' size={16} />
-                    </button>
+                      <button
+                        onClick={() => handleSubmit('ADD_TO_CART')}
+                        className='font-semibold uppercase text-primary pt-[11px] pb-[12px] w-full rounded-[12px] bg-primary/5 ring-[1.5px] ring-primary flex items-center justify-center gap-3'>
+                        <p className='leading-[1] pt-1.25'>
+                          ADD TO CART
+                        </p>
+                        <CartIcon color='#684FCA' size={16} />
+                      </button>
+                      <p className='upppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic'>You will never regeret buying from us bitch</p>
+                    </div>
                   </div>
                 </div>
               </div>
