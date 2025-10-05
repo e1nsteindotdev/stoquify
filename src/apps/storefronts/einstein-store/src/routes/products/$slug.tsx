@@ -45,12 +45,9 @@ function RouteComponent() {
       <p className='rounded-[8px] leading-[1] text-[12px] font-inter font-bold py-2 pb-1.75 px-3 mb-2 bg-black/5 text-black uppercase tracking-wider'>
         {sourceName}
       </p>
-
       <p className='uppercase text-[35px] leading-[1] lg:text-[64px] font-display text-primary'>
         {product.title}
       </p>
-
-      <p className='font-bold text-[20px] lg:text-[31px] leading-[1]'>{product.price} DZD</p>
     </div>
   )
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
@@ -146,7 +143,7 @@ function RouteComponent() {
                                     }}
                                     className={`p-[10px] leading-[1] bg-black/1 rounded-[4px] border-[1px] text-[14px] font-semibold font-inter uppercase min-w-[40px]
                                   ${selectedVariants.get(variant._id) === option.name
-                                        ? "text-primary border-primary bg-primary/5 border-[2px]" : "border-white"} `}
+                                        ? "text-primary border-primary bg-primary/5" : "border-white"} `}
                                   >
                                     {option.name}
                                   </button>
@@ -168,7 +165,10 @@ function RouteComponent() {
                           >
                             <MinusIcon size={16} />
                           </button>
-                          <p className='rounded-[4px] w-[40px] text-center font-inter border-1- border-white text-[18px] font-semibold' > {selectedQuantity} </p>
+
+                          <p className='rounded-[4px] w-[40px] text-center font-inter border-white text-[24px] font-semibold' >
+                            {selectedQuantity}
+                          </p>
 
                           <button
                             onClick={() => { setSelectedQuantity(prev => prev + 1) }}

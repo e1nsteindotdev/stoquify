@@ -1,4 +1,13 @@
 import { Link } from "@tanstack/react-router"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { create } from "zustand"
 import { Image } from "./ui/image"
 import { useQuery } from "convex/react"
 import { api } from "api/convex"
@@ -23,7 +32,7 @@ export function Navbar() {
 
     <div className="hidden lg:flex  gap-[32px] ml-auto ">
       <button> <HeartIcon /> </button>
-      <button> <CartIcon /> </button>
+      <Cart />
     </div>
 
     <div className="flex lg:hidden">
@@ -32,6 +41,23 @@ export function Navbar() {
   </div>
 }
 
+function Cart() {
+  const cartState = useCartStore()
+  return (
+    <Sheet>
+      <SheetTrigger> <CartIcon /> </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Are you absolutely sure?</SheetTitle>
+          <SheetDescription>
+            This action cannot be undone. This will permanently delete your account
+            and remove your data from our servers.
+          </SheetDescription>
+        </SheetHeader>
+      </SheetContent>
+    </Sheet>
+  )
+}
 export function HeaderAnonc() {
   return <div className="py-2 bg-primary flex gap-[32px] overflow-clip px-4">
     {Array.from({ length: 10 }, (_, i) => i).map((_, i) => (
@@ -66,3 +92,37 @@ export function Header() {
   </div>
 
 }
+
+
+type CartContentType = {
+  selection: Map<string, string>,
+  quantity: number
+}
+
+type CartType = Map<string, CartContentType>
+
+type StateType = {
+  cart: CartType,
+  addProductToCart: (productId: string, content: CartContentType) => void
+  removeProductFromCart: (productId: string) => void,
+  changeProduct: (productId: string, content: CartContentType) => void
+}
+
+export const useCartStore = create<StateType>((set) => ({
+  cart: new Map(),
+  addProductToCart: (productId, content) => set((state) => ({
+    cart: state.cart.set(productId, content)
+  })),
+  removeProductFromCart: (productId) => set((state) => {
+    const cart = state.cart
+    cart.delete(productId)
+    return {
+      cart: cart
+    }
+  }),
+  changeProduct: (productId, content) => set((state) => {
+    const cart = state.cart
+    cart.set(productId, content)
+    return { cart }
+  })
+}))

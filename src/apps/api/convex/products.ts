@@ -13,12 +13,12 @@ export const listProducts = query({
 
 
     // attach images urls to products' images 
-    const urls = new Map<Id<'_storage'>, string | null>()
+    const urls = new Map<Id<'_storage'>, string | undefined>()
     await Promise.all(products.map(
       async product => {
         await Promise.all(
           product?.images?.map(async image => {
-            const url = await ctx.storage.getUrl(image.storageId)
+            const url = await ctx.storage.getUrl(image.storageId) ?? undefined
             urls.set(image.storageId, url)
           }) ?? [])
       }

@@ -4,7 +4,7 @@ import { RightChevron } from "./icons/right-chevron"
 import { DownChevron } from "./icons/down-chevron"
 import type { Doc } from "api/data-model"
 import { useEffect, useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 
 export function OurCategories() {
   const categories = useQuery(api.categories.listCategories)
@@ -92,12 +92,18 @@ function Category({ category, products, index, categoriesLength }:
         <div className={`relative min-w-[185px] min-h-[230px] lg:h-[600px] lg:min- flex-2 aspect-[4/5] border-1 border-white ${index % 2 === 0 ? "order-2" : "order-1"}`}>
           {products?.map((p) => (
             <img key={p._id} className={`bg-[#F1F1F1] h-full w-full object-cover transition-all ease-in-out duration-1000 absolute 
-                    ${!(p._id === selectedProduct?._id) ? 'opacity-0' : 'opacity-100'}`} src={p.images?.[0].url} alt="no image" />
+            ${!(p._id === selectedProduct?._id) ? 'opacity-0' : 'opacity-100'}`} src={p.images?.[0].url} alt="no image" />
           ))}
-          <div className="absolute w-[90%] bottom-2.25 lg:bottom-3.5 left-1/2 -translate-x-1/2 lg:px-4 px-2  py-1.5 flex justify-between items-center border-black border-1">
-            <p className="text-black uppercase font-inter font-semibold text-[8px] lg:text-[12px]">touts les "{category.name}"</p>
+          <Link
+            to={`/categories/$slug`}
+            params={{ slug: category._id }}
+            className="absolute w-[97%] bottom-2.25 lg:bottom-3.5 left-1/2 -translate-x-1/2 lg:px-4 px-2  py-1.5 flex justify-between items-center border-black border-1 z-50">
+            <p
+              className="text-black uppercase font-inter font-semibold text-[8px] lg:text-[12px]">
+              touts les "{category.name}"
+            </p>
             <RightChevron size={10} />
-          </div>
+          </Link>
         </div>
       </div>
       {index < categoriesLength && <div className="w-full lg:hidden h-[1px] bg-white" />}
