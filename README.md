@@ -1,10 +1,12 @@
 # TODOS
- [ ] - Add the cart functionality
- [ ] - Complete ordering.
- [ ] - Find how to deploy this for 50+ clients with 0$ and fast seemless bug fixes  
- [ ] - make the dashboard usable from a phone and finish its UI
- [ ] - Finish the UI of the storefront
- [ ] - Start Adding animations
- [ ] - Test it heavily
-
-
+- [ ] Add cart functionality
+- [ ] Complete ordering
+- [ ] Figure out how to deploy for 50+ clients with $0 and fast, seamless bug fixes
+- [ ] Make the dashboard usable from a phone and finish its UI
+- [ ] Add reviews system
+- [ ] Add loyalty system
+- [ ] Add inventory tracking
+- [ ] Finish storefront UI
+- [ ] Make checkout experience seamless
+- [ ] Add animations
+- [ ] Test heavily
