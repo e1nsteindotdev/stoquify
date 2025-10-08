@@ -3,10 +3,10 @@
 - [ ] Complete ordering
 - [ ] Figure out how to deploy for 50+ clients with $0 and fast, seamless bug fixes
 - [ ] Make the dashboard usable from a phone and finish its UI
-- [ ] Add reviews system
-- [ ] Add loyalty system
 - [ ] Add inventory tracking
 - [ ] Finish storefront UI
 - [ ] Make checkout experience seamless
 - [ ] Add animations
 - [ ] Test heavily
+- [ ] Add reviews system
+- [ ] Add loyalty system
