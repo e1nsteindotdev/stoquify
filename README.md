@@ -1,7 +1,7 @@
 # TODOS
 - [ ] Add cart functionality
 - [ ] Complete ordering
-- [ ] Figure out how to deploy for 50+ clients with $0 and fast, seamless bug fixes
+- [ ] Figure out how to deploy for 50+ clients with $0 cost and how to do it fast, and with a seamless to fixes bugs
 - [ ] Make the dashboard usable from a phone and finish its UI
 - [ ] Add inventory tracking
 - [ ] Finish storefront UI

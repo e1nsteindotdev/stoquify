@@ -30,7 +30,7 @@ export function Navbar() {
       ))}
     </div>
 
-    <div className="hidden lg:flex  gap-[32px] ml-auto ">
+    <div className="hidden lg:flex  gap-[32px] ml-auto z-50">
       <button> <HeartIcon /> </button>
       <Cart />
     </div>
@@ -42,9 +42,17 @@ export function Navbar() {
 }
 
 function Cart() {
-  const cartState = useCartStore()
+  const toggleCart = useCartStore(state => state.toggleCart)
   return (
-    <Sheet>
+    <Sheet onOpenChange={(open) => {
+      if (!open) {
+        setTimeout(() => {
+          toggleCart()
+        }, 100)
+      } else {
+        toggleCart()
+      }
+    }}>
       <SheetTrigger> <CartIcon /> </SheetTrigger>
       <SheetContent>
         <SheetHeader>
@@ -101,15 +109,19 @@ type CartContentType = {
 
 type CartType = Map<string, CartContentType>
 
-type StateType = {
+type Store = {
   cart: CartType,
   addProductToCart: (productId: string, content: CartContentType) => void
   removeProductFromCart: (productId: string) => void,
   changeProduct: (productId: string, content: CartContentType) => void
+  isCartOpened: boolean,
+  toggleCart: () => void
 }
 
-export const useCartStore = create<StateType>((set) => ({
+export const useCartStore = create<Store>((set) => ({
   cart: new Map(),
+  isCartOpened: false,
+  toggleCart: () => set(state => ({ isCartOpened: !state.isCartOpened })),
   addProductToCart: (productId, content) => set((state) => ({
     cart: state.cart.set(productId, content)
   })),
@@ -126,3 +138,4 @@ export const useCartStore = create<StateType>((set) => ({
     return { cart }
   })
 }))
+
