@@ -42,11 +42,28 @@ function RouteComponent() {
 
   if (!product) return <div> Loading ...</div>
   const header = (
-    <div className='flex-col items-start gap-1 hidden lg:flex lg:px-3'>
+    <div className='flex-col items-start gap-1 hidden lg:flex'>
+      {sourceType &&
+        <div className='font-inter uppercase text-[10px] lg:text-[14px] font-semibold flex items-start gap-2 text-black/60 cursor-pointer'>
+          <Link to={"/"} >
+            HOME
+          </Link>
+          <span>/</span>
+          <button>
+            <span className='uppercase'>
+              {sourceName}
+            </span>
+          </button>
+          <span>/</span>
+          <span className='uppercase'>
+            {product.title}
+          </span>
+        </div>
+      }
       <p className='uppercase text-[35px] leading-[1] lg:text-[64px] font-display text-primary'>
         {product.title}
       </p>
-      <p className='rounded-[8px] leading-[1] text-[14px] font-[700] text-black/70 uppercase tracking-[.2em]'>
+      <p className='rounded-[8px] leading-[1] text-[14px] font-[600] text-black/70 uppercase tracking-[.2em]'>
         {sourceName}
       </p>
       <p className='text-[30px] pt-4 leading-[0.9] uppercase font-bold'>
@@ -94,7 +111,7 @@ function RouteComponent() {
                     <p className='uppercase text-[31px] leading-[1] lg:text-[64px] font-display text-primary'>
                       {product.title}
                     </p>
-                    <p className='rounded-[8px] leading-[1] text-[12px] font-[700] text-black/70 uppercase tracking-[.2em]'>
+                    <p className='rounded-[8px] leading-[1] text-[12px] font-[600] text-black/70 uppercase tracking-[.2em]'>
                       {sourceName}
                     </p>
                     <p className='text-[20px] pt-2 leading-[0.9] uppercase font-bold'>
@@ -107,13 +124,13 @@ function RouteComponent() {
                 {/* second part */}
                 <div className='pb-4 lg:pt-8'>
                   <img
-                    className='w-full max-w-[800px] min-h-[300px] lg:h-[1000px] border-1 border-white'
+                    className='w-full min-h-[300px] lg:h-[1000px] border-1 border-white'
                     src={images?.[0].url} />
                   {images.length >= 2 &&
                     <div
                       className=''>
                       {images?.slice(1)?.map(img => <img
-                        className='border-1 border-white mt-2 lg:w-[800px]'
+                        className='border-1 border-white mt-2 lg:h-[1000px] '
                         src={img.url} />
                       )}
                     </div>
@@ -124,14 +141,14 @@ function RouteComponent() {
               {/* third part */}
               <div className='relative'>
                 <div className={cn('flex flex-col gap-6 lg:top-[120px] lg:h-[1000px] lg:sticky')}>
-
                   {/* desktop */}
+
                   {header}
 
-                  <div className='flex flex-col gap-4 px-3 items-center'>
+                  <div className='flex flex-col gap-4 items-center lg:items-start px-3 lg:px-0'>
 
                     {/* options form  */}
-                    <div className='flex flex-col border-white border-1 w-full'>
+                    <div className='flex flex-col border-white border-1 w-full lg:w-auto'>
                       {product?.variants.map(variant => {
                         return (
                           <div key={variant._id}>
@@ -204,7 +221,7 @@ function RouteComponent() {
                         </p>
                         <CartIcon color='#684FCA' size={16} />
                       </button>
-                      <p className='upppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic text-center'>LIVRAISON 48H MAXIMUM</p>
+                      <p className='upppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic text-center lg:text-start'>LIVRAISON 48H MAXIMUM</p>
                     </div>
                   </div>
 
