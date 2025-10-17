@@ -24,6 +24,7 @@
   --font-display: "Futura Condensed", sans-serif;
   --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-primary: #664CCC;
+  --color-global-background: #E6E6E6;
   --color-seperator: white;
   --spacing-ip: 16px;
   --breakpoint-xs: 375px;

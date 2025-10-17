@@ -3,7 +3,6 @@ import type { Doc } from "api/data-model";
 
 export function Product({ data, source }: { source?: { sourceName: string, sourceType: string }, data: Doc<'products'> | undefined }) {
   const picture_url = data?.images?.find(img => img.order === 1)?.url ?? data?.images?.[0].url
-  console.log("pic :", picture_url, data?.images?.find(img => img.order === 1))
   const navigate = useNavigate()
   return (
     <div className="flex flex-col gap-3 shrink-0 w-[320px] lg:w-[480px] ">

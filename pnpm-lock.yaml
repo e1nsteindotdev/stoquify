@@ -292,6 +292,9 @@ importers:
       '@fontsource/montserrat':
         specifier: ^5.2.6
         version: 5.2.8
+      '@radix-ui/react-slot':
+        specifier: ^1.2.3
+        version: 1.2.3(@types/react@19.0.14)(react@19.1.0)
       '@tailwindcss/postcss':
         specifier: ^4.1.11
         version: 4.1.11
@@ -310,6 +313,9 @@ importers:
       '@tanstack/zod-adapter':
         specifier: ^1.132.33
         version: 1.132.33(@tanstack/react-router@1.130.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(zod@4.0.14)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       convex:
         specifier: ^1.25.4
         version: 1.25.4(react@19.1.0)

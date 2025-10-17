@@ -1,6 +1,6 @@
 
 import { Footer } from '@/components/footer';
-import { HeaderAnonc, Navbar, useCartStore } from '@/components/navbar';
+import { HeaderAnonc, Navbar } from '@/components/navbar';
 import { createFileRoute, Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { api } from 'api/convex';
 import type { Id } from 'api/data-model';
@@ -10,6 +10,7 @@ import { MinusIcon, PlusIcon } from 'lucide-react';
 import { CartIcon } from '@/components/icons/cart-icon';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useCartStore } from '@/lib/state';
 
 
 export const Route = createFileRoute('/products/$slug')({
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/products/$slug')({
 
 function RouteComponent() {
   const params = useParams({ from: "/products/$slug" });
+  const addProductToCart = useCartStore(state => state.addProductToCart)
   const productId = params.slug as Id<'products'>
   const product = useQuery(api.products.getProductById, { id: productId })
   const isCartOpened = useCartStore(state => state.isCartOpened)
@@ -38,7 +40,6 @@ function RouteComponent() {
   const images = product?.images?.sort((a, b) => a.order - b.order) ?? []
   const [selectedVariants, setSelectedVariants] = useState(new Map<string, null | string>(product?.variants.map(v => [v._id, null])))
   const [selectedQuantity, setSelectedQuantity] = useState(1)
-  console.log('selected variants :', selectedVariants)
 
   if (!product) return <div> Loading ...</div>
   const header = (
@@ -71,8 +72,14 @@ function RouteComponent() {
       </p>
     </div>
   )
-  function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
 
+  function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
+    if (mode === "ADD_TO_CART") {
+      if (product?._id && Object.values(selectedVariants).includes(null) === false) {
+        addProductToCart(product?._id, { selection: Object.fromEntries(selectedVariants) as { [key: string]: string }, quantity: selectedQuantity })
+        console.log('added product to cart :', product._id)
+      }
+    }
   }
 
   return (
@@ -160,12 +167,12 @@ function RouteComponent() {
                                     key={option._id}
                                     onClick={() => {
                                       setSelectedVariants(prev => {
-                                        prev.set(variant._id, option.name)
+                                        prev.set(variant.name, option.name)
                                         return new Map(prev)
                                       })
                                     }}
                                     className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
-                                  ${selectedVariants.get(variant._id) === option.name
+                                  ${selectedVariants.get(variant.name) === option.name
                                         ? "text-primary border-primary bg-primary/5" : "border-white"} `}
                                   >
                                     {option.name}
