@@ -71,11 +71,12 @@ function Category({ category, products, index, categoriesLength }:
             </p>
           </button>
           <div className="flex flex-1 min-h-0 overflow-hidden flex-col justify-between gap-2 h-full">
-            <div className={`text-black/20 font-inter font-semibold text-[10px] lg:text-[16px] flex flex-col gap-0.5 lg:gap-1.5 uppercase h-[160px] lg:h-[300px] overflow-clip
+            <div className={`text-black/20 font-inter font-semibold text-[10px] lg:text-[16px] flex flex-col gap-1 lg:gap-1.5 uppercase h-[160px] lg:h-[300px] overflow-clip
               ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>
-              {products?.map((p, i) => p.categoryId === category._id && <p
-                className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1] ${selectedProduct?._id === p._id ? 'opacity-100' : "opacity-30"}`}
-              >{p.title}</p>)}
+              {products?.map((p, i) =>
+                p.categoryId === category._id
+                && <p className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1] ${selectedProduct?._id === p._id ? 'opacity-100' : "opacity-30"}`} >
+                  {p.title}</p>)}
             </div>
           </div>
           <div className={`flex shrink-0 flex-col gap-1 lg:gap-3 mt-auto lg:pb-2 ${index % 2 === 0 ? 'items-end' : 'items-start'}`}>

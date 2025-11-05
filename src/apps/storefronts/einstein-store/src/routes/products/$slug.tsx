@@ -38,7 +38,7 @@ function RouteComponent() {
     sourceType = 'collections'
   else sourceType = ''
   const images = product?.images?.sort((a, b) => a.order - b.order) ?? []
-  const [selectedVariants, setSelectedVariants] = useState(new Map<string, null | string>(product?.variants.map(v => [v._id, null])))
+  const [selectedVariants, setSelectedVariants] = useState(new Map<string, string>(product?.variants.map(v => [v._id, 'vide'])))
   const [selectedQuantity, setSelectedQuantity] = useState(1)
 
   if (!product) return <div> Loading ...</div>
@@ -76,7 +76,7 @@ function RouteComponent() {
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
     if (mode === "ADD_TO_CART") {
       if (product?._id && Object.values(selectedVariants).includes(null) === false) {
-        addProductToCart(product?._id, { selection: Object.fromEntries(selectedVariants) as { [key: string]: string }, quantity: selectedQuantity })
+        addProductToCart(product?._id, { price: product?.price ?? 0, selection: selectedVariants, quantity: selectedQuantity })
         console.log('added product to cart :', product._id)
       }
     }
@@ -138,6 +138,7 @@ function RouteComponent() {
                       className=''>
                       {images?.slice(1)?.map(img => <img
                         className='border-1 border-white mt-2 lg:h-[1000px] '
+                        key={img.url}
                         src={img.url} />
                       )}
                     </div>

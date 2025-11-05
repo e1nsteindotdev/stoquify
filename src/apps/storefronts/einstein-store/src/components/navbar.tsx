@@ -1,24 +1,11 @@
 import { Link } from "@tanstack/react-router"
-import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet"
 import { Image } from "./ui/image"
 import { useQuery } from "convex/react"
 import { api } from "api/convex"
-import { CartIcon } from "./icons/cart-icon"
 import { HeartIcon } from "./icons/heart-icon"
 import { MenuIcon } from "./icons/menu-icon"
 import { OrderIcon } from "./icons/order-icon"
-import { useCartStore } from "@/lib/state"
-import type { Id } from "api/data-model"
-import { XIcon } from "lucide-react"
+import { Cart } from "./cart"
 
 export function Navbar() {
   const categories = useQuery(api.categories.listCategories)
@@ -35,85 +22,17 @@ export function Navbar() {
     </div>
 
     <div className="hidden lg:flex  gap-[32px] ml-auto z-50">
-      <button> <HeartIcon /> </button>
+      {/* <button><HeartIcon /></button> */}
       <Cart />
     </div>
 
-    <div className="flex lg:hidden">
-      <MenuIcon />
+    <div className="flex lg:hidden gap-4 items-start">
+      <Cart />
+      <div className="mt-1"> <MenuIcon /> </div>
     </div>
   </div>
 }
 
-function Cart() {
-  const toggleCart = useCartStore(state => state.toggleCart)
-  const cart = useCartStore(state => state.cart)
-  const removeProductFromCart = useCartStore(state => state.removeProductFromCart)
-  const products = Array.from(cart.keys()).map(id => useQuery(api.products.getProductById, { id }))
-  return (
-    <Sheet onOpenChange={(open) => {
-      if (!open) {
-        setTimeout(() => {
-          toggleCart()
-        }, 100)
-      } else {
-        toggleCart()
-      }
-    }}>
-      <SheetTrigger className="">
-        <div className="relative">
-          <CartIcon />
-          <div className="absolute -top-2 -left-3 text-[10px] bg-primary text-white font-semibold font-inter rounded-full py-1 px-2">{cart.size}</div>
-        </div>
-      </SheetTrigger>
-      <SheetContent className="bg-global-background">
-        <SheetHeader>
-          <SheetTitle>CART</SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-col justify-between h-full gap-3 px-3 border-l-1 border-black/20 mx-2">
-          <div className="flex flex-col gap-3">
-            {Array.from(cart.keys()).map(key => {
-              const product = products.find(product => product?._id === key)
-              if (!product) return <p>loading...</p>
-              return (<div className="border-t-1 border-black/10 flex pt-3 gap-2 text-[14px]">
-                <img src={product?.images?.find(img => img.order === 1)?.url}
-                  className="border-white border-1 w-20 h-25 object-cover" />
-                <div className="w-full">
-                  <div className="w-full flex justify-between items-start">
-                    <div>
-                      <p className="font-display text-primary tracking-wide lg:text-[18px]">{product.title}</p>
-                      <p>quantity : {cart.get(key)?.quantity}</p>
-                    </div>
-                    <button
-                      onClick={() => { removeProductFromCart(product._id) }}
-                      className="pt-1 pr-1"> <XIcon size={16} /> </button>
-                  </div>
-                  <div>
-                    {Object.entries(cart.get(key)?.selection ?? {})?.map(value => (<p>{value[0]} : {value[1]}</p>))}
-                  </div>
-                </div>
-              </div>)
-            })}
-            <div className="w-full h-[1px] bg-black/10" />
-          </div>
-
-          <div>
-            <p className="text-[14px]">Livraison 400 DZD <span className="text-[12px]">(for Algiers) <button className="underline text-black/40 italic ">change wilaya</button></span>
-            </p>
-            <p className="text-[31px] font-black">TOTAL : 4000 DZD</p>
-          </div>
-        </div>
-
-        <SheetFooter>
-          <Button type="submit" className="text-white rounded-lg py-5 uppercase font-display tracking-wide">ORDER NOW!</Button>
-          <SheetClose asChild>
-            <Button variant="outline">Close</Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet >
-  )
-}
 export function HeaderAnonc() {
   return <div className="py-2 bg-primary flex gap-[32px] overflow-clip px-4">
     {Array.from({ length: 10 }, (_, i) => i).map((_, i) => (

@@ -18,8 +18,8 @@ export function OurCollections() {
           const collection_products = ids?.map(id => products?.find(p => p._id == id))
           const collectionProducts = c?.productIds?.map(id => products?.filter(p => p._id === id))
           return (
-            <div>
-              <div key={c._id} className="flex flex-col gap-7 py-8 px-3 lg:px-6">
+            <div key={c._id}>
+              <div className="flex flex-col gap-7 py-8 px-3 lg:px-6">
                 <div className="flex items-center gap-10 lg:gap-20">
                   <div className="relative">
                     <p className="text-[27px] lg:text-[60px] tracking-[0.04em] uppercase leading-[1] px-3">{c.title}</p>

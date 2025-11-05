@@ -2,8 +2,9 @@ import type { Id } from "api/data-model"
 import { create } from "zustand"
 
 type CartContentType = {
-  selection: { [key: string]: string },
+  selection: Map<string, string>,
   quantity: number
+  price: number
 }
 
 type CartType = Map<Id<'products'>, CartContentType>
@@ -30,6 +31,7 @@ export const useCartStore = create<Store>((set) => ({
   removeProductFromCart: (productId) => set((state) => {
     const cart = state.cart
     cart.delete(productId)
+    persistCart(cart)
     return {
       cart: new Map(cart)
     }
@@ -37,6 +39,7 @@ export const useCartStore = create<Store>((set) => ({
   changeProduct: (productId, content) => set((state) => {
     const cart = state.cart
     cart.set(productId, content)
+    persistCart(cart)
     return { cart: new Map(cart) }
   })
 }))
