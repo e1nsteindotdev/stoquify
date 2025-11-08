@@ -74,6 +74,42 @@ const schema = defineSchema({
   collections: defineTable({
     title: v.string(),
     productIds: v.optional(v.array(v.id('products')))
+  }),
+
+  wilayat: defineTable({
+    name: v.string(),
+    htmlName: v.string(),
+    deliveryCost: v.number()
+  }),
+
+  customers: defineTable({
+    firstName: v.string(),
+    lastName: v.string(),
+    phoneNumber: v.number(),
+    lastestAdress: v.id('addresses')
+  }),
+
+  addresses: defineTable({
+    wilayaId: v.id('wilayat'),
+    fullAddress: v.string()
+  }),
+
+  orders: defineTable({
+    customerId: v.id('customers'),
+    orderContent: v.array(
+      v.object({
+        quantity: v.number(),
+        productId: v.id('products'),
+        price: v.number(),
+        selection: v.array(v.object({
+          variantId: v.id('variants'),
+          variantOptionId: v.id('variantOptions'),
+        })),
+      })
+    ),
+    address: v.id('addresses'),
+    deliveryCost: v.number(),
+    totalCost: v.number(),
   })
 });
 

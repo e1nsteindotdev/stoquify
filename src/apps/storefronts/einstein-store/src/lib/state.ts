@@ -1,13 +1,16 @@
 import type { Id } from "api/data-model"
 import { create } from "zustand"
-import { deepMapToObject } from "./utils"
 
 type CartContentType = {
-  selection: { [k: string]: string }
+  selection: { [variantId: string]: { variantOptionName: string, variantOptionId: string } }
   quantity: number
   price: number
 }
 
+
+/*
+      Map [ product Id -> { selection, quantity , price} ] 
+ */
 type CartType = Map<Id<'products'>, CartContentType>
 
 type Store = {

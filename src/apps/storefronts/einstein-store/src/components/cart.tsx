@@ -16,9 +16,12 @@ export function Cart() {
   const toggleCart = useCartStore((state) => state.toggleCart);
   const removeProductFromCart = useCartStore((state) => state.removeProductFromCart);
   const cart = useCartStore((state) => state.cart);
-  //  const products = Array.from(cart.keys()).map((id) => useQuery(api.products.getProductById, { id }));
   const products = useQuery(api.products.listProducts)
-  const totalCost = Array.from(cart).map(([key, product]) => product.quantity * product.price).reduce((current, prev) => current + prev, 0)
+  const totalCost = Array.from(cart).map(([_, product]) => product.quantity * product.price).reduce((current, prev) => current + prev, 0)
+  console.log('cart :', cart)
+
+  async function handleOrder() {
+  }
 
   return (
     <Sheet
@@ -74,7 +77,7 @@ export function Cart() {
                         <div className="flex gap-2">
                           {Object.entries(cart.get(key)!.selection).map(([key, value]) =>
                           (<div className="bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase" key={key}>
-                            <p>{value}</p>
+                            <p>{value.variantOptionName}</p>
                           </div>
                           ))}
                         </div>

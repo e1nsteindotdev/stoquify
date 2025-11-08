@@ -25,20 +25,23 @@ export const Route = createFileRoute('/products/$slug')({
 
 function RouteComponent() {
   const params = useParams({ from: "/products/$slug" });
-  const addProductToCart = useCartStore(state => state.addProductToCart)
+  let { source: { sourceType, sourceName } } = useSearch({ from: Route.fullPath })
   const productId = params.slug as Id<'products'>
+
+  const addProductToCart = useCartStore(state => state.addProductToCart)
   const product = useQuery(api.products.getProductById, { id: productId })
-  const isCartOpened = useCartStore(state => state.isCartOpened)
-  let { source: { sourceType, sourceName } } = useSearch({
-    from: Route.fullPath
-  })
+
   if (sourceType === "categories")
     sourceType = 'catégorés'
   else if (sourceType === "collections")
     sourceType = 'collections'
   else sourceType = ''
+
+  const initialSelection = new Map<string, { variantOptionId: string, variantOptionName: string }>(product?.variants.map(v => [v._id, { variantOptionId: '', variantOptionName: '' }]))
+
+  const isCartOpened = useCartStore(state => state.isCartOpened)
   const images = product?.images?.sort((a, b) => a.order - b.order) ?? []
-  const [selectedVariants, setSelectedVariants] = useState(new Map<string, string>(product?.variants.map(v => [v._id, 'vide'])))
+  const [selectedVariants, setSelectedVariants] = useState(initialSelection)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
 
   if (!product) return <div> Loading ...</div>
@@ -167,13 +170,12 @@ function RouteComponent() {
                                     key={option._id}
                                     onClick={() => {
                                       setSelectedVariants(prev => {
-                                        prev.set(variant.name, option.name)
+                                        prev.set(variant.name, { variantOptionName: option.name, variantOptionId: option._id })
                                         return new Map(prev)
                                       })
                                     }}
                                     className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
-                                  ${selectedVariants.get(variant.name) === option.name
-                                        ? "text-primary border-primary bg-primary/5" : "border-white"} `}
+                                  ${selectedVariants.get(variant.name)?.variantOptionName === option.name ? "text-primary border-primary bg-primary/5" : "border-white"} `}
                                   >
                                     {option.name}
                                   </button>
