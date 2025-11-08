@@ -17,8 +17,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const products = useQuery(api.products.listProducts);
-  console.log(products);
   return (
     <div className="overflow-clip">
       <div className="px-3 lg:px-4 max-w-[1800px] mx-auto bg-[#E6E6E6]">

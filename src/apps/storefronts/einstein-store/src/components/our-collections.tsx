@@ -30,10 +30,11 @@ export function OurCollections() {
                     <SimpleChevronDownIcon size={16} className="lg:hidden" />
                   </div>
                 </div>
-                <div className="flex gap-8 flex-wrap px-3">
-                  {collection_products?.map(p => <Product source={{ sourceType: "collections", sourceName: c.title }} key={p?._id} data={p} />)}
+                <div>
+                  <div className="flex overflow-x-scroll gap-4 px-3 no-scrollbar">
+                    {collection_products?.map(p => <Product source={{ sourceType: "collections", sourceName: c.title }} key={p?._id} data={p} />)}
+                  </div>
                 </div>
-
               </div>
               <div className="w-full h-[1px] bg-white" />
             </div>)

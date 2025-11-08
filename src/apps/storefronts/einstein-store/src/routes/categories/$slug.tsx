@@ -50,7 +50,7 @@ function RouteComponent() {
                   {category.name}
                 </p>
               </div>
-              <div className='h-full flex flex-col lg:flex-row flex-wrap gap-x-8 gap-y-8 pt-4'>
+              <div className='h-full grid grid-cols-1 lg:grid-cols-4 gap-x-4 gap-y-8 pt-4'>
                 {products?.map(p => <Product source={{ sourceType: 'categories', sourceName: category.name }} data={p} key={p._id} />)}
               </div>
             </div>

@@ -7,8 +7,13 @@
 @import "@fontsource/inter/700.css";
 @import "@fontsource/inter/900.css";
 
-.scrollbar-hide::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 

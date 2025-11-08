@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
   SheetFooter,
   SheetClose,
@@ -44,7 +42,7 @@ export function Cart() {
         </div>
       </SheetTrigger>
 
-      <SheetContent className="bg-global-background w-[90%] lg:w-auto">
+      <SheetContent className="bg-global-background w-[90%] lg:w-full">
         <div className="px-6 pt-4 h-[83%] lg:h-[85%]">
           <div className="absolute h-full w-[1px] bg-black left-2" />
           <div className="absolute h-full w-[1px] bg-black right-2" />
@@ -68,18 +66,22 @@ export function Cart() {
                         <div className="w-full flex justify-between items-start">
                           <div>
                             <p className="font-inter font-bold text-primary tracking-wide lg:text-[14px] uppercase"> {product.title}</p>
-                            <p className="text-[12px] font-semibold">{product.price} DA <span className="text-black/50"> x{cart.get(key)?.quantity} </span> </p>
+                            <p className="text-[12px] font-semibold">{product.price} DA <span className="text-black/50"> x{cart.get(key)?.quantity}</span></p>
                           </div>
                           <button onClick={() => removeProductFromCart(product._id)} className="pt-1 pr-1" > <XIcon size={16} /> </button>
                         </div>
 
                         <div className="flex gap-2">
-                          {Object.entries(cart.get(key)!.selection).map(([key, value]) => (<div className="bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase" key={key}><p>{value}</p></div>))}
+                          {Object.entries(cart.get(key)!.selection).map(([key, value]) =>
+                          (<div className="bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase" key={key}>
+                            <p>{value}</p>
+                          </div>
+                          ))}
                         </div>
 
                         <button
                           onClick={() => removeProductFromCart(product._id)}
-                          className="text-[#D20909] bg-red-200 flex gap-2 p-1 items-center text-[10px] self-start font-semibold"><XIcon size={10} /> REMOVE FROM CART</button>
+                          className="text-[#D20909] bg-red-200 flex gap-2 p-1 items-center text-[10px] self-start font-semibold"><XIcon size={10} />REMOVE FROM CART</button>
                       </div>
                     </div>
                   );

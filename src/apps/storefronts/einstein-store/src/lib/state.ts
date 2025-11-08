@@ -1,8 +1,9 @@
 import type { Id } from "api/data-model"
 import { create } from "zustand"
+import { deepMapToObject } from "./utils"
 
 type CartContentType = {
-  selection: Map<string, string>,
+  selection: { [k: string]: string }
   quantity: number
   price: number
 }
@@ -23,8 +24,8 @@ export const useCartStore = create<Store>((set) => ({
   isCartOpened: false,
   toggleCart: () => set(state => ({ isCartOpened: !state.isCartOpened })),
   addProductToCart: (productId, content) => set((state) => {
-    state.cart.set(productId, content);
     const cart = new Map(state.cart)
+    cart.set(productId, content);
     persistCart(cart)
     return { cart }
   }),
@@ -52,7 +53,6 @@ function loadCart() {
   const storage = localStorage.getItem('cart') ?? null
   const data = storage ? JSON.parse(storage) : {}
   const cart = new Map(Object.entries(data)) as CartType
-  console.log('loaded cart from storage :', cart)
   return cart
 }
 

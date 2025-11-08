@@ -1,13 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { Doc } from "api/data-model";
 
-export function Product({ data, source }: { source?: { sourceName: string, sourceType: string }, data: Doc<'products'> | undefined }) {
+export function Product({ data, source, imgWidth }: { imgWidth?: { sm: number, large: number }, source?: { sourceName: string, sourceType: string }, data: Doc<'products'> | undefined }) {
   const picture_url = data?.images?.find(img => img.order === 1)?.url ?? data?.images?.[0].url
   const navigate = useNavigate()
   return (
-    <div className="flex flex-col gap-3 shrink-0 w-[320px] lg:w-[480px] ">
+    <div className="flex flex-col gap-3 shrink-0">
       <button onClick={() => navigate({ to: `/products/${data?._id}`, search: { source } })}>
-        <img className="w-[320px] h-[414px] lg:h-[600px] lg:w-[480px] border-[1px] border-white object-cover" src={picture_url} />
+        <img className="border-[1px] lg:w-[420px] border-white object-cover" src={picture_url} />
       </button>
       <div className="flex flex-col gap-1.5">
         <div className="flex justify-between items-start">

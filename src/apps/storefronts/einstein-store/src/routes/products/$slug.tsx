@@ -76,8 +76,7 @@ function RouteComponent() {
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
     if (mode === "ADD_TO_CART") {
       if (product?._id && Object.values(selectedVariants).includes(null) === false) {
-        addProductToCart(product?._id, { price: product?.price ?? 0, selection: selectedVariants, quantity: selectedQuantity })
-        console.log('added product to cart :', product._id)
+        addProductToCart(product?._id, { price: product?.price ?? 0, selection: Object.fromEntries(selectedVariants), quantity: selectedQuantity })
       }
     }
   }
