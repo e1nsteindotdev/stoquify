@@ -37,7 +37,12 @@ function RouteComponent() {
     sourceType = 'collections'
   else sourceType = ''
 
-  const initialSelection = new Map<string, { variantOptionId: string, variantOptionName: string }>(product?.variants.map(v => [v._id, { variantOptionId: '', variantOptionName: '' }]))
+  const initialSelection = new Map<string,
+    {
+      variantOptionId: string,
+      variantOptionName: string
+    }
+  >(product?.variants.map(v => [v._id, { variantOptionId: '', variantOptionName: '' }]))
 
   const isCartOpened = useCartStore(state => state.isCartOpened)
   const images = product?.images?.sort((a, b) => a.order - b.order) ?? []
@@ -79,7 +84,13 @@ function RouteComponent() {
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
     if (mode === "ADD_TO_CART") {
       if (product?._id && Object.values(selectedVariants).includes(null) === false) {
-        addProductToCart(product?._id, { price: product?.price ?? 0, selection: Object.fromEntries(selectedVariants), quantity: selectedQuantity })
+        console.log('adding this selection: ', Object.fromEntries(selectedVariants))
+        addProductToCart(product?._id,
+          {
+            price: product?.price ?? 0,
+            selection: Object.fromEntries(selectedVariants),
+            quantity: selectedQuantity
+          })
       }
     }
   }
@@ -170,12 +181,16 @@ function RouteComponent() {
                                     key={option._id}
                                     onClick={() => {
                                       setSelectedVariants(prev => {
-                                        prev.set(variant.name, { variantOptionName: option.name, variantOptionId: option._id })
+                                        prev.set(variant._id, { variantOptionName: option.name, variantOptionId: option._id })
                                         return new Map(prev)
                                       })
                                     }}
                                     className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
-                                  ${selectedVariants.get(variant.name)?.variantOptionName === option.name ? "text-primary border-primary bg-primary/5" : "border-white"} `}
+                                    ${selectedVariants
+                                        .get(variant._id)
+                                        ?.variantOptionName === option.name
+                                        ? "text-primary border-primary bg-primary/5"
+                                        : "border-white"} `}
                                   >
                                     {option.name}
                                   </button>

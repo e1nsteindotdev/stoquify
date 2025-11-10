@@ -11,6 +11,7 @@ import { api } from "api/convex";
 import { CartIcon } from "./icons/cart-icon";
 import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export function Cart() {
   const toggleCart = useCartStore((state) => state.toggleCart);
@@ -18,10 +19,6 @@ export function Cart() {
   const cart = useCartStore((state) => state.cart);
   const products = useQuery(api.products.listProducts)
   const totalCost = Array.from(cart).map(([_, product]) => product.quantity * product.price).reduce((current, prev) => current + prev, 0)
-  console.log('cart :', cart)
-
-  async function handleOrder() {
-  }
 
   return (
     <Sheet
@@ -106,12 +103,13 @@ export function Cart() {
           </div>
 
           <SheetFooter className="p-0 pt-4.5 ">
-            <Button
+            <Link
+              to={'/checkout'}
               type="submit"
               className="text-white rounded-lg py-5 uppercase font-inter font-bold tracking-wide"
             >
               ORDER NOW!
-            </Button>
+            </Link>
             <SheetClose asChild>
               <Button className="bg-red-200 hover:bg-red-300 text-[#D20909]">Close</Button>
             </SheetClose>

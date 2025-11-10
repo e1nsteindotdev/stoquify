@@ -19,7 +19,7 @@ type Store = {
   removeProductFromCart: (productId: Id<'products'>) => void,
   changeProduct: (productId: Id<'products'>, content: CartContentType) => void
   isCartOpened: boolean,
-  toggleCart: () => void
+  toggleCart: () => void,
 }
 
 export const useCartStore = create<Store>((set) => ({
@@ -45,7 +45,7 @@ export const useCartStore = create<Store>((set) => ({
     cart.set(productId, content)
     persistCart(cart)
     return { cart: new Map(cart) }
-  })
+  }),
 }))
 
 function persistCart(cart: CartType) {
@@ -59,5 +59,10 @@ function loadCart() {
   return cart
 }
 
-
+export const getTotal = () => {
+  const cart = useCartStore(state => state.cart)
+  let result = 0;
+  cart.forEach(v => { result = v.quantity * v.price })
+  return result
+}
 

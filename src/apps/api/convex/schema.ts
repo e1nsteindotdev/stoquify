@@ -86,17 +86,17 @@ const schema = defineSchema({
     firstName: v.string(),
     lastName: v.string(),
     phoneNumber: v.number(),
-    lastestAdress: v.id('addresses')
+    lastestAdressId: v.id('addresses')
   }),
 
   addresses: defineTable({
     wilayaId: v.id('wilayat'),
-    fullAddress: v.string()
+    address: v.string()
   }),
 
   orders: defineTable({
     customerId: v.id('customers'),
-    orderContent: v.array(
+    order: v.array(
       v.object({
         quantity: v.number(),
         productId: v.id('products'),
@@ -107,9 +107,9 @@ const schema = defineSchema({
         })),
       })
     ),
-    address: v.id('addresses'),
+    addressId: v.id('addresses'),
     deliveryCost: v.number(),
-    totalCost: v.number(),
+    subTotalCost: v.number(),
   })
 });
 
