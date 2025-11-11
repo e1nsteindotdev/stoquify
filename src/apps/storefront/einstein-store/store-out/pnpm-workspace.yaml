@@ -1,7 +1,0 @@
-packages:
-  - src/apps/*
-  - src/apps/dashboard/*
-  - src/apps/storefronts/einstein-store
-  - src/packages/*
-
-nodeLinker: hoisted
