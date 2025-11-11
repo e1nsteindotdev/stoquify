@@ -1,7 +1,7 @@
 "use node"
-import { v, Infer } from "convex/values";
-import { Doc, Id } from "../_generated/dataModel";
-import { MutationCtx, QueryCtx } from "../_generated/server";
+import { v, type Infer } from "convex/values";
+import { type Id } from "../_generated/dataModel";
+import { type MutationCtx, type QueryCtx } from "../_generated/server";
 
 const convextVariantType = v.array(v.object({
   _id: v.optional(v.id("variants")),

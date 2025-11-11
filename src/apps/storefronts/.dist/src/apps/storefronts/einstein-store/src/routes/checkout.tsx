@@ -9,14 +9,16 @@ import {
 } from "@/components/ui/select"
 
 import { useForm } from "@tanstack/react-form"
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { getTotal, useCartStore } from "@/lib/state";
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from 'api/convex';
 import { XIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import type { Id } from 'api/data-model';
 
-export const Route = createFileRoute('/check')({
+
+export const Route = createFileRoute('/checkout')({
   component: RouteComponent,
 })
 
@@ -24,13 +26,14 @@ function RouteComponent() {
   const products = useQuery(api.products.listProducts)
   const removeProductFromCart = useCartStore((state) => state.removeProductFromCart);
   const cart = useCartStore((state) => state.cart);
-
   return (
     <div className=''>
       {/* navbar  */}
-      <div className='mx-auto w-full border-b-white border-1 py-6 flex justify-center bg-white/40'>
+      <Link
+        to={"/"}
+        className='mx-auto w-full border-b-white border-1 py-6 flex justify-center bg-[#EAEAEA]'>
         <Image src="/logo.svg" className="h-[30px]" />
-      </div>
+      </Link>
 
       <div className='flex justify-center min-h-screen'>
 
@@ -40,9 +43,9 @@ function RouteComponent() {
         {/* summary  */}
 
         <div className='flex-1 flex justify-start'>
-          <div className='w-[300px] lg:w-[600px] h-[800px] flex flex-col justify-between px-20 pt-8 order-2 font-inter relative'>
+          <div className='w-[300px] lg:w-[600px] h-[800px] flex flex-col justify-between px-20 my-8 order-2 font-inter relative'>
 
-            <div className='h-full w-[1px] bg-black absolute left-14 top-10' />
+            <div className='h-full w-[1px] bg-black absolute left-14 top-0' />
 
             {/* upper part */}
             <div>
@@ -86,7 +89,7 @@ function RouteComponent() {
 
 
             {/* lower part  */}
-            <div className='flex flex-col gap-3 text-[14px] uppercase'>
+            <div className='flex flex-col gap-2 text-[14px] uppercase border-t-1 border-black pt-3'>
               <div className='w-full flex justify-between'>
                 <p className='font-bold'>SUBTOTAL</p>
                 <p>{getTotal()} DA</p>
@@ -97,6 +100,10 @@ function RouteComponent() {
                 <p>400 DA</p>
               </div>
 
+              <div className='w-full  text-[18px] flex justify-between pt-2 mt-3 border-t-1 border-black/40 border-dashed'>
+                <p className='font-black'>TOTAL</p>
+                <p className='font-black'>{getTotal() + 400} DA</p>
+              </div>
             </div>
 
           </div>
@@ -109,22 +116,43 @@ function RouteComponent() {
 
 
 function OrderForm() {
+  const sendOrder = useMutation(api.order.placeOrder)
+  const cart = useCartStore((state) => state.cart);
+  const cartArray = Array.from(cart)
+
   const form = useForm({
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      phoneNumber: '',
-      wilaya: '',
-      address: ''
+      firstName: 'Abdelmajid',
+      lastName: 'Tebboun',
+      phoneNumber: 540228402,
+      wilaya: 'Algiers',
+      address: 'Belfort, el harrach'
     },
-    onSubmit: async (values) => {
-      console.log('values :', values)
+    onSubmit: async ({ value: { firstName, lastName, phoneNumber, address, wilaya } }) => {
+      const data = {
+        firstName,
+        lastName,
+        phoneNumber,
+        address,
+        wilaya,
+        order: cartArray.map(([productId, content]) => ({
+          quantity: content.quantity,
+          productId,
+          price: content.price,
+          selection: Object.entries(content.selection).map(([key, value]) => ({
+            variantOptionId: value.variantOptionId as Id<'variantOptions'>,
+            variantId: key as Id<'variants'>
+          }))
+        }))
+      }
+      console.log('form data : ', data)
+      sendOrder(data)
     }
   })
   const wilayat = useQuery(api.order.getWilayat)
   return (
-    <div className='flex-1 flex justify-end bg-white/40 border-r-1 border-white'>
-      <div className='py-8 lg:px-20 lg:w-[600px] font-inter'>
+    <div className='flex-1 flex justify-end bg-[#EAEAEA] border-r-1 border-white'>
+      <div className='my-8 lg:px-20 lg:w-[600px] lg:h-[800px] font-inter'>
         <p className='text-[25px] font-bold uppercase'>Complete order</p>
         <form
           onSubmit={(e) => {
@@ -132,7 +160,7 @@ function OrderForm() {
             e.stopPropagation()
             form.handleSubmit()
           }}
-          className='space-y-20'
+          className='flex flex-col h-full justify-between'
         >
           <div className='flex flex-col gap-6 pt-8'>
 
@@ -166,7 +194,16 @@ function OrderForm() {
             </div>
             <div className='space-y-2'>
               <p className='text-[14px] font-semibold'>Numero Tel</p>
-              <Input placeholder='phone number' />
+              <form.Field
+                name="phoneNumber"
+                children={(field) => (
+                  <Input
+                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                    placeholder='0540228402'
+                    value={field.state.value}
+                  />
+                )}
+              />
             </div>
 
 
@@ -209,14 +246,11 @@ function OrderForm() {
               />
             </div>
 
-
-
           </div>
 
-          <button className='w-full bg-primary rounded-2xl py-2 text-white font-semibold'>Complete order</button>
+          <button className='w-full bg-primary rounded-2xl py-2 text-white font-semibold mb-8'>Complete order</button>
         </form>
       </div>
     </div>
   )
-
 } 
