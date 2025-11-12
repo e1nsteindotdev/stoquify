@@ -28,6 +28,7 @@
     "dev": {
       "cache": false,
       "persistent": true
-    }
+    },
+    "deploy": {}
   }
 }

@@ -87,7 +87,7 @@ export async function deleteVariantsInventory(ctx: MutationCtx, productId: Id<'p
 
 export async function insertVariants(ctx: MutationCtx, variants: TVariant, productId: Id<'products'>) {
   variants = variants.sort((a, b) => a.order - b.order)
-  let pastVariantId = undefined;
+  let pastVariantId: undefined | Id<'variants'> = undefined;
   for (let v of variants) {
     // insert variants
     const newVariantId: Id<"variants"> = await ctx.db.insert("variants", {

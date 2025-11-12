@@ -1,0 +1,15 @@
+{
+  "name": "einstein-store",
+  "compatibility_date": "2025-04-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "VITE_CONVEX_URL": "https://outstanding-bison-86.convex.cloud"
+      }
+    }
+  }
+}

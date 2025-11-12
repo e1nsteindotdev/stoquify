@@ -1,6 +1,5 @@
 import { Outlet, createRootRoute, redirect } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ConvexReactClient } from "convex/react";
 import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
@@ -12,6 +11,8 @@ import { AuthForm } from "@/components/forms/auth/auth-form";
 
 
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
+console.log('vars :', import.meta.env)
+
 if (!CONVEX_URL) {
   throw new Error("convex url doesn't exist in env")
 }
