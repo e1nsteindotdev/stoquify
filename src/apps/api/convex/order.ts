@@ -62,18 +62,25 @@ export const placeOrder = mutation({
     }
     if (!customer) return new Error('couldnt create customer for some reason')
 
-    else
-      await ctx.db.patch(customer._id, { lastestAdressId: newAddressId })
+    // Update customer info with latest data
+    await ctx.db.patch(customer._id, {
+      firstName,
+      lastName,
+      lastestAdressId: newAddressId
+    })
 
     const products = await Promise.all(
       order.map(v => ctx.db.get(v.productId))
     )
-    const subTotalCost = products.map(p => {
+    const subTotalCostArr = products.map(p => {
       if (p?.price) {
         const quantity = order.find(o => o?.productId === p?._id)?.quantity ?? 0
         return p.price * quantity
       } else return 0
-    }).reduce((acc, current) => acc + current,)
+    })
+    const subTotalCost = subTotalCostArr.length > 0
+      ? subTotalCostArr.reduce((acc, current) => acc + current)
+      : 0
     console.log('calculated the total cost :', subTotalCost)
 
     // finally place the order
@@ -82,16 +89,98 @@ export const placeOrder = mutation({
       customerId: customer._id,
       addressId: newAddressId,
       deliveryCost: fullWilaya.deliveryCost,
-      subTotalCost
+      subTotalCost,
+      status: 'pending',
+      createdAt: Date.now()
     })
     console.log('ordered placed correctly :', placedOrder)
 
-    return 'success'
+    return placedOrder
   }
 })
 
 export const getWilayat = query({
   handler: async (ctx) => {
     return await ctx.db.query('wilayat').collect()
+  }
+})
+
+export const listOrders = query({
+  handler: async (ctx) => {
+    const orders = await ctx.db.query('orders')
+      .collect()
+
+    // Sort by createdAt descending
+    const sortedOrders = orders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+
+    return await Promise.all(sortedOrders.map(async (order) => {
+      const customer = await ctx.db.get(order.customerId)
+      const address = await ctx.db.get(order.addressId)
+      const wilaya = address ? await ctx.db.get(address.wilayaId) : null
+
+      return {
+        ...order,
+        customer,
+        address: address ? {
+          ...address,
+          wilaya
+        } : null
+      }
+    }))
+  }
+})
+
+export const getOrder = query({
+  args: { orderId: v.id('orders') },
+  handler: async (ctx, { orderId }) => {
+    const order = await ctx.db.get(orderId)
+    if (!order) return null
+
+    const customer = await ctx.db.get(order.customerId)
+    const address = await ctx.db.get(order.addressId)
+    const wilaya = address ? await ctx.db.get(address.wilayaId) : null
+
+    const orderItems = await Promise.all(order.order.map(async (item) => {
+      const product = await ctx.db.get(item.productId)
+      const selections = await Promise.all(item.selection.map(async (sel) => {
+        const variant = await ctx.db.get(sel.variantId)
+        const variantOption = await ctx.db.get(sel.variantOptionId)
+        return {
+          variant,
+          variantOption
+        }
+      }))
+      return {
+        ...item,
+        product,
+        selections
+      }
+    }))
+
+    return {
+      ...order,
+      customer,
+      address: address ? {
+        ...address,
+        wilaya
+      } : null,
+      order: orderItems
+    }
+  }
+})
+
+export const confirmOrder = mutation({
+  args: { orderId: v.id('orders') },
+  handler: async (ctx, { orderId }) => {
+    await ctx.db.patch(orderId, { status: 'confirmed' })
+    return 'success'
+  }
+})
+
+export const denyOrder = mutation({
+  args: { orderId: v.id('orders') },
+  handler: async (ctx, { orderId }) => {
+    await ctx.db.patch(orderId, { status: 'denied' })
+    return 'success'
   }
 })

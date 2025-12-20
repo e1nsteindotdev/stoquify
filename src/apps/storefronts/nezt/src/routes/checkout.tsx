@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select"
 
 import { useForm } from "@tanstack/react-form"
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { getTotal, useCartStore } from "@/lib/state";
 import { useMutation, useQuery } from 'convex/react';
 import { api } from 'api/convex';
@@ -31,21 +31,26 @@ function RouteComponent() {
       {/* navbar  */}
       <Link
         to={"/"}
-        className='mx-auto w-full border-b-white border-1 py-6 flex justify-center bg-[#EAEAEA]'>
+        className='mx-auto w-full border-b-white border-b-1 py-6 flex justify-center bg-[#EAEAEA]'>
         <Image src="/logo.svg" className="h-[30px]" />
       </Link>
 
-      <div className='flex justify-center min-h-screen'>
+      <div className='flex flex-col gap-5 lg:gap-0 lg:flex-row justify-center min-h-screen pb-20'>
 
         {/* form */}
-        <OrderForm />
+        <div className='order-3 lg:order-1'>
+          <OrderForm />
+        </div>
+
+
+        <div className='w-[95%] mx-auto h-[1px]  bg-black order-2 lg:hidden' />
 
         {/* summary  */}
 
-        <div className='flex-1 flex justify-start'>
-          <div className='w-[300px] lg:w-[600px] h-[800px] flex flex-col justify-between px-20 my-8 order-2 font-inter relative'>
+        <div className='flex-1 flex justify-start order-1 lg:order-1'>
+          <div className='w-full lg:w-[600px] lg:h-[800px] gap-40 lg:gap-0 flex flex-col justify-between px-10 lg:px-20 my-8 order-2 font-inter relative'>
 
-            <div className='h-full w-[1px] bg-black absolute left-14 top-0' />
+            <div className='h-full w-[1px] bg-black absolute left-5 lg:left-14 top-0' />
 
             {/* upper part */}
             <div>
@@ -109,6 +114,7 @@ function RouteComponent() {
           </div>
         </div>
 
+
       </div>
     </div>
   )
@@ -118,7 +124,9 @@ function RouteComponent() {
 function OrderForm() {
   const sendOrder = useMutation(api.order.placeOrder)
   const cart = useCartStore((state) => state.cart);
+  const removeProductFromCart = useCartStore((state) => state.removeProductFromCart);
   const cartArray = Array.from(cart)
+  const navigate = useNavigate()
 
   const form = useForm({
     defaultValues: {
@@ -146,12 +154,23 @@ function OrderForm() {
         }))
       }
       console.log('form data : ', data)
-      sendOrder(data)
+      const orderId = await sendOrder(data)
+      if (orderId) {
+        // Clear cart
+        cartArray.forEach(([productId]) => {
+          removeProductFromCart(productId)
+        })
+        // Navigate to success page
+        navigate({ to: '/order-success', search: { orderId } })
+      }
     }
   })
   const wilayat = useQuery(api.order.getWilayat)
   return (
-    <div className='flex-1 flex justify-end bg-[#EAEAEA] border-r-1 border-white'>
+    <div className='relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white px-10 overflow-clip'>
+
+      <div className='h-full w-[1px] bg-black absolute left-5 lg:left-14 bottom-0' />
+
       <div className='my-8 lg:px-20 lg:w-[600px] lg:h-[800px] font-inter'>
         <p className='text-[25px] font-bold uppercase'>Complete order</p>
         <form
@@ -235,7 +254,7 @@ function OrderForm() {
             <div className='space-y-2'>
               <p className='text-[14px] font-semibold'>Address</p>
               <form.Field
-                name="firstName"
+                name="address"
                 children={(field) => (
                   <Input
                     onChange={(e) => field.handleChange(e.target.value)}

@@ -43,14 +43,16 @@ const schema = defineSchema({
       v.literal("by_number")
     ),
     quantity: v.optional(v.number()),
-    images: v.optional(v.array(
-      v.object({
-        storageId: v.id('_storage'),
-        url: v.optional(v.string()),
-        order: v.number(),
-        hidden: v.boolean(),
-      })
-    )),
+    images: v.optional(
+      v.array(
+        v.object({
+          storageId: v.id("_storage"),
+          url: v.optional(v.string()),
+          order: v.number(),
+          hidden: v.boolean(),
+        })
+      )
+    ),
   }).index("by_store", ["storeId"]),
 
   variants: defineTable({
@@ -63,54 +65,62 @@ const schema = defineSchema({
   variantOptions: defineTable({
     name: v.string(),
     variantId: v.id("variants"),
-  }).index("by_variantId", ['variantId']),
+  }).index("by_variantId", ["variantId"]),
 
   variantsInventory: defineTable({
-    productId: v.id('products'),
+    productId: v.id("products"),
     path: v.array(v.string()),
-    quantity: v.number()
+    quantity: v.number(),
   }).index("by_productId", ["productId"]),
 
   collections: defineTable({
     title: v.string(),
-    productIds: v.optional(v.array(v.id('products')))
+    productIds: v.optional(v.array(v.id("products"))),
   }),
 
   wilayat: defineTable({
     name: v.string(),
     htmlName: v.string(),
-    deliveryCost: v.number()
+    deliveryCost: v.number(),
   }),
 
   customers: defineTable({
     firstName: v.string(),
     lastName: v.string(),
     phoneNumber: v.number(),
-    lastestAdressId: v.id('addresses')
-  }),
+    lastestAdressId: v.id("addresses"),
+  }).index("by_phone", ["phoneNumber"]),
 
   addresses: defineTable({
-    wilayaId: v.id('wilayat'),
-    address: v.string()
+    wilayaId: v.id("wilayat"),
+    address: v.string(),
   }),
 
   orders: defineTable({
-    customerId: v.id('customers'),
+    customerId: v.id("customers"),
     order: v.array(
       v.object({
         quantity: v.number(),
-        productId: v.id('products'),
+        productId: v.id("products"),
         price: v.number(),
-        selection: v.array(v.object({
-          variantId: v.id('variants'),
-          variantOptionId: v.id('variantOptions'),
-        })),
+        selection: v.array(
+          v.object({
+            variantId: v.id("variants"),
+            variantOptionId: v.id("variantOptions"),
+          })
+        ),
       })
     ),
-    addressId: v.id('addresses'),
+    addressId: v.id("addresses"),
     deliveryCost: v.number(),
     subTotalCost: v.number(),
-  })
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("denied")
+    ),
+    createdAt: v.number(),
+  }).index("by_customer", ["customerId"]),
 });
 
 export default schema;

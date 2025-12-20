@@ -16,6 +16,8 @@ import { Route as DashboardClientsIndexRouteImport } from './routes/_dashboard/c
 import { Route as DashboardanalyticsIndexRouteImport } from './routes/_dashboard/(analytics)/index'
 import { Route as DashboardProduitsCreateRouteImport } from './routes/_dashboard/produits/create'
 import { Route as DashboardProduitsSlugRouteImport } from './routes/_dashboard/produits/$slug'
+import { Route as DashboardCommandesSlugRouteImport } from './routes/_dashboard/commandes/$slug'
+import { Route as DashboardClientsSlugRouteImport } from './routes/_dashboard/clients/$slug'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/_dashboard',
@@ -51,8 +53,20 @@ const DashboardProduitsSlugRoute = DashboardProduitsSlugRouteImport.update({
   path: '/produits/$slug',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCommandesSlugRoute = DashboardCommandesSlugRouteImport.update({
+  id: '/commandes/$slug',
+  path: '/commandes/$slug',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
+  id: '/clients/$slug',
+  path: '/clients/$slug',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/clients/$slug': typeof DashboardClientsSlugRoute
+  '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
   '/produits/create': typeof DashboardProduitsCreateRoute
   '/': typeof DashboardanalyticsIndexRoute
@@ -61,6 +75,8 @@ export interface FileRoutesByFullPath {
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/clients/$slug': typeof DashboardClientsSlugRoute
+  '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
   '/produits/create': typeof DashboardProduitsCreateRoute
   '/': typeof DashboardanalyticsIndexRoute
@@ -71,6 +87,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
+  '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
+  '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
   '/_dashboard/produits/create': typeof DashboardProduitsCreateRoute
   '/_dashboard/(analytics)/': typeof DashboardanalyticsIndexRoute
@@ -81,6 +99,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/clients/$slug'
+    | '/commandes/$slug'
     | '/produits/$slug'
     | '/produits/create'
     | '/'
@@ -89,6 +109,8 @@ export interface FileRouteTypes {
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/clients/$slug'
+    | '/commandes/$slug'
     | '/produits/$slug'
     | '/produits/create'
     | '/'
@@ -98,6 +120,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_dashboard'
+    | '/_dashboard/clients/$slug'
+    | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
     | '/_dashboard/produits/create'
     | '/_dashboard/(analytics)/'
@@ -161,10 +185,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardProduitsSlugRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/commandes/$slug': {
+      id: '/_dashboard/commandes/$slug'
+      path: '/commandes/$slug'
+      fullPath: '/commandes/$slug'
+      preLoaderRoute: typeof DashboardCommandesSlugRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/clients/$slug': {
+      id: '/_dashboard/clients/$slug'
+      path: '/clients/$slug'
+      fullPath: '/clients/$slug'
+      preLoaderRoute: typeof DashboardClientsSlugRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardClientsSlugRoute: typeof DashboardClientsSlugRoute
+  DashboardCommandesSlugRoute: typeof DashboardCommandesSlugRoute
   DashboardProduitsSlugRoute: typeof DashboardProduitsSlugRoute
   DashboardProduitsCreateRoute: typeof DashboardProduitsCreateRoute
   DashboardanalyticsIndexRoute: typeof DashboardanalyticsIndexRoute
@@ -174,6 +214,8 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardClientsSlugRoute: DashboardClientsSlugRoute,
+  DashboardCommandesSlugRoute: DashboardCommandesSlugRoute,
   DashboardProduitsSlugRoute: DashboardProduitsSlugRoute,
   DashboardProduitsCreateRoute: DashboardProduitsCreateRoute,
   DashboardanalyticsIndexRoute: DashboardanalyticsIndexRoute,

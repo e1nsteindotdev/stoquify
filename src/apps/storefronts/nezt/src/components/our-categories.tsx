@@ -76,7 +76,7 @@ function Category({ category, products, index, categoriesLength }:
               ${index % 2 === 0 ? 'text-end' : 'text-start'}`}>
               {products?.map((p, i) =>
                 p.categoryId === category._id
-                && <p className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1] ${selectedProduct?._id === p._id ? 'opacity-100' : "opacity-30"}`} >
+                && <p className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1.2] ${selectedProduct?._id === p._id ? 'opacity-100' : "opacity-30"}`} >
                   {p.title}</p>)}
             </div>
           </div>

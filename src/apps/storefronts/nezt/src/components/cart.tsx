@@ -53,8 +53,8 @@ export function Cart() {
           <div className="absolute h-full w-[1px] bg-black right-2" />
 
           <p className="text-[41px] font-display text-primary">CART</p>
-          <div className="flex flex-col justify-between h-full gap-3 mb-2">
-            <div className="flex flex-col gap-3">
+          <div className="flex flex-col justify-between h-full gap-3 mb-2 ">
+            <div className="flex flex-col gap-3 overflow-y-scroll h-[350px]">
               {cart.size === 0 ?
                 <div className="w-full"> <p className="mx-auto italic text-[14px]">Your cart is empty.</p></div>
                 :
