@@ -3,7 +3,6 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import "../App.css"
 
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
-console.log('env vars :', import.meta.env)
 if (!CONVEX_URL) {
   console.error("missing envar VITE_CONVEX_URL");
 }

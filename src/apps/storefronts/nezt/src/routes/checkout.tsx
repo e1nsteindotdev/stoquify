@@ -248,7 +248,7 @@ function OrderForm() {
 
           </div>
 
-          <button className='w-full bg-primary rounded-2xl py-2 text-white font-semibold mb-8'>Complete order</button>
+          <button className='w-full bg-primary rounded-2xl py-2 text-white font-semibold mb-8 uppercase'>Complete order</button>
         </form>
       </div>
     </div>

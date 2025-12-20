@@ -21,6 +21,7 @@ import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as order from "../order.js";
 import type * as products from "../products.js";
+import type * as test from "../test.js";
 import type * as users from "../users.js";
 
 /**
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   images: typeof images;
   order: typeof order;
   products: typeof products;
+  test: typeof test;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

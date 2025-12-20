@@ -5,6 +5,9 @@ import {
   SheetTrigger,
   SheetFooter,
   SheetClose,
+  SheetHeader,
+  SheetDescription,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { useQuery } from "convex/react";
 import { api } from "api/convex";
@@ -12,6 +15,7 @@ import { CartIcon } from "./icons/cart-icon";
 import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { Input } from "./ui/input";
 
 export function Cart() {
   const toggleCart = useCartStore((state) => state.toggleCart);
@@ -42,8 +46,9 @@ export function Cart() {
         </div>
       </SheetTrigger>
 
-      <SheetContent className="bg-global-background w-[90%] lg:w-full">
-        <div className="px-6 pt-4 h-[83%] lg:h-[85%]">
+      <SheetContent>
+
+        <div className="px-6 pt-4">
           <div className="absolute h-full w-[1px] bg-black left-2" />
           <div className="absolute h-full w-[1px] bg-black right-2" />
 
@@ -89,7 +94,13 @@ export function Cart() {
               <div className="w-full h-[1px] bg-black" />
             </div>
 
-            <div className="border-t-1 border-black pt-3">
+          </div>
+        </div>
+
+        <SheetFooter>
+          <div className="flex flex-col gap-8">
+
+            <div className="border-t-1 border-black pt-3 px-2">
               <div className="pb-2">
                 <p className="font-primary font-display text-primary leading-tighter text-[20px]">TOTAL COST</p>
                 <p className="text-[25px] font-black leading-tighter leading-[0.7]">{totalCost} DZD</p>
@@ -100,22 +111,22 @@ export function Cart() {
                 <span className="text-[12px]"> (for Algiers) <button className="underline text-black/80 italic "> change wilaya </button> </span>
               </p>
             </div>
-          </div>
 
-          <SheetFooter className="p-0 pt-4.5 ">
-            <Link
-              to={'/checkout'}
-              type="submit"
-              className="text-white rounded-lg py-5 uppercase font-inter font-bold tracking-wide"
-            >
-              ORDER NOW!
-            </Link>
-            <SheetClose asChild>
-              <Button className="bg-red-200 hover:bg-red-300 text-[#D20909]">Close</Button>
-            </SheetClose>
-          </SheetFooter>
-        </div>
+            <div className="w-full flex flex-col gap-3">
+              <Link
+                to={'/checkout'}
+                type="submit"
+                className="w-full"
+              >
+                <Button className="rounded-3xl font-inter font-bold text-white w-full py-4">ORDER NOW</Button>
+              </Link>
+              <SheetClose asChild>
+                <Button className="bg-red-200 hover:bg-red-300 text-[#D20909] rounded-3xl">Close</Button>
+              </SheetClose>
+            </div>
+          </div>
+        </SheetFooter>
       </SheetContent>
-    </Sheet>
+    </Sheet >
   );
 }

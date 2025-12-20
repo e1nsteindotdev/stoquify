@@ -9,6 +9,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 export function OurCategories() {
   const categories = useQuery(api.categories.listCategories)
   const products = useQuery(api.products.listProducts)
+
   return (
     <div className="flex flex-col pt-6">
       <div className="relative mx-auto">

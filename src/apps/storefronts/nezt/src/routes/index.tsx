@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
 import { Header, HeaderAnonc, Navbar } from "@/components/navbar";
 import { OurCategories } from "@/components/our-categories";
 import { Bande } from "@/components/ui/bande";
@@ -10,7 +8,6 @@ import { Livraison } from "@/components/livraison";
 import { FAQs } from "@/components/faq";
 import { OurCollections } from "@/components/our-collections";
 import { Footer } from "@/components/footer";
-import { DashedSeperator } from "@/components/ui/dashed-seperator";
 
 export const Route = createFileRoute("/")({
   component: Home,

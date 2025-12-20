@@ -6,6 +6,7 @@ export const generateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl();
   },
 });
+
 export const getUrl = mutation({
   args: {
     storageId: v.id("_storage")

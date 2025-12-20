@@ -9,6 +9,8 @@ import { Cart } from "./cart"
 
 export function Navbar() {
   const categories = useQuery(api.categories.listCategories)
+  const test = useQuery(api.test.test)
+  console.log('test value :', test)
   return <div className="flex items-center w-full py-3 lg:py-4 px-ip border-b-1 border-seperator">
     <Link to="/" className="mr-auto h-full" >
       <Image src="/logo.svg" className="h-full" />
