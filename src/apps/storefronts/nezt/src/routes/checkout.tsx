@@ -10,6 +10,7 @@ import {
 
 import { useForm } from "@tanstack/react-form"
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { LoadingSpinner } from '@/components/loading-spinner';
 import { getTotal, useCartStore } from "@/lib/state";
 import { useMutation, useQuery } from 'convex/react';
 import { api } from 'api/convex';
@@ -50,7 +51,7 @@ function RouteComponent() {
               <div className="flex flex-col gap-3 pt-3 lg:pt-4">
                 {Array.from(cart.keys()).map((key) => {
                   const product = products?.find((product) => product?._id === key);
-                  if (!product) return <p key={key}>chargement...</p>;
+                  if (!product) return <LoadingSpinner size={20} key={key} className="py-2" />;
                   return (
                     <div key={key} className="flex gap-2 text-[14px] py-3 border-t-1 border-black">
                       <img

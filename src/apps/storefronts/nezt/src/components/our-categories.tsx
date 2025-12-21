@@ -198,7 +198,6 @@ function Category({
                 className={`bg-[#F1F1F1] h-full w-full object-cover transition-all ease-in-out duration-1000 absolute 
                 ${!isSelected ? "opacity-0" : "opacity-100"}`}
                 src={imageToShow}
-                alt="no image"
               />
             );
           })}

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useConvex } from "convex/react";
 import { api } from "api/convex";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDashboardStore } from "@/hooks/use-dashboard-store";
 import {
   ChartContainer,
   ChartTooltip,
@@ -29,10 +30,32 @@ export const Route = createFileRoute("/_dashboard/(analytics)/")({
 
 function Page() {
   const [period, setPeriod] = useState<TimePeriod>("today");
+  const convex = useConvex();
+  const { analytics, setAnalytics } = useDashboardStore();
 
-  const salesData = useQuery(api.analytics.getSalesData, { period });
-  const salesByPeriod = useQuery(api.analytics.getSalesByTimePeriod, { period });
-  const productPerformance = useQuery(api.analytics.getProductPerformance, { period });
+  const cache = analytics[period] || {};
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!cache.salesData) {
+        const data = await convex.query(api.analytics.getSalesData, { period });
+        setAnalytics(period, "salesData", data);
+      }
+      if (!cache.salesByPeriod) {
+        const data = await convex.query(api.analytics.getSalesByTimePeriod, { period });
+        setAnalytics(period, "salesByPeriod", data);
+      }
+      if (!cache.productPerformance) {
+        const data = await convex.query(api.analytics.getProductPerformance, { period });
+        setAnalytics(period, "productPerformance", data);
+      }
+    };
+    fetchData();
+  }, [period, cache, convex, setAnalytics]);
+
+  const salesData = cache.salesData;
+  const salesByPeriod = cache.salesByPeriod;
+  const productPerformance = cache.productPerformance;
 
   const chartConfig = {
     online: {

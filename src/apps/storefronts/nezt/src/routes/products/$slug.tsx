@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useCartStore } from '@/lib/state';
 import { AnimatePresence, motion } from 'motion/react';
+import { LoadingScreen } from '@/components/loading-spinner';
 
 
 export const Route = createFileRoute('/products/$slug')({
@@ -57,8 +58,7 @@ function RouteComponent() {
 
   const navigation = useNavigate()
 
-
-  if (!product) return <div> Chargement...</div>
+  if (!product) return <LoadingScreen />
   const header = (
     <div className='flex-col items-start gap-1 hidden lg:flex'>
       {sourceType &&
@@ -347,4 +347,3 @@ function FuckingButton({ handleSubmit }: { handleSubmit: any }) {
     </motion.button>
   )
 }
-

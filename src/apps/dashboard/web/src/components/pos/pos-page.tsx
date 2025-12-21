@@ -109,9 +109,9 @@ export default function POSPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Cart Side */}
-        <div className="w-1/3 border-r flex flex-col bg-muted/30">
+        <div className="w-full md:w-1/3 border-r flex flex-col bg-muted/30">
           <div className="p-4 border-b bg-card flex items-center justify-between">
             <h2 className="font-semibold flex items-center gap-2">
               <IconShoppingCart className="size-5" /> Panier
@@ -175,14 +175,19 @@ export default function POSPage() {
         </div>
 
         {/* Content Side */}
-        <div className="flex-1 flex flex-col p-6 bg-background relative">
+        <div className={`
+          flex-1 flex flex-col bg-background z-10
+          ${showProductSelector 
+            ? "fixed inset-0 pt-16 md:relative md:pt-0" 
+            : "hidden md:flex md:relative"}
+        `}>
           {!showProductSelector ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-50">
+            <div className="hidden md:flex flex-1 flex-col items-center justify-center text-muted-foreground opacity-50">
                <IconShoppingCart className="size-24 mb-4" />
                <p className="text-xl">Cliquez sur "Ajouter un produit" pour commencer</p>
             </div>
           ) : (
-            <div className="h-full flex flex-col transition-all">
+            <div className="h-full flex flex-col transition-all p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">
                   {!selectedCategory ? "Choisir une catégorie" : categories?.find(c => c._id === selectedCategory)?.name}

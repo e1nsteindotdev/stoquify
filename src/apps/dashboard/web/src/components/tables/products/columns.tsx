@@ -23,7 +23,7 @@ export const columns: ColumnDef<ProductRow>[] = [
           />
         ) : (
           <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
-            {row.original.title.slice(0, 2)}
+            {row.original.title?.slice(0, 2)}
           </div>
         )}
       </div>

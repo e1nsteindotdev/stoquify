@@ -1,7 +1,7 @@
 # TODOS
 - [X] Add cart functionality
 - [X] Add full ordering system
-- [ ] Add animations to the storefront
+- [X] Add animations to the storefront
 - [ ] Make the whole app a PWA and finish its ui
 - [ ] Simple POS
 - [ ] Simple analytics

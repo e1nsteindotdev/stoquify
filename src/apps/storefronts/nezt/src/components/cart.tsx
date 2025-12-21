@@ -12,6 +12,7 @@ import { CartIcon } from "./icons/cart-icon";
 import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { LoadingSpinner } from "./loading-spinner";
 
 export function Cart() {
   const toggleCart = useCartStore((state) => state.toggleCart);
@@ -56,7 +57,7 @@ export function Cart() {
                 :
                 Array.from(cart.keys()).map((key) => {
                   const product = products?.find((product) => product?._id === key);
-                  if (!product) return <p key={key}>chargement...</p>;
+                  if (!product) return <LoadingSpinner size={20} key={key} className="py-2" />;
                   return (
                     <div key={key} className="border-t-1 border-black flex pt-3 gap-2 text-[14px]">
                       <img

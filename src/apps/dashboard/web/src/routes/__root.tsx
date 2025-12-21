@@ -52,11 +52,12 @@ function AuthWrapper({ children }) {
   );
 }
 
+import { ClipLoader } from "react-spinners";
+
 function LoadingScreen() {
   return (
     <div className="h-screen center">
-      <p className="italic font-bold text-4xl">Chargement....</p>
+       <ClipLoader color="#000" size={50} />
     </div>
-
   )
 }

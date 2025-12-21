@@ -1,15 +1,36 @@
 import { columns, type ProductRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useQuery, useMutation } from "convex/react";
+import { useConvex, useMutation } from "convex/react";
+import { useDashboardStore } from "@/hooks/use-dashboard-store";
+import { useEffect, useState } from "react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
 export function ProductsTable() {
-  const products = useQuery(api.products.listAllProduts) ?? [];
+  const convex = useConvex();
+  const products = useDashboardStore((state) => state.products);
+  const setProducts = useDashboardStore((state) => state.setProducts);
+  const [loading, setLoading] = useState(!products);
   const deleteProduct = useMutation(api.products.removeProduct);
 
-  const rows: ProductRow[] = products.map((p: any) => ({
+  useEffect(() => {
+    if (!products) {
+      const fetchProducts = async () => {
+        try {
+          const data = await convex.query(api.products.listAllProduts);
+          setProducts(data);
+        } catch (error) {
+          console.error("Failed to fetch products:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProducts();
+    }
+  }, [products, convex, setProducts]);
+
+  const rows: ProductRow[] = (products ?? []).map((p: any) => ({
     _id: p._id,
     title: p.title,
     price: p.price,
@@ -25,6 +46,9 @@ export function ProductsTable() {
     if (button) {
       const id = button.getAttribute("data-product-id") as any;
       await deleteProduct({ id });
+      if (products) {
+        setProducts(products.filter((p: any) => p._id !== id));
+      }
     }
   };
 

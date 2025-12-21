@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,16 @@ type TVariant = {
     name: string;
   }[];
 };
-export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string, options: string[]) => void }) {
+export function NewVariantForm({ addNewVariant, isEmpty }: { isEmpty?: boolean, addNewVariant: (name: string, options: string[]) => void }) {
   const [isModifying, setIsModifying] = useState<boolean>(false);
   const [variantName, setVariantName] = useState<string | null>();
-  const [options, setOptions] = useState<string[] | null>();
+  const [options, setOptions] = useState<string[]>([]);
+  useEffect(() => {
+    if (isEmpty) {
+      setVariantName('Taille')
+      setOptions(['S', 'M', 'L', 'XL'])
+    }
+  }, [isEmpty])
 
   function handleAddOption() {
     setOptions((prev) => {
@@ -38,11 +44,10 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
 
   function handleOptionChange(index: number, value: string) {
     setOptions((prev) => {
-      if (prev)
-        return prev.map((opt, i) => (i === index ? value : opt))
+      return prev.map((opt, i) => (i === index ? value : opt))
     });
-    const lastOption = options![options!.length - 1]
-    if (lastOption != "") {
+    const lastOption = options[options.length - 1]
+    if (index === options.length - 1 && lastOption === "") {
       handleAddOption()
     }
   }
@@ -54,11 +59,7 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
         .filter((o) => o !== "" && o);
       const name = variantName.trim();
       if (!name || cleanedOptions.length === 0) return;
-      const next: TVariant = {
-        order: 0,
-        name,
-        options: cleanedOptions.map((n) => ({ name: n })),
-      };
+
       addNewVariant(variantName, options)
       setIsModifying(false);
       setVariantName("")
@@ -73,6 +74,7 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
       return nameOk && optsOk;
     }
   }, [variantName, options]);
+
   if (isModifying) {
     return (
       <div className={cn("grid gap-2",)}>

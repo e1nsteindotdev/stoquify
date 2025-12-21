@@ -50,7 +50,7 @@ export default function VariantsField() {
         </div>
       )}
       <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-1" />
-      <NewVariantForm addNewVariant={addNewVariant} />
+      <NewVariantForm addNewVariant={addNewVariant} isEmpty={variants.length === 0} />
     </div>
   );
 }

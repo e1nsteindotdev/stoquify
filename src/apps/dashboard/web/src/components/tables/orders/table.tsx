@@ -1,12 +1,33 @@
 import { columns, type OrderRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useQuery } from "convex/react";
+import { useConvex } from "convex/react";
+import { useDashboardStore } from "@/hooks/use-dashboard-store";
+import { useEffect, useState } from "react";
 import { api } from "api/convex";
 
 export function OrdersTable() {
-  const orders = useQuery(api.order.listOrders) ?? [];
+  const convex = useConvex();
+  const orders = useDashboardStore((state) => state.orders);
+  const setOrders = useDashboardStore((state) => state.setOrders);
+  const [loading, setLoading] = useState(!orders);
 
-  const rows: OrderRow[] = orders.map((order: any) => ({
+  useEffect(() => {
+    if (!orders) {
+      const fetchOrders = async () => {
+        try {
+          const data = await convex.query(api.order.listOrders);
+          setOrders(data);
+        } catch (error) {
+          console.error("Failed to fetch orders:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchOrders();
+    }
+  }, [orders, convex, setOrders]);
+
+  const rows: OrderRow[] = (orders ?? []).map((order: any) => ({
     _id: order._id,
     customerName: order.customer
       ? `${order.customer.firstName} ${order.customer.lastName}`

@@ -31,13 +31,19 @@ import { useAuthActions } from "@convex-dev/auth/react"
 import { useQuery } from "convex/react"
 import { api } from "api/convex"
 
+import { ClipLoader } from "react-spinners"
+
 export function NavUser({ avatar }: { avatar: string }) {
 
   const { isMobile } = useSidebar()
   const { signOut } = useAuthActions()
   const user = useQuery(api.users.get);
   if (!user) {
-    return <p>Loading... </p>
+    return (
+      <div className="flex items-center justify-center p-4">
+        <ClipLoader size={20} color="hsl(var(--primary))" />
+      </div>
+    )
   }
   const name = user.name ?? "user"
   const email = user.profile?.email ?? ""
