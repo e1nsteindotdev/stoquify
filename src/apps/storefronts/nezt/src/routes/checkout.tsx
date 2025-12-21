@@ -35,30 +35,22 @@ function RouteComponent() {
         <Image src="/logo.svg" className="h-[30px]" />
       </Link>
 
-      <div className='flex flex-col gap-5 lg:gap-0 lg:flex-row justify-center min-h-screen pb-20'>
-
+      <div className='flex flex-col gap-5 lg:gap-0 lg:flex-row justify-center min-h-screen pb-20 lg:pb-0'>
         {/* form */}
-        <div className='order-3 lg:order-1'>
-          <OrderForm />
-        </div>
-
-
+        <OrderForm />
         <div className='w-[95%] mx-auto h-[1px]  bg-black order-2 lg:hidden' />
-
         {/* summary  */}
-
-        <div className='flex-1 flex justify-start order-1 lg:order-1'>
-          <div className='w-full lg:w-[600px] lg:h-[800px] gap-40 lg:gap-0 flex flex-col justify-between px-10 lg:px-20 my-8 order-2 font-inter relative'>
-
-            <div className='h-full w-[1px] bg-black absolute left-5 lg:left-14 top-0' />
+        <div className='flex-1 flex justify-start lg:px-10 order-1'>
+          <div className='w-full lg:w-[600px] lg:h-[800px] gap-40 lg:gap-0 flex flex-col justify-between px-10 lg:px-0 my-8 order-2 font-inter relative'>
+            <div className='h-full w-[1px] bg-black absolute left-5 lg:-left-5 top-0' />
 
             {/* upper part */}
             <div>
-              <p className='text-[25px] font-bold uppercase'>Summary</p>
+              <p className='text-[25px] font-bold uppercase'>REÇU</p>
               <div className="flex flex-col gap-3 pt-3 lg:pt-4">
                 {Array.from(cart.keys()).map((key) => {
                   const product = products?.find((product) => product?._id === key);
-                  if (!product) return <p key={key}>loading...</p>;
+                  if (!product) return <p key={key}>chargement...</p>;
                   return (
                     <div key={key} className="flex gap-2 text-[14px] py-3 border-t-1 border-black">
                       <img
@@ -81,7 +73,7 @@ function RouteComponent() {
 
                         <button onClick={() => removeProductFromCart(product._id)} className="text-[#D20909] bg-red-200 flex gap-2 p-1 items-center text-[10px] self-start font-semibold">
                           <XIcon size={10} />
-                          REMOVE FROM CART
+                          RETIRER DU PANIER
                         </button>
 
                       </div>
@@ -96,12 +88,12 @@ function RouteComponent() {
             {/* lower part  */}
             <div className='flex flex-col gap-2 text-[14px] uppercase border-t-1 border-black pt-3'>
               <div className='w-full flex justify-between'>
-                <p className='font-bold'>SUBTOTAL</p>
+                <p className='font-bold'>SOUS-TOTAL</p>
                 <p>{getTotal()} DA</p>
               </div>
 
               <div className='w-full flex justify-between'>
-                <p className='font-bold'>delivery</p>
+                <p className='font-bold'>livraison</p>
                 <p>400 DA</p>
               </div>
 
@@ -167,12 +159,14 @@ function OrderForm() {
   })
   const wilayat = useQuery(api.order.getWilayat)
   return (
-    <div className='relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white px-10 overflow-clip'>
+    <div className='order-3 lg:order-1 relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white overflow-clip '>
 
-      <div className='h-full w-[1px] bg-black absolute left-5 lg:left-14 bottom-0' />
+      <div className='h-full w-[1px] bg-black absolute left-5 lg:left-14 bottom-0 lg:hidden' />
 
-      <div className='my-8 lg:px-20 lg:w-[600px] lg:h-[800px] font-inter'>
-        <p className='text-[25px] font-bold uppercase'>Complete order</p>
+
+      <div className='my-8 lg:px-13 px-8 lg:w-[600px] lg:h-[800px] font-inter '>
+        <p className='text-[25px] font-bold uppercase'>Finaliser la commande</p>
+        <div className='w-full h-[1px] bg-black mt-4' />
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -267,7 +261,7 @@ function OrderForm() {
 
           </div>
 
-          <button className='w-full bg-primary rounded-2xl py-2 text-white font-semibold mb-8 uppercase'>Complete order</button>
+          <button className='w-full bg-primary rounded-2xl py-2 text-white font-semibold mb-8 uppercase'>Finaliser la commande</button>
         </form>
       </div>
     </div>

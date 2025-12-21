@@ -39,9 +39,9 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
         <div className={cn("flex flex-col gap-6", className)} {...props}>
           <Card>
             <CardHeader>
-              <CardTitle className="text-[20px]">Create a new account</CardTitle>
+              <CardTitle className="text-[20px]">Créer un nouveau compte</CardTitle>
               <CardDescription>
-                Fill the form below to create a new account
+                Remplissez le formulaire ci-dessous pour créer un nouveau compte
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -58,9 +58,9 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                     validators={{
                       onChange: ({ value }) =>
                         !value
-                          ? "A first name is required"
+                          ? "Un email est requis"
                           : value.length < 3
-                            ? "First name must be at least 3 characters"
+                            ? "L'email doit contenir au moins 3 caractères"
                             : undefined,
                     }}
                     children={(field) => {
@@ -85,16 +85,16 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                     validators={{
                       onChange: ({ value }) =>
                         !value
-                          ? "A first name is required"
+                          ? "Un nom d'entreprise est requis"
                           : value.length < 3
-                            ? "First name must be at least 3 characters"
+                            ? "Le nom d'entreprise doit contenir au moins 3 caractères"
                             : undefined,
                     }}
                     children={(field) => {
                       // Avoid hasty abstractions. Render props are great!
                       return (
                         <div className="grid gap-3">
-                          <Label htmlFor={field.name}>Name of your business</Label>
+                          <Label htmlFor={field.name}>Nom de votre entreprise</Label>
                           <Input
                             id={field.name}
                             name={field.name}
@@ -117,9 +117,9 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                       validators={{
                         onChange: ({ value }) =>
                           !value
-                            ? "A password is required"
+                            ? "Un mot de passe est requis"
                             : value.length < 3
-                              ? "A password must be at least 4 characters"
+                              ? "Le mot de passe doit contenir au moins 4 caractères"
                               : undefined,
                       }}
                       children={(field) => {
@@ -144,14 +144,14 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                   </div>
                   <div className="flex flex-col gap-3">
                     <Button type="submit" className="w-full">
-                      Sign Up
+                      S&apos;inscrire
                     </Button>
                   </div>
                 </div>
                 <div className="mt-4 text-center text-sm">
-                  Already have an Account?{" "}
+                  Vous avez déjà un compte ?{" "}
                   <button onClick={() => setStep("signIn")} className="underline underline-offset-4">
-                    Sign In
+                    Se connecter
                   </button>
                 </div>
               </form>
@@ -169,7 +169,7 @@ function FieldInfo({ field }: { field: AnyFieldApi }) {
       {field.state.meta.isTouched && !field.state.meta.isValid ? (
         <em>{field.state.meta.errors.join(", ")}</em>
       ) : null}
-      {field.state.meta.isValidating ? "Validating..." : null}
+      {field.state.meta.isValidating ? "Validation..." : null}
     </>
   );
 }

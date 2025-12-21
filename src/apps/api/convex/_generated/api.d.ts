@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as actions_product_actions from "../actions/product_actions.js";
+import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
 import type * as collections from "../collections.js";
@@ -22,6 +23,7 @@ import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as order from "../order.js";
 import type * as products from "../products.js";
+import type * as settings from "../settings.js";
 import type * as test from "../test.js";
 import type * as users from "../users.js";
 
@@ -35,6 +37,7 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   "actions/product_actions": typeof actions_product_actions;
+  analytics: typeof analytics;
   auth: typeof auth;
   categories: typeof categories;
   collections: typeof collections;
@@ -43,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   images: typeof images;
   order: typeof order;
   products: typeof products;
+  settings: typeof settings;
   test: typeof test;
   users: typeof users;
 }>;

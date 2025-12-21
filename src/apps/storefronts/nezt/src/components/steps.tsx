@@ -7,7 +7,7 @@ export function Steps() {
 
     <div className="w-full flex flex-col gap-4 lg:gap-8">
       <div className="flex justify-center ">
-        <p className="relative uppercase text-primary text-[41px] lg:text-[103px] font-display tracking-tighter inline">KIFACH NCHRI
+        <p className="relative uppercase text-primary text-[41px] lg:text-[103px] font-display tracking-tighter inline">COMMENT ACHETER
           <span
             className="absolute font-display -left-8 lg:-left-18 lg:bottom-[22px] bottom-[8px] text-[19px] lg:text-[47px] text-black/20 font-bold tracking-[-0.06em]">03</span>
         </p>
@@ -17,7 +17,7 @@ export function Steps() {
         <div className="flex flex-col gap-4 lg:gap-7 flex-1  items-start p-4 lg:p-6 border-b-1 lg:border-b-0 lg:border-r-1 border-seperator">
 
           <div className="flex flex-col w-full">
-            <p className="uppercase font-bold leading-[1] tracking-tighter text-[22px] lg:text-[45px] text-primary">ETAP 01</p>
+            <p className="uppercase font-bold leading-[1] tracking-tighter text-[22px] lg:text-[45px] text-primary">ÉTAPE 01</p>
             <div className="w-full h-[4px] lg:h-[8px] bg-primary"></div>
           </div>
 
@@ -33,7 +33,7 @@ export function Steps() {
         <div className="flex flex-col gap-4 lg:gap-7 flex-1 items-start p-4 lg:p-6 border-b-1 lg:border-b-0 lg:border-r-1 border-seperator">
 
           <div className="flex flex-col w-full">
-            <p className="uppercase font-bold leading-[1] tracking-tighter text-[22px] lg:text-[45px] text-primary">ETAP 02</p>
+            <p className="uppercase font-bold leading-[1] tracking-tighter text-[22px] lg:text-[45px] text-primary">ÉTAPE 02</p>
             <div className="w-full h-[4px] lg:h-[8px] bg-primary"></div>
           </div>
 
@@ -49,7 +49,7 @@ export function Steps() {
         <div className="flex flex-col gap-4 lg:gap-7 flex-1  items-start p-4 lg:p-6 border-b-1 lg:border-b-0 lg:border-r-1 border-seperator">
 
           <div className="flex flex-col w-full">
-            <p className="uppercase font-bold leading-[1] tracking-tighter text-[22px] lg:text-[45px] text-primary">ETAP 03</p>
+            <p className="uppercase font-bold leading-[1] tracking-tighter text-[22px] lg:text-[45px] text-primary">ÉTAPE 03</p>
             <div className="w-full h-[4px] lg:h-[8px] bg-primary"></div>
           </div>
 
@@ -78,7 +78,7 @@ function Step() {
       </div>
       <div className="flex gap-3 items-center">
         <div className="w-[20px] h-[2px] bg-black" />
-        <p className="uppercase font-inter font-semibold text-[18px]">ETAP 01</p>
+        <p className="uppercase font-inter font-semibold text-[18px]">ÉTAPE 01</p>
       </div>
     </div>
   )

@@ -5,9 +5,6 @@ import {
   SheetTrigger,
   SheetFooter,
   SheetClose,
-  SheetHeader,
-  SheetDescription,
-  SheetTitle,
 } from "@/components/ui/sheet";
 import { useQuery } from "convex/react";
 import { api } from "api/convex";
@@ -15,7 +12,6 @@ import { CartIcon } from "./icons/cart-icon";
 import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { Input } from "./ui/input";
 
 export function Cart() {
   const toggleCart = useCartStore((state) => state.toggleCart);
@@ -52,15 +48,15 @@ export function Cart() {
           <div className="absolute h-full w-[1px] bg-black left-2" />
           <div className="absolute h-full w-[1px] bg-black right-2" />
 
-          <p className="text-[41px] font-display text-primary">CART</p>
+          <p className="text-[41px] font-display text-primary">PANIER</p>
           <div className="flex flex-col justify-between h-full gap-3 mb-2 ">
             <div className="flex flex-col gap-3 overflow-y-scroll h-[350px]">
               {cart.size === 0 ?
-                <div className="w-full"> <p className="mx-auto italic text-[14px]">Your cart is empty.</p></div>
+                <div className="w-full"> <p className="mx-auto italic text-[14px]">Votre panier est vide.</p></div>
                 :
                 Array.from(cart.keys()).map((key) => {
                   const product = products?.find((product) => product?._id === key);
-                  if (!product) return <p key={key}>loading...</p>;
+                  if (!product) return <p key={key}>chargement...</p>;
                   return (
                     <div key={key} className="border-t-1 border-black flex pt-3 gap-2 text-[14px]">
                       <img
@@ -86,7 +82,7 @@ export function Cart() {
 
                         <button
                           onClick={() => removeProductFromCart(product._id)}
-                          className="text-[#D20909] bg-red-200 flex gap-2 p-1 items-center text-[10px] self-start font-semibold"><XIcon size={10} />REMOVE FROM CART</button>
+                          className="text-[#D20909] bg-red-200 flex gap-2 p-1 items-center text-[10px] self-start font-semibold"><XIcon size={10} />RETIRER DU PANIER</button>
                       </div>
                     </div>
                   );
@@ -102,13 +98,13 @@ export function Cart() {
 
             <div className="border-t-1 border-black pt-3 px-2">
               <div className="pb-2">
-                <p className="font-primary font-display text-primary leading-tighter text-[20px]">TOTAL COST</p>
+                <p className="font-primary font-display text-primary leading-tighter text-[20px]">COÛT TOTAL</p>
                 <p className="text-[25px] font-black leading-tighter leading-[0.7]">{totalCost} DZD</p>
               </div>
 
               <p className="text-[12px] opacity-40">
                 Livraison 400 DZD
-                <span className="text-[12px]"> (for Algiers) <button className="underline text-black/80 italic "> change wilaya </button> </span>
+                <span className="text-[12px]"> (pour Alger) <button className="underline text-black/80 italic "> changer de wilaya </button> </span>
               </p>
             </div>
 
@@ -118,10 +114,10 @@ export function Cart() {
                 type="submit"
                 className="w-full"
               >
-                <Button className="rounded-3xl font-inter font-bold text-white w-full py-4">ORDER NOW</Button>
+                <Button className="rounded-3xl font-inter font-bold text-white w-full py-4">COMMANDER MAINTENANT</Button>
               </Link>
               <SheetClose asChild>
-                <Button className="bg-red-200 hover:bg-red-300 text-[#D20909] rounded-3xl">Close</Button>
+                <Button className="bg-red-200 hover:bg-red-300 text-[#D20909] rounded-3xl">Fermer</Button>
               </SheetClose>
             </div>
           </div>

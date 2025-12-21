@@ -12,7 +12,7 @@ export type ProductRow = {
 export const columns: ColumnDef<ProductRow>[] = [
   {
     accessorKey: "title",
-    header: "Title",
+    header: "Titre",
   },
   {
     accessorKey: "desc",
@@ -20,7 +20,7 @@ export const columns: ColumnDef<ProductRow>[] = [
   },
   {
     accessorKey: "price",
-    header: "Price",
+    header: "Prix",
     //  cell: ({ row }) => `$${row.original.price.toFixed(2)}`,
   },
   {
@@ -30,7 +30,7 @@ export const columns: ColumnDef<ProductRow>[] = [
       <div className="flex gap-2">
         <Link to="/produits/$slug" params={{ slug: row.original._id }}>
           <Button size="sm" variant="outline">
-            Edit
+            Modifier
           </Button>
         </Link>
         <Button
@@ -38,7 +38,7 @@ export const columns: ColumnDef<ProductRow>[] = [
           variant="destructive"
           data-product-id={row.original._id}
         >
-          Delete
+          Supprimer
         </Button>
       </div>
     ),

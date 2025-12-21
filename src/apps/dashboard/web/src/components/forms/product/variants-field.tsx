@@ -27,8 +27,8 @@ export default function VariantsField() {
   return (
     <div className={cn("grid gap-3")}>
       <div className="">
-        <p className="text-[20px] font-semibold">Exisiting Variants</p>
-        <p className="text-[16px] text-neutral-500">Know the order of the variants matter because it how you can manage your inventory</p>
+        <p className="text-[20px] font-semibold">Variantes existantes</p>
+        <p className="text-[16px] text-neutral-500">L'ordre des variantes est important car c'est ainsi que vous pouvez gérer votre inventaire</p>
       </div>
       {variants?.length ? (
         <div className="grid gap-2">
@@ -45,7 +45,7 @@ export default function VariantsField() {
       ) : (
         <div className="rounded-2xl border border-input-border p-4">
           <p className="italic text-[14px] text-neutral-500">
-            No variants exist for this product yet.
+            Aucune variante n'existe encore pour ce produit.
           </p>
         </div>
       )}

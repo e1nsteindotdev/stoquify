@@ -33,7 +33,7 @@ function RouteComponent() {
   const product = useQuery(api.products.getProductById, { id: productId })
 
   if (sourceType === "categories")
-    sourceType = 'catégories'
+    sourceType = 'catégorés'
   else if (sourceType === "collections")
     sourceType = 'collections'
   else sourceType = ''
@@ -50,15 +50,13 @@ function RouteComponent() {
   const [selectedVariants, setSelectedVariants] = useState(initialSelection)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
 
-  const navigation = useNavigate()
-
-  if (!product) return <div> Chargement...</div>
+  if (!product) return <div> Loading ...</div>
   const header = (
     <div className='flex-col items-start gap-1 hidden lg:flex'>
       {sourceType &&
         <div className='font-inter uppercase text-[10px] lg:text-[14px] font-semibold flex items-start gap-2 text-black/60 cursor-pointer'>
           <Link to={"/"} >
-            ACCUEIL
+            HOME
           </Link>
           <span>/</span>
           <button>
@@ -84,10 +82,10 @@ function RouteComponent() {
     </div>
   )
 
-
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
     if (mode === "ADD_TO_CART") {
       if (product?._id && Object.values(selectedVariants).includes(null) === false) {
+        console.log('adding this selection: ', Object.fromEntries(selectedVariants))
         addProductToCart(product?._id,
           {
             price: product?.price ?? 0,
@@ -95,17 +93,6 @@ function RouteComponent() {
             quantity: selectedQuantity
           })
       }
-    } else if (mode === "BUY_IT_NOW") {
-      if (product?._id && Object.values(selectedVariants).includes(null) === false) {
-        addProductToCart(product?._id,
-          {
-            price: product?.price ?? 0,
-            selection: Object.fromEntries(selectedVariants),
-            quantity: selectedQuantity
-          })
-        navigation({ to: "/checkout" })
-      }
-
     }
   }
 
@@ -226,7 +213,7 @@ function RouteComponent() {
                       {/* quantity selector  */}
 
                       <div className='flex flex-col gap-2 p-3'>
-                        <p className='text-primary text-[18px] font-bold uppercase'>Quantité</p>
+                        <p className='text-primary text-[18px] font-bold uppercase'>Quantity</p>
                         <div className='flex gap-4 items-center'>
                           <motion.button
                             whileTap={{ scale: 0.95 }}
@@ -257,12 +244,12 @@ function RouteComponent() {
                         onClick={() => handleSubmit('BUY_IT_NOW')}
                         className='font-semibold uppercase text-primary pt-[11px] pb-[12px] w-full rounded-[16px] bg-primary/5 ring-1 ring-primary lg:text-[18px] lg:w-[500px]'>
                         <p className='leading-[1] pt-1.25 font-bold'>
-                          ACHETER MAINTENANT
+                          BUY IT NOW
                         </p>
                       </motion.button>
                       <FuckingButton handleSubmit={handleSubmit} />
 
-                      <p className='uppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic text-center lg:text-start'>LIVRAISON 48H MAXIMUM</p>
+                      <p className='upppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic text-center lg:text-start'>LIVRAISON 48H MAXIMUM</p>
                     </div>
                   </div>
 
@@ -322,13 +309,13 @@ function FuckingButton({ handleSubmit }: { handleSubmit: any }) {
           >
             {clicked ?
               <div className='flex gap-3 justify-center items-center'>
-                <p className='leading-[1] pt-1.25'>TERMINÉ</p>
+                <p className='leading-[1] pt-1.25'>DONE</p>
                 <Check color='white' className='size-5 stroke-white' strokeWidth={3} />
               </div>
               :
               <div className='flex gap-3 justify-center items-center'>
-                <p className='leading-[1] pt-1.25 font-bold'>Ajouter au panier</p>
-                <CartIcon color='white' className='stoke-white mt-1.25' size={16} />
+                <p className='leading-[1]  font-bold'>Add to cart</p>
+                <CartIcon color='white' className='stoke-white' size={16} />
               </div>
             }
           </motion.div>

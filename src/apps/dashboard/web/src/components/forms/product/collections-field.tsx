@@ -38,7 +38,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
     try {
       const res = await createCollection({ title: name });
       if (res.ok) {
-        toast.success('Collection added succesfully')
+        toast.success('Collection ajoutée avec succès')
       } else {
         toast.error(res.msg,)
       }
@@ -56,7 +56,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
       <Card className="gap-2 border-white">
         <CardHeader>
           <CardTitle>Collections</CardTitle>
-          <CardDescription>Adding a product to collections will make it appear in the home page in the store</CardDescription>
+          <CardDescription>Ajouter un produit à des collections le fera apparaître sur la page d'accueil de la boutique</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -64,7 +64,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
             <PopoverTrigger asChild>
               <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent">
                 <PlusIcon />
-                Add to a new collection</Button>
+                Ajouter à une nouvelle collection</Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
               {
@@ -87,7 +87,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
                     </div>)
                   :
                   <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
-                    No collections exist, create a new collection first.
+                    Aucune collection n'existe, créez d'abord une nouvelle collection.
                   </div>
               }
             </PopoverContent>
@@ -95,7 +95,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
 
           {selectedCollections.size === 0 ?
             <div className="pt-3 text-red-400 italic text-[12px] uppercase">
-              Product is added to no collections
+              Le produit n'est ajouté à aucune collection
             </div>
             :
             <div className="flex flex-col gap-2 pt-3">
@@ -122,12 +122,12 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
                 <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
                   <AddIcon />
                 </div>
-                <p className="text-[14px]">Create a new collection</p>
+                <p className="text-[14px]">Créer une nouvelle collection</p>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD] shadow-black/40 shadow-lg ">
               <div className="flex flex-col gap-4">
-                <p className="text-[14px] font-medium">Collection name:</p>
+                <p className="text-[14px] font-medium">Nom de la collection :</p>
                 <Input
                   placeholder="e.g. New Arrival"
                   value={name}
@@ -140,7 +140,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
                 disabled={!name.trim() || isAdding}
                 className="rounded-[12px] bg-[#DDDAE7] text-primary"
               >
-                {isAdding ? "Creating..." : "Create"}
+                {isAdding ? "Création..." : "Créer"}
               </Button>
             </PopoverContent>
           </Popover>

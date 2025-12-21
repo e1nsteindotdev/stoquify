@@ -42,9 +42,9 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
         <div className={cn("flex flex-col gap-6", className)} {...props}>
           <Card>
             <CardHeader>
-              <CardTitle>Login to your account</CardTitle>
+              <CardTitle>Connectez-vous à votre compte</CardTitle>
               <CardDescription>
-                Enter your email below to login to your account
+                Entrez votre email ci-dessous pour vous connecter à votre compte
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -60,11 +60,11 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                     name="email"
                     validators={{
                       onChange: ({ value }) =>
-                        !value
-                          ? "A first name is required"
-                          : value.length < 3
-                            ? "First name must be at least 3 characters"
-                            : undefined,
+                          !value
+                            ? "Un mot de passe est requis"
+                            : value.length < 3
+                              ? "Le mot de passe doit contenir au moins 3 caractères"
+                              : undefined,
                     }}
                     children={(field) => {
                       // Avoid hasty abstractions. Render props are great!
@@ -90,7 +90,7 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                         href="#"
                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                       >
-                        Forgot your password?
+                        Mot de passe oublié ?
                       </a>
                     </div>
 
@@ -99,9 +99,9 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                       validators={{
                         onChange: ({ value }) =>
                           !value
-                            ? "A first name is required"
+                            ? "Un email est requis"
                             : value.length < 3
-                              ? "First name must be at least 3 characters"
+                              ? "L'email doit contenir au moins 3 caractères"
                               : undefined,
                       }}
                       children={(field) => {
@@ -126,14 +126,14 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                   </div>
                   <div className="flex flex-col gap-3">
                     <Button type="submit" className="w-full">
-                      Login
+                      Se connecter
                     </Button>
                   </div>
                 </div>
                 <div className="mt-4 text-center text-sm">
-                  Don&apos;t have an account?{" "}
+                  Vous n&apos;avez pas de compte ?{" "}
                   <button onClick={() => setStep("signUp")} className="underline underline-offset-4">
-                    Sign up
+                    S&apos;inscrire
                   </button>
                 </div>
               </form>
@@ -151,7 +151,7 @@ function FieldInfo({ field }: { field: AnyFieldApi }) {
       {field.state.meta.isTouched && !field.state.meta.isValid ? (
         <em>{field.state.meta.errors.join(", ")}</em>
       ) : null}
-      {field.state.meta.isValidating ? "Validating..." : null}
+      {field.state.meta.isValidating ? "Validation..." : null}
     </>
   );
 }

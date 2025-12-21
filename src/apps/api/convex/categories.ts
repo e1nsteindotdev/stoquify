@@ -3,10 +3,8 @@ import { mutation, query } from "./_generated/server";
 
 export const listCategories = query({
   handler: async (ctx) => {
-    console.log("going to call list categories")
     const categories = await ctx.db.query("categories").collect();
     const products = await ctx.db.query('products').collect()
-    console.log('categories : ', categories)
     return categories.filter(c => {
       const ps = products.filter(p => p.categoryId == c._id && p.status === "active")
       return ps.length !== 0

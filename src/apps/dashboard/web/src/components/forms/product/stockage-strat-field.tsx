@@ -21,20 +21,20 @@ export default function StockageStratField() {
     },
     {
       key: "by_number",
-      value: "Quantite fix",
+      value: "Quantité fixe",
     },
   ]
 
   return (
     <div className="grid gap-1">
-      <Label className="font-semibold pb-[12px]">Starategy</Label>
+      <Label className="font-semibold pb-[12px]">Stratégie</Label>
       <div className="space-y-1">
         <Select
           value={(field.state.value) ?? ""}
           onValueChange={(v) => field.handleChange(v as any)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select an option" />
+            <SelectValue placeholder="Sélectionner une option" />
           </SelectTrigger>
           <SelectContent className="bg-card">
             {strats.map((c, k) => (

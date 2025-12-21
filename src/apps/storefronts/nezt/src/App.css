@@ -90,4 +90,8 @@ body {
   .seperated {
     @apply border-t-1 border-b-1 border-white
   }
+
+  td, tr, table {
+    @apply border-1 border-black
+  }
 }

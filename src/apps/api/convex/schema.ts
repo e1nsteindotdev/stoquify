@@ -121,6 +121,38 @@ const schema = defineSchema({
     ),
     createdAt: v.number(),
   }).index("by_customer", ["customerId"]),
+
+  sales: defineTable({
+    order: v.array(
+      v.object({
+        quantity: v.number(),
+        productId: v.id("products"),
+        price: v.number(),
+        selection: v.array(
+          v.object({
+            variantId: v.id("variants"),
+            variantOptionId: v.id("variantOptions"),
+          })
+        ),
+      })
+    ),
+    subTotalCost: v.number(),
+    createdAt: v.number(),
+  }).index("by_createdAt", ["createdAt"]),
+
+  faqs: defineTable({
+    question: v.string(),
+    answer: v.string(),
+    order: v.number(),
+  }),
+
+  settings: defineTable({
+    storeId: v.id("stores"),
+    locationLink: v.optional(v.string()),
+    instagramLink: v.optional(v.string()),
+    facebookLink: v.optional(v.string()),
+    tiktokLink: v.optional(v.string()),
+  }).index("by_store", ["storeId"]),
 });
 
 export default schema;

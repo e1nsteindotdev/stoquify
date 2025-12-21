@@ -56,7 +56,7 @@ export default function CategoriesField({ label }: Props) {
           onValueChange={(v) => field.handleChange(v as any)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select an option" />
+            <SelectValue placeholder="Sélectionner une option" />
           </SelectTrigger>
           <SelectContent className="bg-card">
             {categories.map((c) => (
@@ -83,12 +83,12 @@ export default function CategoriesField({ label }: Props) {
               <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
                 <AddIcon />
               </div>
-              <p className="text-[14px]">Add another category</p>
+              <p className="text-[14px]">Ajouter une autre catégorie</p>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
             <div className="flex flex-col gap-2">
-              <p className="text-[14px] font-medium">Category name:</p>
+              <p className="text-[14px] font-medium">Nom de la catégorie :</p>
               <Input
                 placeholder="e.g. Pants"
                 value={name}
@@ -100,7 +100,7 @@ export default function CategoriesField({ label }: Props) {
               disabled={!name.trim() || isCreating}
               className="rounded-[12px] bg-[#DDDAE7] text-primary"
             >
-              {isCreating ? "Creating..." : "Create"}
+              {isCreating ? "Création..." : "Créer"}
             </Button>
           </PopoverContent>
         </Popover>

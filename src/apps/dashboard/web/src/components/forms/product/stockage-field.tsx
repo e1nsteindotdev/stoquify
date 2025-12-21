@@ -129,7 +129,7 @@ export default function StockageField({ variants, strat }: Props) {
 
 function QuantityInput({ fp, initialQuantity, changeQuantity }: { initialQuantity: number, fp: string, changeQuantity: (a: string, b: number) => void, path: string[] }) {
   return <div className="flex gap-2 items-center">
-    <p className="text-[14px] text-neutral-700">Quantity</p>
+    <p className="text-[14px] text-neutral-700">Quantité</p>
     <Input onChange={(e) => changeQuantity(fp, Number(e.target.value))} placeholder="eg. 4" defaultValue={initialQuantity} className="text-[14px] py-1" />
   </div>
 }

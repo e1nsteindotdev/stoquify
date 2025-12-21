@@ -17,9 +17,8 @@ function RouteComponent() {
   const navigate = useNavigate()
   const products = useQuery(api.products.listProducts)
     ?.filter(p => p.categoryId === categoryId)
-  if (!category) return <div> Loading ...</div>
   return (
-    <div className="overflow-clip">
+    <div className="overflow-clip" >
       <div className="px-3 lg:px-4 max-w-[1800px] mx-auto bg-[#E6E6E6]">
         <HeaderAnonc />
         <div className="flex flex-col gap-10 lg:gap-30 w-full border-l-1 border-r-1 border-seperator relative">
@@ -29,29 +28,40 @@ function RouteComponent() {
               <div className='font-inter uppercase text-[10px] lg:text-[14px] flex gap-2 pb-2 lg:pb-3'>
                 <button
                   onClick={() => navigate({ to: "/" })}
-                >HOME</button>
+                >ACCUEIL</button>
                 <span>/</span>
                 <button>
                   <span className='uppercase'>
-                    catégorés
+                    catégories
                   </span>
                 </button>
                 <span>/</span>
                 <button>
-                  <span className='uppercase'>
-                    {category.name}
-                  </span>
+                  {category?.name
+                    ? <span className='uppercase'>
+                      {category.name}
+                    </span>
+                    : <div className='lg:h-[64px] w-[100px]' />
+                  }
                 </button>
               </div>
               <div className='flex flex-col gap-1'>
-                <p className='uppercase leading-[1] text-[16px] lg:text-[25px] text-primary'>
-                  catégorés</p>
-                <p className='uppercase leading-[1] text-[41px] lg:text-[64px] font-display text-primary'>
-                  {category.name}
-                </p>
+                <p className='uppercase leading-[1] text-[16px] lg:text-[25px] text-primary'>catégories</p>
+                {category?.name
+                  ? <p className='uppercase leading-[1] text-[41px] lg:text-[64px] font-display text-primary'>{category.name} </p>
+                  : <div />
+                }
               </div>
-              <div className='h-full grid grid-cols-1 lg:grid-cols-4 gap-x-4 gap-y-8 pt-4'>
-                {products?.map(p => <Product source={{ sourceType: 'categories', sourceName: category.name }} data={p} key={p._id} />)}
+              <div className='grid grid-cols-1 lg:grid-cols-4 gap-x-4 gap-y-8 pt-4'>
+                {category ? products?.map(p =>
+                  <Product
+                    source={{ sourceType: 'categories', sourceName: category.name }}
+                    data={p} key={p._id} />
+                )
+                  :
+                  Array.from({ length: 12 }).map((_) => <Product data={undefined} />)
+                }
+
               </div>
             </div>
             <Footer />

@@ -198,7 +198,7 @@ export default function ImageField({ productId, label, className, type, ...props
             type="button"
             className="bg-transparent text-[14px] text-[#6A4FFF] border-[#6A4FFF]/30 border-1 hover:bg-transparent"
             onClick={handleClick}>
-            Add Photos
+            Ajouter des photos
           </Button>
         </div>
       ) : actions !== null && (

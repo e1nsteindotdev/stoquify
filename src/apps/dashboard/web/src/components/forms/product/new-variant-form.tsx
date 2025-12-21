@@ -76,10 +76,10 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
   if (isModifying) {
     return (
       <div className={cn("grid gap-2",)}>
-        <p className="font-semibold text-[18px]">Add new Variant</p>
+        <p className="font-semibold text-[18px]">Ajouter une nouvelle variante</p>
         <div className="grid gap-4 border border-neutral-300 rounded-[15px] p-4">
           <div className="grid gap-3">
-            <Label className="font-semibold">Variant name</Label>
+            <Label className="font-semibold">Nom de la variante</Label>
             <Input
               placeholder="Color"
               value={variantName ?? ""}
@@ -146,7 +146,7 @@ export function NewVariantForm({ addNewVariant }: { addNewVariant: (name: string
         <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
           <AddIcon />
         </div>
-        <p className="text-[14px]">Add new variant</p>
+        <p className="text-[14px]">Ajouter une nouvelle variante</p>
       </Button>
     </div>
   }

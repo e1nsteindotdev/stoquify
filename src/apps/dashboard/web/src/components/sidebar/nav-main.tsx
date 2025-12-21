@@ -11,6 +11,7 @@ import {
   IconPackage,
   IconShoppingBag,
   IconUsers,
+  IconSettings,
 } from "@tabler/icons-react";
 
 export function NavMain() {
@@ -21,6 +22,7 @@ export function NavMain() {
     { title: "Produits", url: "/produits", icon: IconPackage },
     { title: "Commandes", url: "/commandes", icon: IconShoppingBag },
     { title: "Clients", url: "/clients", icon: IconUsers },
+    { title: "Paramètres", url: "/parametres", icon: IconSettings },
   ];
 
   return (
@@ -35,7 +37,7 @@ export function NavMain() {
             >
               <Link to="/">
                 <IconChartBar />
-                <span>Analytics</span>
+                <span>Analytique</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

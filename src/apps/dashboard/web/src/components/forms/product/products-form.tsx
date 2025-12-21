@@ -110,7 +110,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   children={(field) => (
                     <field.TextField
                       placeholder="Hoodie noire oversize"
-                      label="Title"
+                      label="Titre"
                     />
                   )}
                 />
@@ -119,7 +119,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   children={(field) => (
                     <field.TextAreaField
                       placeholder="this is ltrly the best product in the entire world..."
-                      label="Desc"
+                      label="Description"
                     />
                   )}
                 />
@@ -134,7 +134,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 <form.AppField
                   name="categoryId"
                   children={(field) => (
-                    <field.CategoriesField label="Category" />
+                    <field.CategoriesField label="Catégorie" />
                   )}
                 />
 
@@ -192,8 +192,8 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
             <div className="space-y-4">
               <Card className="gap-2 border-white">
                 <CardHeader>
-                  <CardTitle>Status</CardTitle>
-                  <CardDescription>You have to fill important fields to be able to make the product active on the store</CardDescription>
+                  <CardTitle>Statut</CardTitle>
+                  <CardDescription>Vous devez remplir les champs importants pour pouvoir rendre le produit actif dans la boutique</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form.Subscribe
@@ -216,7 +216,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                               onValueChange={(v) => field.handleChange(v as any)}
                             >
                               <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select status" />
+                                <SelectValue placeholder="Sélectionner le statut" />
                               </SelectTrigger>
                               <SelectContent className="bg-card">
                                 <SelectItem value="incomplete">incomplet</SelectItem>
@@ -246,14 +246,14 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               />
               <Card className="gap-2 border-white">
                 <CardHeader>
-                  <CardTitle>Produit Statistics</CardTitle>
+                  <CardTitle>Statistiques du produit</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground space-y-1">
                   <div>
                     Ventes : <span className="text-foreground">—</span>
                   </div>
                   <div>
-                    Money generated : <span className="text-foreground">—</span>
+                    Argent généré : <span className="text-foreground">—</span>
                   </div>
                   <div>
                     Classement : <span className="text-foreground">—</span>

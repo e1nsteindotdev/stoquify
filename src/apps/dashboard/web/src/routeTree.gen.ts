@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
+import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
 import { Route as DashboardCommandesIndexRouteImport } from './routes/_dashboard/commandes/index'
 import { Route as DashboardClientsIndexRouteImport } from './routes/_dashboard/clients/index'
 import { Route as DashboardanalyticsIndexRouteImport } from './routes/_dashboard/(analytics)/index'
@@ -28,6 +29,12 @@ const DashboardProduitsIndexRoute = DashboardProduitsIndexRouteImport.update({
   path: '/produits/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardParametresIndexRoute =
+  DashboardParametresIndexRouteImport.update({
+    id: '/parametres/',
+    path: '/parametres/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardCommandesIndexRoute = DashboardCommandesIndexRouteImport.update({
   id: '/commandes/',
   path: '/commandes/',
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/': typeof DashboardanalyticsIndexRoute
   '/clients': typeof DashboardClientsIndexRoute
   '/commandes': typeof DashboardCommandesIndexRoute
+  '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
   '/': typeof DashboardanalyticsIndexRoute
   '/clients': typeof DashboardClientsIndexRoute
   '/commandes': typeof DashboardCommandesIndexRoute
+  '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesById {
@@ -94,6 +103,7 @@ export interface FileRoutesById {
   '/_dashboard/(analytics)/': typeof DashboardanalyticsIndexRoute
   '/_dashboard/clients/': typeof DashboardClientsIndexRoute
   '/_dashboard/commandes/': typeof DashboardCommandesIndexRoute
+  '/_dashboard/parametres/': typeof DashboardParametresIndexRoute
   '/_dashboard/produits/': typeof DashboardProduitsIndexRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clients'
     | '/commandes'
+    | '/parametres'
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clients'
     | '/commandes'
+    | '/parametres'
     | '/produits'
   id:
     | '__root__'
@@ -127,6 +139,7 @@ export interface FileRouteTypes {
     | '/_dashboard/(analytics)/'
     | '/_dashboard/clients/'
     | '/_dashboard/commandes/'
+    | '/_dashboard/parametres/'
     | '/_dashboard/produits/'
   fileRoutesById: FileRoutesById
 }
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/produits'
       fullPath: '/produits'
       preLoaderRoute: typeof DashboardProduitsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/parametres/': {
+      id: '/_dashboard/parametres/'
+      path: '/parametres'
+      fullPath: '/parametres'
+      preLoaderRoute: typeof DashboardParametresIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/commandes/': {
@@ -210,6 +230,7 @@ interface DashboardRouteChildren {
   DashboardanalyticsIndexRoute: typeof DashboardanalyticsIndexRoute
   DashboardClientsIndexRoute: typeof DashboardClientsIndexRoute
   DashboardCommandesIndexRoute: typeof DashboardCommandesIndexRoute
+  DashboardParametresIndexRoute: typeof DashboardParametresIndexRoute
   DashboardProduitsIndexRoute: typeof DashboardProduitsIndexRoute
 }
 
@@ -221,6 +242,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardanalyticsIndexRoute: DashboardanalyticsIndexRoute,
   DashboardClientsIndexRoute: DashboardClientsIndexRoute,
   DashboardCommandesIndexRoute: DashboardCommandesIndexRoute,
+  DashboardParametresIndexRoute: DashboardParametresIndexRoute,
   DashboardProduitsIndexRoute: DashboardProduitsIndexRoute,
 }
 

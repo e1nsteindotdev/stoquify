@@ -33,7 +33,7 @@ function PathlessLayoutComponent() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Nouveau Produits</BreadcrumbPage>
+                  <BreadcrumbPage>Nouveau produit</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
