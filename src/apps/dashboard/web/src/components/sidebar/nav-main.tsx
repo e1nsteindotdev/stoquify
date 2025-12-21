@@ -33,7 +33,7 @@ export function NavMain() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              tooltip="Analytics"
+              tooltip="Analytique"
               isActive={isActive("/")}
             >
               <Link to="/">

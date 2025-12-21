@@ -17,12 +17,24 @@ export const createSale = mutation({
       })
     ),
     subTotalCost: v.number(),
+    createdAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // Fetch product costs
+    const products = await Promise.all(
+      args.order.map((item) => ctx.db.get(item.productId))
+    );
+
     const saleId = await ctx.db.insert("sales", {
-      order: args.order,
+      order: args.order.map((item) => {
+        const product = products.find((p) => p?._id === item.productId);
+        return {
+          ...item,
+          cost: product?.cost,
+        };
+      }),
       subTotalCost: args.subTotalCost,
-      createdAt: Date.now(),
+      createdAt: args.createdAt ?? Date.now(),
     });
     return saleId;
   },

@@ -43,27 +43,27 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
+      title: "Tableau de bord",
       url: "#",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
+      title: "Cycle de vie",
       url: "#",
       icon: IconListDetails,
     },
     {
-      title: "Analytics",
+      title: "Analytique",
       url: "#",
       icon: IconChartBar,
     },
     {
-      title: "Projects",
+      title: "Projets",
       url: "#",
       icon: IconFolder,
     },
     {
-      title: "Team",
+      title: "Équipe",
       url: "#",
       icon: IconUsers,
     },
@@ -76,26 +76,26 @@ const data = {
       url: "#",
       items: [
         {
-          title: "Active Proposals",
+          title: "Propositions actives",
           url: "#",
         },
         {
-          title: "Archived",
+          title: "Archivé",
           url: "#",
         },
       ],
     },
     {
-      title: "Proposal",
+      title: "Proposition",
       icon: IconFileDescription,
       url: "#",
       items: [
         {
-          title: "Active Proposals",
+          title: "Propositions actives",
           url: "#",
         },
         {
-          title: "Archived",
+          title: "Archivé",
           url: "#",
         },
       ],
@@ -106,11 +106,11 @@ const data = {
       url: "#",
       items: [
         {
-          title: "Active Proposals",
+          title: "Propositions actives",
           url: "#",
         },
         {
-          title: "Archived",
+          title: "Archivé",
           url: "#",
         },
       ],
@@ -118,37 +118,37 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Settings",
+      title: "Paramètres",
       url: "#",
       icon: IconSettings,
     },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
+    // {
+    //   title: "Aide",
+    //   url: "#",
+    //   icon: IconHelp,
+    // },
+    // {
+    //   title: "Recherche",
+    //   url: "#",
+    //   icon: IconSearch,
+    // },
   ],
   documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
+    // {
+    //   name: "Bibliothèque de données",
+    //   url: "#",
+    //   icon: IconDatabase,
+    // },
+    // {
+    //   name: "Rapports",
+    //   url: "#",
+    //   icon: IconReport,
+    // },
+    // {
+    //   name: "Assistant Word",
+    //   url: "#",
+    //   icon: IconFileWord,
+    // },
   ],
 };
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -169,7 +169,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain />
-        <NavDocuments items={data.documents} />
+        {data.documents.length > 0 && <NavDocuments items={data.documents} />}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

@@ -86,6 +86,7 @@ export const updateProduct = mutation({
     title: v.optional(v.string()),
     desc: v.optional(v.string()),
     price: v.optional(v.number()),
+    cost: v.optional(v.number()),
     discount: v.optional(v.number()),
     oldPrice: v.optional(v.number()),
     categoryId: v.optional(v.id("categories")),

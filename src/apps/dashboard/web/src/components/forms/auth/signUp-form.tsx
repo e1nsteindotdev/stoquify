@@ -109,7 +109,7 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                   />
                   <div className="grid gap-3">
                     <div className="flex items-center">
-                      <Label htmlFor={"password"}>Password</Label>
+                      <Label htmlFor={"password"}>Mot de passe</Label>
                     </div>
 
                     <form.Field

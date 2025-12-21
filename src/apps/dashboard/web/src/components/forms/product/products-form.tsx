@@ -4,6 +4,7 @@ import { type AnyFieldApi } from "@tanstack/react-form";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -37,6 +38,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       title: product?.title ?? "",
       desc: product?.desc ?? "",
       price: product?.price ?? 0,
+      cost: product?.cost ?? 0,
       discount: product?.discount ?? undefined,
       oldPrice: product?.oldPrice ?? undefined,
       stockingStrategy: product?.stockingStrategy ?? "by_variants",
@@ -58,6 +60,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any
       }
       value.price = Number(value.price) ?? 0
+      value.cost = Number(value.cost) ?? 0
       const dirtyValues = Object.fromEntries(
         Object.entries(value).filter(([k]) => {
           const decision = form.getFieldMeta(k as any)?.isDefaultValue
@@ -118,7 +121,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   name="desc"
                   children={(field) => (
                     <field.TextAreaField
-                      placeholder="this is ltrly the best product in the entire world..."
+                      placeholder="Ceci est littéralement le meilleur produit au monde..."
                       label="Description"
                     />
                   )}
@@ -138,12 +141,26 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   )}
                 />
 
-                <form.AppField
-                  name="price"
-                  children={(field) => (
-                    <field.PricingField />
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <form.AppField
+                    name="price"
+                    children={(field) => (
+                      <field.PricingField />
+                    )}
+                  />
+                  <form.AppField
+                    name="cost"
+                    children={(field) => (
+                      <div className="grid">
+                        <Label className="font-semibold pb-[12px]">Coût</Label>
+                        <field.TextField
+                          type="number"
+                          placeholder="2500"
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
               </InputsContainer>
             </div>
 
@@ -293,7 +310,7 @@ function FieldInfo({ field }: { field: AnyFieldApi }) {
       {field.state.meta.isTouched && !field.state.meta.isValid ? (
         <em>{field.state.meta.errors.join(", ")}</em>
       ) : null}
-      {field.state.meta.isValidating ? "Validating..." : null}
+      {field.state.meta.isValidating ? "Validation..." : null}
     </>
   );
 }

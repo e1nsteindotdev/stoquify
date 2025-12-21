@@ -21,11 +21,12 @@ import type * as collections from "../collections.js";
 import type * as customers from "../customers.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
+import type * as migrations from "../migrations.js";
 import type * as order from "../order.js";
 import type * as products from "../products.js";
 import type * as sales from "../sales.js";
+import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
-import type * as test from "../test.js";
 import type * as users from "../users.js";
 
 /**
@@ -45,11 +46,12 @@ declare const fullApi: ApiFromModules<{
   customers: typeof customers;
   http: typeof http;
   images: typeof images;
+  migrations: typeof migrations;
   order: typeof order;
   products: typeof products;
   sales: typeof sales;
+  seed: typeof seed;
   settings: typeof settings;
-  test: typeof test;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

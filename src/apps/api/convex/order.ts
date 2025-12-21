@@ -13,12 +13,14 @@ export const placeOrder = mutation({
         quantity: v.number(),
         productId: v.id('products'),
         price: v.number(),
+        cost: v.optional(v.number()),
         selection: v.array(v.object({
           variantId: v.id('variants'),
           variantOptionId: v.id('variantOptions'),
         })),
       })
-    )
+    ),
+    createdAt: v.optional(v.number()),
   }
   ),
   handler: async (ctx,
@@ -28,7 +30,8 @@ export const placeOrder = mutation({
       firstName,
       lastName,
       wilaya,
-      order
+      order,
+      createdAt
     }) => {
     let fullWilaya = await ctx.db.query('wilayat')
       .filter(e => e.eq(e.field('name'), wilaya))
@@ -85,13 +88,19 @@ export const placeOrder = mutation({
 
     // finally place the order
     const placedOrder = await ctx.db.insert('orders', {
-      order,
+      order: order.map(item => {
+        const product = products.find(p => p?._id === item.productId);
+        return {
+          ...item,
+          cost: product?.cost
+        };
+      }),
       customerId: customer._id,
       addressId: newAddressId,
       deliveryCost: fullWilaya.deliveryCost,
       subTotalCost,
       status: 'pending',
-      createdAt: Date.now()
+      createdAt: createdAt ?? Date.now()
     })
     console.log('ordered placed correctly :', placedOrder)
 

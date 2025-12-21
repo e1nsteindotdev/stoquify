@@ -74,14 +74,9 @@ function ByVariantForm({ variants, variantsInventory }: { variants: TVariant[], 
 }
 
 function QuantityInput({ path }: { path: string[] }) {
-  const fp = generateVIFingerPrint(path)
   return <div className="flex gap-2 items-center">
     <p className="text-[14px] text-neutral-700">Quantity</p>
     <Input placeholder="eg. 4" defaultValue={0} className="text-[14px] py-1" />
   </div>
 }
 
-
-/*
-   Map<tempId, { path :  string[] }  ,quantity : number}>
-*/

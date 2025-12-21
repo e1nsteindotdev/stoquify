@@ -1,33 +1,8 @@
 import { UpArrow } from "./icons/up-arrow";
 import { useQuery } from "convex/react";
 import { api } from "api/convex";
+import { smoothScrollTo } from "../lib/scroll";
 
-function smoothScrollTo(element: HTMLElement, offset: number = 100) {
-  const startY = window.scrollY;
-  const targetY = element.offsetTop - offset;
-  const distance = targetY - startY;
-  const duration = 800; // milliseconds
-  let start: number | null = null;
-
-  function step(timestamp: number) {
-    if (!start) start = timestamp;
-    const progress = timestamp - start;
-    const progressPercent = Math.min(progress / duration, 1);
-
-    // Easing function: ease-in-out cubic
-    const easeInOutCubic = (t: number) =>
-      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-    const easedProgress = easeInOutCubic(progressPercent);
-    window.scrollTo(0, startY + easedProgress * distance);
-
-    if (progress < duration) {
-      requestAnimationFrame(step);
-    }
-  }
-
-  requestAnimationFrame(step);
-}
 
 export function Footer() {
   const settings = useQuery(api.settings.getSettings);
@@ -107,7 +82,7 @@ export function Footer() {
                   onClick={() => {
                     const element = document.getElementById("categories");
                     if (element) {
-                      smoothScrollTo(element, 100);
+                      smoothScrollTo(element, 150);
                     }
                   }}
                   className="flex justify-between items-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -119,7 +94,7 @@ export function Footer() {
                   onClick={() => {
                     const element = document.getElementById("collections");
                     if (element) {
-                      smoothScrollTo(element, 100);
+                      smoothScrollTo(element, 150);
                     }
                   }}
                   className="flex justify-between items-center gap-4 cursor-pointer hover:opacity-70 transition-opacity"

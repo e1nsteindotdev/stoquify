@@ -59,13 +59,15 @@ export function HeaderAnonc() {
 
 export function Header() {
   const settings = useQuery(api.settings.getSettings);
+  const products = useQuery(api.products.listProducts);
+  const productsCount = products?.length ?? 0;
   const locationLink = settings?.locationLink || "";
 
   return (
     <div className="w-full flex flex-col gap-1 justify-center items-start py-3 lg:py-5 px-2 lg:px-4">
       <div className="flex gap-2.5 text-[12px] lg:text-[25px] uppercase mx-auto">
         <span>[</span>
-        <span>85</span>
+        <span>{productsCount}</span>
         <span>produits</span>
         <span> disponibles</span>
         <span>]</span>

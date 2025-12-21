@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Image } from '@/components/ui/image'
 import { Check } from 'lucide-react'
 import { getTotal, useCartStore } from '@/lib/state'
@@ -13,6 +13,10 @@ export const Route = createFileRoute('/order-success')({
 function RouteComponent() {
   const cart = useCartStore((state) => state.cart);
   const products = useQuery(api.products.listProducts)
+
+  const removeProductFromCart = useCartStore((state) => state.removeProductFromCart);
+  const cartArray = Array.from(cart)
+  const navigate = useNavigate()
 
   return (
     <div className='min-h-screen flex flex-col items-center justify-center bg-[#EAEAEA] px-4'>
@@ -81,12 +85,18 @@ function RouteComponent() {
             </div>
           </tr>
         </table>
-        <Link
-          to="/"
+        <button
+          onClick={() => {
+            // clear cart
+            cartArray.forEach(([productId]) => {
+              removeProductFromCart(productId)
+            })
+            navigate({ to: '/' })
+          }}
           className='bg-primary rounded-2xl py-3 text-white font-semibold uppercase hover:bg-primary/90 transition-colors'
         >
           Retour à l'accueil
-        </Link>
+        </button>
       </div>
     </div >
   )

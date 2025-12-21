@@ -30,6 +30,7 @@ const schema = defineSchema({
     desc: v.optional(v.string()),
     categoryId: v.optional(v.id("categories")),
     price: v.optional(v.number()),
+    cost: v.optional(v.number()),
     status: v.union(
       v.literal("active"),
       v.literal("hidden"),
@@ -103,6 +104,7 @@ const schema = defineSchema({
         quantity: v.number(),
         productId: v.id("products"),
         price: v.number(),
+        cost: v.optional(v.number()),
         selection: v.array(
           v.object({
             variantId: v.id("variants"),
@@ -120,7 +122,8 @@ const schema = defineSchema({
       v.literal("denied")
     ),
     createdAt: v.number(),
-  }).index("by_customer", ["customerId"]),
+  }).index("by_customer", ["customerId"])
+    .index("by_createdAt", ["createdAt"]),
 
   sales: defineTable({
     order: v.array(
@@ -128,6 +131,7 @@ const schema = defineSchema({
         quantity: v.number(),
         productId: v.id("products"),
         price: v.number(),
+        cost: v.optional(v.number()),
         selection: v.array(
           v.object({
             variantId: v.id("variants"),

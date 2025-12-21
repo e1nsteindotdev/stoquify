@@ -55,7 +55,7 @@ function AuthWrapper({ children }) {
 function LoadingScreen() {
   return (
     <div className="h-screen center">
-      <p className="italic font-bold text-4xl">Loading....</p>
+      <p className="italic font-bold text-4xl">Chargement....</p>
     </div>
 
   )

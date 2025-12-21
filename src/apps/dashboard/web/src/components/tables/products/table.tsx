@@ -12,8 +12,9 @@ export function ProductsTable() {
   const rows: ProductRow[] = products.map((p: any) => ({
     _id: p._id,
     title: p.title,
-    desc: p.desc,
     price: p.price,
+    imageUrl:
+      p.images?.filter((img: any) => !img.hidden && img.url).sort((a: any, b: any) => a.order - b.order)[0]?.url,
   }));
 
   const onClick = async (e: React.MouseEvent) => {
@@ -31,7 +32,7 @@ export function ProductsTable() {
     <div className="container mx-auto py-10 space-y-4" onClick={onClick}>
       <div className="flex justify-end">
         <Link to="/produits/create">
-          <Button variant="default">New Product</Button>
+          <Button variant="default">Nouveau produit</Button>
         </Link>
       </div>
       <DataTable columns={columns} data={rows} />

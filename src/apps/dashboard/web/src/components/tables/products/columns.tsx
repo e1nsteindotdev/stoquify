@@ -5,18 +5,33 @@ import { Link } from "@tanstack/react-router";
 export type ProductRow = {
   _id: string;
   title: string;
-  desc: string;
   price: number;
+  imageUrl?: string;
 };
 
 export const columns: ColumnDef<ProductRow>[] = [
   {
-    accessorKey: "title",
-    header: "Titre",
+    accessorKey: "imageUrl",
+    header: "Image",
+    cell: ({ row }) => (
+      <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-md border border-input">
+        {row.original.imageUrl ? (
+          <img
+            src={row.original.imageUrl}
+            alt={row.original.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
+            {row.original.title.slice(0, 2)}
+          </div>
+        )}
+      </div>
+    ),
   },
   {
-    accessorKey: "desc",
-    header: "Description",
+    accessorKey: "title",
+    header: "Titre",
   },
   {
     accessorKey: "price",

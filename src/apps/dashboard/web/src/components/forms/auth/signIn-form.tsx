@@ -61,9 +61,9 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                     validators={{
                       onChange: ({ value }) =>
                           !value
-                            ? "Un mot de passe est requis"
+                            ? "Un email est requis"
                             : value.length < 3
-                              ? "Le mot de passe doit contenir au moins 3 caractères"
+                              ? "L'email doit contenir au moins 3 caractères"
                               : undefined,
                     }}
                     children={(field) => {
@@ -85,13 +85,7 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                   />
                   <div className="grid gap-3">
                     <div className="flex items-center">
-                      <Label htmlFor={"password"}>Password</Label>
-                      <a
-                        href="#"
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                      >
-                        Mot de passe oublié ?
-                      </a>
+                      <Label htmlFor={"password"}>Mot de passe</Label>
                     </div>
 
                     <form.Field
@@ -99,9 +93,9 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                       validators={{
                         onChange: ({ value }) =>
                           !value
-                            ? "Un email est requis"
+                            ? "Un mot de passe est requis"
                             : value.length < 3
-                              ? "L'email doit contenir au moins 3 caractères"
+                              ? "Le mot de passe doit contenir au moins 3 caractères"
                               : undefined,
                       }}
                       children={(field) => {

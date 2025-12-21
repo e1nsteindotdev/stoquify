@@ -29,6 +29,11 @@ function RouteComponent() {
   let { source: { sourceType, sourceName } } = useSearch({ from: Route.fullPath })
   const productId = params.slug as Id<'products'>
 
+
+  const cart = useCartStore((state) => state.cart);
+  const removeProductFromCart = useCartStore((state) => state.removeProductFromCart);
+  const cartArray = Array.from(cart)
+
   const addProductToCart = useCartStore(state => state.addProductToCart)
   const product = useQuery(api.products.getProductById, { id: productId })
 
@@ -51,6 +56,7 @@ function RouteComponent() {
   const [selectedQuantity, setSelectedQuantity] = useState(1)
 
   const navigation = useNavigate()
+
 
   if (!product) return <div> Chargement...</div>
   const header = (
@@ -97,6 +103,10 @@ function RouteComponent() {
       }
     } else if (mode === "BUY_IT_NOW") {
       if (product?._id && Object.values(selectedVariants).includes(null) === false) {
+
+        cartArray.forEach(([productId]) => {
+          removeProductFromCart(productId)
+        })
         addProductToCart(product?._id,
           {
             price: product?.price ?? 0,

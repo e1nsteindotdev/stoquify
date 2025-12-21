@@ -145,13 +145,12 @@ function OrderForm() {
           }))
         }))
       }
-      console.log('form data : ', data)
       const orderId = await sendOrder(data)
       if (orderId) {
         // Clear cart
-        cartArray.forEach(([productId]) => {
-          removeProductFromCart(productId)
-        })
+        // cartArray.forEach(([productId]) => {
+        //   removeProductFromCart(productId)
+        // })
         // Navigate to success page
         navigate({ to: '/order-success', search: { orderId } })
       }
