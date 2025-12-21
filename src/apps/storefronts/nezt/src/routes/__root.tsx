@@ -53,7 +53,17 @@ function RootComponent() {
             ))}
           </div>
         </AnimatePresence>
-        <Outlet />
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 100, transition: { duration: 1 } }}
+            exit={{ opacity: 0, transition: { duration: 0.01 } }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </ConvexProvider >
     </>
   );

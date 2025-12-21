@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { Doc } from "api/data-model";
-import { ProductQuickView } from "./product-quick-view";
 import { useState, useEffect } from "react";
 
 export function Product({
@@ -49,11 +48,11 @@ export function Product({
           <p className="font-black text-[20px] leading-[1] font-inter">
             {data?.price} DA
           </p>
-          <button
-            className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter"
-          >
-            voir rapidement
-          </button>
+          {/* <button */}
+          {/*   className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter" */}
+          {/* > */}
+          {/*   voir rapidement */}
+          {/* </button> */}
         </div>
         <p className="font-bold lg:text-[14px] leading-[1] uppercase tracking-wider font-inter">
           {data?.title}
@@ -127,11 +126,11 @@ export function CollectionProduct({
           <p className="font-black text-[20px] leading-[1] font-inter">
             {data?.price} DA
           </p>
-          <button
-            className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter"
-          >
-            voir rapidement
-          </button>
+          {/* <button */}
+          {/*   className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter" */}
+          {/* > */}
+          {/*   voir rapidement */}
+          {/* </button> */}
         </div>
         <p className="font-bold lg:text-[14px] leading-[1] uppercase tracking-wider font-inter mt-1">
           {data?.title}

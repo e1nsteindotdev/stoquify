@@ -71,7 +71,7 @@ export function Header() {
         <span>]</span>
       </div>
       {/* 139 */}
-      <p className="font-extrabold font-display text-[52px] lg:text-[clamp(79px,calc(79px+0.0773*(100cqw-1024px)),139px)] leading-[0.9] tracking-tight text-primary text-start uppercase lg:text-nowrap">
+      <p className="font-extrabold font-display text-[52px] lg:text-[clamp(67px,calc(67px+0.0796*(100vw-1100px)),120px)] leading-[0.9] tracking-tight text-primary text-start uppercase lg:text-nowrap">
         Bienvenue dans notre boutique
       </p>
       <div className="flex justify-between w-full text-[14px] lg:text-[31px] uppercase">

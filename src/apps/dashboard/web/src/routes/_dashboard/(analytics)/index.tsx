@@ -16,11 +16,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 type TimePeriod = "today" | "week" | "month" | "year" | "all";
 
 const PERIOD_LABELS: Record<TimePeriod, string> = {
-  today: "Today",
-  week: "This Week",
-  month: "This Month",
-  year: "This Year",
-  all: "All Time",
+  today: "Aujourd'hui",
+  week: "Cette semaine",
+  month: "Ce mois",
+  year: "Cette année",
+  all: "Tout",
 };
 
 export const Route = createFileRoute("/_dashboard/(analytics)/")({
@@ -36,15 +36,15 @@ function Page() {
 
   const chartConfig = {
     online: {
-      label: "Online Sales",
+      label: "Ventes en ligne",
       color: "hsl(217, 91%, 60%)",
     },
     pos: {
-      label: "POS Sales",
+      label: "Ventes POS",
       color: "hsl(142, 76%, 36%)",
     },
     profit: {
-      label: "Total Profit",
+      label: "Bénéfice total",
       color: "hsl(262, 83%, 58%)",
     },
   };
@@ -57,9 +57,9 @@ function Page() {
       const startOfYear = new Date(date.getFullYear(), 0, 1);
       const daysSinceStart = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
       const weekNumber = Math.floor(daysSinceStart / 7) + 1;
-      return `W${weekNumber}`;
+      return `S${weekNumber}`;
     }
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("fr-FR", {
       month: "short",
       day: "numeric",
     });
@@ -109,9 +109,9 @@ function Page() {
       {/* Total Sales Profit Stacked Bar Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Total Sales (Pure Profit)</CardTitle>
+          <CardTitle>Ventes Totales (Bénéfice Pur)</CardTitle>
           <CardDescription>
-            {period === "year" ? "Weekly breakdown" : "Daily breakdown"} of online and POS sales
+            {period === "year" ? "Répartition hebdomadaire" : "Répartition quotidienne"} des ventes en ligne et POS
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -123,13 +123,13 @@ function Page() {
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar dataKey="online" stackId="a" fill="var(--color-online)" name="Online Sales" isAnimationActive={true} animationDuration={1000} />
-                <Bar dataKey="pos" stackId="a" fill="var(--color-pos)" name="POS Sales" isAnimationActive={true} animationDuration={1000} />
+                <Bar dataKey="online" stackId="a" fill="var(--color-online)" name="Ventes en ligne" isAnimationActive={true} animationDuration={1000} />
+                <Bar dataKey="pos" stackId="a" fill="var(--color-pos)" name="Ventes POS" isAnimationActive={true} animationDuration={1000} />
               </BarChart>
             </ChartContainer>
           ) : (
             <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              No data available for the selected period
+              Aucune donnée disponible pour la période sélectionnée
             </div>
           )}
         </CardContent>
@@ -138,9 +138,9 @@ function Page() {
       {/* Total Sales with Order Counts */}
       <Card>
         <CardHeader>
-          <CardTitle>Total Sales & Order Counts</CardTitle>
+          <CardTitle>Total des ventes et nombre de commandes</CardTitle>
           <CardDescription>
-            Total sales amount with number of online orders and POS sales
+            Montant total des ventes avec le nombre de commandes en ligne et de ventes POS
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -153,14 +153,14 @@ function Page() {
                 <YAxis yAxisId="right" orientation="right" />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar yAxisId="left" dataKey="totalSales" fill="var(--color-profit)" name="Total Sales (DZD)" isAnimationActive={true} animationDuration={1000} />
-                <Bar yAxisId="right" dataKey="onlineOrders" fill="var(--color-online)" name="Online Orders (count)" isAnimationActive={true} animationDuration={1000} />
-                <Bar yAxisId="right" dataKey="posSales" fill="var(--color-pos)" name="POS Sales (count)" isAnimationActive={true} animationDuration={1000} />
+                <Bar yAxisId="left" dataKey="totalSales" fill="var(--color-profit)" name="Ventes totales (DZD)" isAnimationActive={true} animationDuration={1000} />
+                <Bar yAxisId="right" dataKey="onlineOrders" fill="var(--color-online)" name="Commandes en ligne (nombre)" isAnimationActive={true} animationDuration={1000} />
+                <Bar yAxisId="right" dataKey="posSales" fill="var(--color-pos)" name="Ventes POS (nombre)" isAnimationActive={true} animationDuration={1000} />
               </BarChart>
             </ChartContainer>
           ) : (
             <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              No data available for the selected period
+              Aucune donnée disponible pour la période sélectionnée
             </div>
           )}
         </CardContent>
@@ -171,9 +171,9 @@ function Page() {
         {/* Best Performing Products */}
         <Card>
           <CardHeader>
-            <CardTitle>Best Performing Products (Top 3)</CardTitle>
+            <CardTitle>Produits les plus performants (Top 3)</CardTitle>
             <CardDescription>
-              Products with the highest sales in the selected time frame
+              Produits ayant réalisé les ventes les plus élevées au cours de la période sélectionnée
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -184,12 +184,12 @@ function Page() {
                   <XAxis type="number" />
                   <YAxis dataKey="name" type="category" width={150} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="sales" fill="var(--color-online)" name="Sales Count" isAnimationActive={true} animationDuration={1000} />
+                  <Bar dataKey="sales" fill="var(--color-online)" name="Nombre de ventes" isAnimationActive={true} animationDuration={1000} />
                 </BarChart>
               </ChartContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                No data available
+                Aucune donnée disponible
               </div>
             )}
           </CardContent>
@@ -198,9 +198,9 @@ function Page() {
         {/* Worst Performing Products */}
         <Card>
           <CardHeader>
-            <CardTitle>Worst Performing Products (Bottom 3)</CardTitle>
+            <CardTitle>Produits les moins performants (Derniers 3)</CardTitle>
             <CardDescription>
-              Products with the lowest sales (excluding unsold items)
+              Produits ayant réalisé les ventes les plus faibles (à l'exclusion des articles non vendus)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,12 +211,12 @@ function Page() {
                   <XAxis type="number" />
                   <YAxis dataKey="name" type="category" width={150} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="sales" fill="var(--color-pos)" name="Sales Count" isAnimationActive={true} animationDuration={1000} />
+                  <Bar dataKey="sales" fill="var(--color-pos)" name="Nombre de ventes" isAnimationActive={true} animationDuration={1000} />
                 </BarChart>
               </ChartContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                No data available
+                Aucune donnée disponible
               </div>
             )}
           </CardContent>

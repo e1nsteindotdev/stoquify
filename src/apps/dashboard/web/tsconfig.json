@@ -13,7 +13,8 @@
       "DOM.Iterable"
     ],
     "types": [
-      "vite/client"
+      "vite/client",
+      "vite-plugin-pwa/client"
     ],
     /* Bundler mode */
     "moduleResolution": "bundler",

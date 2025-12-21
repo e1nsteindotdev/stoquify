@@ -19,6 +19,7 @@ export function NavMain() {
   const isActive = (path: string) => location.pathname === path;
 
   const items = [
+    { title: "POS", url: "/pos", icon: IconShoppingBag },
     { title: "Produits", url: "/produits", icon: IconPackage },
     { title: "Commandes", url: "/commandes", icon: IconShoppingBag },
     { title: "Clients", url: "/clients", icon: IconUsers },

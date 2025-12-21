@@ -13,11 +13,11 @@ function smoothScrollTo(element: HTMLElement, offset: number = 100) {
     if (!start) start = timestamp;
     const progress = timestamp - start;
     const progressPercent = Math.min(progress / duration, 1);
-    
+
     // Easing function: ease-in-out cubic
     const easeInOutCubic = (t: number) =>
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    
+
     const easedProgress = easeInOutCubic(progressPercent);
     window.scrollTo(0, startY + easedProgress * distance);
 
@@ -112,7 +112,7 @@ export function Footer() {
                   }}
                   className="flex justify-between items-center cursor-pointer hover:opacity-70 transition-opacity"
                 >
-                  <p className="">nos catégories</p>
+                  <p className="uppercase">nos catégories</p>
                   <UpArrow />
                 </button>
                 <button
@@ -124,7 +124,7 @@ export function Footer() {
                   }}
                   className="flex justify-between items-center gap-4 cursor-pointer hover:opacity-70 transition-opacity"
                 >
-                  <p className="">nos collections</p>
+                  <p className="uppercase">nos collections</p>
                   <UpArrow />
                 </button>
               </div>
