@@ -13,6 +13,5 @@
 ###Optional extras that scream “experienced”
 
 - [ ] Webhooks to keep inventory updated in real-time
-- [ ] GraphQL API for frontends
 - [ ] CI/CD pipeline for staging/production
 - [ ] Feature flags to test new integrations

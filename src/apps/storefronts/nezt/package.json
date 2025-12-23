@@ -24,7 +24,6 @@
     "@tanstack/zod-adapter": "^1.132.33",
     "autoprefixer": "^10.4.22",
     "class-variance-authority": "^0.7.1",
-    "verbatimModuleSyntax": false,
     "convex": "^1.25.4",
     "lucide-react": "^0.536.0",
     "motion": "^12.23.26",

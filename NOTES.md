@@ -1,3 +1,0 @@
-### about the inventory tracking
-
-
