@@ -157,13 +157,6 @@ export const updateProduct = mutation({
       })
     const past_collection_ids = past_collections.map(c => c._id)
     const new_collection_ids = collections ?? []
-    const removed_collections = past_collections.filter(c => {
-      let r = true;
-      collections?.forEach(cc => {
-        if (cc === c._id) r = false
-      })
-      return r
-    })
 
     // add new collections
     new_collection_ids
@@ -198,8 +191,6 @@ export const getProductById = query({
 
     const variants = await getVariants(ctx, product._id)
     const variantsInventory = await getVariantsInventory(ctx, product._id)
-
-
 
     // attach images urls to products' images 
     const urls = new Map<Id<'_storage'>, string | undefined>()

@@ -5,12 +5,11 @@ import { useRef, useState } from "react";
 
 import { type Id } from "api/data-model";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "convex/react";
 import { useMutation as useTanstackMutation } from "@tanstack/react-query";
-import { api } from "api/convex";
 import ImageItem from "./image-item";
 import { useImageActions } from "@/hooks/useImageActions";
 import { useGetImageUrl, useInitiateProduct, useNavigateToProduct } from "@/hooks/products";
+import { useGenerateUploadUrl, useSendImage } from "@/hooks/use-convex-queries";
 
 type PropsType = {
   productId: Id<"products"> | null;
@@ -43,8 +42,8 @@ export default function ImageField({ productId, label, className, type, ...props
   const initiateProduct = useInitiateProduct();
   const navigateToProduct = useNavigateToProduct();
   const getImageUrl = useGetImageUrl()
-  const generateUploadUrl = useMutation(api.images.generateUploadUrl);
-  const sendImage = useMutation(api.products.sendImage);
+  const generateUploadUrlMutation = useGenerateUploadUrl();
+  const sendImageMutation = useSendImage();
 
   function handleClick() { imagesInputRef?.current?.click(); }
 
@@ -106,7 +105,7 @@ export default function ImageField({ productId, label, className, type, ...props
 
       // prepare the task to upload the image to convex's generated postUrl and add it to the other tasks
       const task = (async () => {
-        const postUrl = await generateUploadUrl();
+        const postUrl = await generateUploadUrlMutation.mutateAsync({});
         const res = await uploadMutation.mutateAsync({
           fp,
           order,
@@ -123,7 +122,7 @@ export default function ImageField({ productId, label, className, type, ...props
 
     // prepare the task to attach the image to it's respective product
     const sendTasks: Promise<string | null>[] = results.map(async (r) =>
-      sendImage({
+      sendImageMutation.mutateAsync({
         storageId: r.storageId,
         productId: ensuredProductId as unknown as Id<"products">,
         order: r.order,

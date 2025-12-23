@@ -2,10 +2,10 @@
 - [X] Add cart functionality
 - [X] Add full ordering system
 - [X] Add animations to the storefront
+- [X] Simple analytics
+- [X] Simple POS
 - [ ] Automate full onboarding with one command.
 - [ ] Make the whole app a PWA and finish its ui
-- [ ] Simple POS
-- [ ] Simple analytics
 - [ ] Figure out how to deploy for 10 clients with $0 cost and how to do it fast, and with a seamless to fixes bugs
 
 ## FEATURES PHASE 01 (NO AI)
@@ -22,7 +22,7 @@
 ### PORTFOLIO ONES
 - [X] Unified dashboard: products, inventory, orders
 - [X] Responsive, fast frontend (Next.js + Tailwind + charts)
-- [ ] Background worker for syncing data from stores
+- [ ] Cache most of the data (Both in the store and in the dashboard) and add a background worker for syncing data from stores
 - [ ] Analytics & visualizations (sales, stock trends)
 - [ ] Automated alerts for low stock / sales spikes
 - [ ] Error logging and retry for API failures

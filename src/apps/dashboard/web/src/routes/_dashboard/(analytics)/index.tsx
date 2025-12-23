@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useConvex } from "convex/react";
-import { api } from "api/convex";
-import { useState, useEffect } from "react";
-import { useDashboardStore } from "@/hooks/use-dashboard-store";
+import { useState } from "react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -13,6 +10,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
+import { useSalesData, useSalesByTimePeriod, useProductPerformance } from "@/hooks/use-convex-queries";
 
 type TimePeriod = "today" | "week" | "month" | "year" | "all";
 
@@ -30,32 +28,11 @@ export const Route = createFileRoute("/_dashboard/(analytics)/")({
 
 function Page() {
   const [period, setPeriod] = useState<TimePeriod>("today");
-  const convex = useConvex();
-  const { analytics, setAnalytics } = useDashboardStore();
-
-  const cache = analytics[period] || {};
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!cache.salesData) {
-        const data = await convex.query(api.analytics.getSalesData, { period });
-        setAnalytics(period, "salesData", data);
-      }
-      if (!cache.salesByPeriod) {
-        const data = await convex.query(api.analytics.getSalesByTimePeriod, { period });
-        setAnalytics(period, "salesByPeriod", data);
-      }
-      if (!cache.productPerformance) {
-        const data = await convex.query(api.analytics.getProductPerformance, { period });
-        setAnalytics(period, "productPerformance", data);
-      }
-    };
-    fetchData();
-  }, [period, cache, convex, setAnalytics]);
-
-  const salesData = cache.salesData;
-  const salesByPeriod = cache.salesByPeriod;
-  const productPerformance = cache.productPerformance;
+  
+  // Use TanStack Query hooks with automatic caching and reactivity
+  const { data: salesData } = useSalesData(period);
+  const { data: salesByPeriod } = useSalesByTimePeriod(period);
+  const { data: productPerformance } = useProductPerformance(period);
 
   const chartConfig = {
     online: {

@@ -1,10 +1,9 @@
 import { columns, type ClientRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { useCustomers } from "@/hooks/use-convex-queries";
 
 export function ClientsTable() {
-  const clients = useQuery(api.customers.listCustomers) ?? [];
+  const { data: clients = [], isLoading } = useCustomers();
 
   const rows: ClientRow[] = clients.map((client: any) => ({
     _id: client._id,
@@ -22,4 +21,5 @@ export function ClientsTable() {
     </div>
   );
 }
+
 

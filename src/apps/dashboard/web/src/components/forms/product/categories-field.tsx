@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useFieldContext } from "@/hooks/form-context.tsx";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "api/convex";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
@@ -20,14 +18,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import { useAllCategories, useCreateCategory } from "@/hooks/use-convex-queries";
+
 type Props = {
   label?: string;
 };
 
 export default function CategoriesField({ label }: Props) {
   const field = useFieldContext<string>();
-  const categories = useQuery(api.categories.listAllCategories) ?? [];
-  const createCategory = useMutation(api.categories.createCategory as any);
+  const { data: categories = [] } = useAllCategories();
+  const createCategory = useCreateCategory();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -37,7 +37,7 @@ export default function CategoriesField({ label }: Props) {
     if (!name.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      const id = await createCategory({ name });
+      const id = await createCategory.mutateAsync({ name });
       // Select the newly created category
       field.handleChange(String(id) as any);
       setCreateOpen(false);

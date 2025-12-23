@@ -28,8 +28,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuthActions } from "@convex-dev/auth/react"
-import { useQuery } from "convex/react"
-import { api } from "api/convex"
+import { useCurrentUser } from "@/hooks/use-convex-queries"
 
 import { ClipLoader } from "react-spinners"
 
@@ -37,8 +36,8 @@ export function NavUser({ avatar }: { avatar: string }) {
 
   const { isMobile } = useSidebar()
   const { signOut } = useAuthActions()
-  const user = useQuery(api.users.get);
-  if (!user) {
+  const { data: user, isLoading } = useCurrentUser();
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center p-4">
         <ClipLoader size={20} color="hsl(var(--primary))" />

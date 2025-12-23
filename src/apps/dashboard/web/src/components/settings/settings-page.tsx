@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,14 +12,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { type Id } from "api/data-model";
+import { useSettings, useFAQs, useUpdateSettings, useCreateFAQ, useUpdateFAQ, useDeleteFAQ } from "@/hooks/use-convex-queries";
 
 export function SettingsPage() {
-  const settings = useQuery(api.settings.getSettings);
-  const faqs = useQuery(api.settings.getFAQs) || [];
-  const updateSettings = useMutation(api.settings.updateSettings);
-  const createFAQ = useMutation(api.settings.createFAQ);
-  const updateFAQ = useMutation(api.settings.updateFAQ);
-  const deleteFAQ = useMutation(api.settings.deleteFAQ);
+  const { data: settings } = useSettings();
+  const { data: faqs = [] } = useFAQs();
+  const updateSettings = useUpdateSettings();
+  const createFAQ = useCreateFAQ();
+  const updateFAQ = useUpdateFAQ();
+  const deleteFAQ = useDeleteFAQ();
 
   const [locationLink, setLocationLink] = useState("");
   const [instagramLink, setInstagramLink] = useState("");
@@ -54,7 +53,7 @@ export function SettingsPage() {
 
   const handleSaveSettings = async () => {
     try {
-      await updateSettings({
+      await updateSettings.mutateAsync({
         locationLink: locationLink || undefined,
         instagramLink: instagramLink || undefined,
         facebookLink: facebookLink || undefined,
@@ -74,7 +73,7 @@ export function SettingsPage() {
     try {
       const maxOrder =
         faqsList.length > 0 ? Math.max(...faqsList.map((f) => f.order)) : 0;
-      await createFAQ({
+      await createFAQ.mutateAsync({
         question: newFaqQuestion,
         answer: newFaqAnswer,
         order: maxOrder + 1,
@@ -89,7 +88,7 @@ export function SettingsPage() {
 
   const handleUpdateFAQ = async (id: Id<"faqs">) => {
     try {
-      await updateFAQ({
+      await updateFAQ.mutateAsync({
         id,
         question: editingFaqQuestion,
         answer: editingFaqAnswer,
@@ -123,7 +122,7 @@ export function SettingsPage() {
   const handleDeleteFAQ = async (id: Id<"faqs">) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette FAQ ?")) return;
     try {
-      await deleteFAQ({ id });
+      await deleteFAQ.mutateAsync({ id });
       toast.success("FAQ supprimée avec succès");
     } catch (error) {
       toast.error("Erreur lors de la suppression de la FAQ");

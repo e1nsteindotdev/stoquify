@@ -1,8 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,19 +15,18 @@ import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { type Doc, type Id } from "api/data-model";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
+import { useProductById, useSelectedCollectionIds, useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
-  const initiateProduct = useMutation(api.products.initiateProduct);
-  const updateProduct = useMutation(api.products.updateProduct);
+  const initiateProduct = useInitiateProduct();
+  const updateProduct = useUpdateProduct();
 
-  const product = isNew
-    ? null
-    : (useQuery(api.products.getProductById, { id: slug as Id<"products"> }) ??
-      null);
-  let productCollections = new Set(useQuery(api.collections.listSelectedCollectionsIds, { productId: product?._id }))
+  const { data: product } = useProductById(isNew ? undefined : slug as Id<"products">);
+  const { data: selectedCollectionIds } = useSelectedCollectionIds(product?._id);
+  const productCollections = new Set(selectedCollectionIds ?? []);
   console.log('product collections : ', productCollections)
 
   const defaultValues = useMemo(
@@ -72,13 +69,13 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       }
 
       if (isNew) {
-        const id = await initiateProduct();
-        await updateProduct({ ...dirtyValues, productId: id } as any);
+        const id = await initiateProduct.mutateAsync({});
+        await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
         router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
       } else {
         if (productId) {
           dirtyValues["productId"] = productId;
-          await updateProduct(dirtyValues as any);
+          await updateProduct.mutateAsync(dirtyValues as any);
         }
       }
     },

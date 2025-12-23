@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "api/convex";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { IconArrowLeft, IconMinus, IconPlus, IconShoppingCart, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useCategories, useProducts, useCreateSale, useProductById } from "@/hooks/use-convex-queries";
+import type { Id } from "api/data-model";
 
 interface CartItem {
   productId: string;
@@ -29,9 +29,9 @@ export default function POSPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showVariantModal, setShowVariantModal] = useState(false);
 
-  const categories = useQuery(api.categories.listCategories);
-  const products = useQuery(api.products.listProducts);
-  const createSale = useMutation(api.sales.createSale);
+  const { data: categories } = useCategories();
+  const { data: products } = useProducts();
+  const createSale = useCreateSale();
 
   const filteredProducts = selectedCategory 
     ? products?.filter(p => p.categoryId === selectedCategory)
@@ -75,7 +75,7 @@ export default function POSPage() {
 
     try {
       const subTotalCost = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-      await createSale({
+      await createSale.mutateAsync({
         order: cart.map(item => ({
           productId: item.productId as any,
           price: item.price,
@@ -267,7 +267,7 @@ export default function POSPage() {
 }
 
 function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
-  const productWithVariants = useQuery(api.products.getProductById, product?._id ? { id: product._id } : "skip");
+  const { data: productWithVariants } = useProductById(product?._id as Id<"products"> | undefined);
   const [selections, setSelections] = useState<any[]>([]);
 
   if (!product) return null;

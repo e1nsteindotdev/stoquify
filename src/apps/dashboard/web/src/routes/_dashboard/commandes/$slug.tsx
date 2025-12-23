@@ -1,10 +1,10 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "api/convex";
 import type { Id } from "api/data-model";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useOrderById, useConfirmOrder, useDenyOrder } from "@/hooks/use-convex-queries";
+import { ClipLoader } from "react-spinners";
 
 export const Route = createFileRoute("/_dashboard/commandes/$slug")({
   component: OrderDetailComponent,
@@ -24,24 +24,24 @@ const statusLabels = {
 
 function OrderDetailComponent() {
   const { slug } = useParams({ from: "/_dashboard/commandes/$slug" });
-  const order = useQuery(api.order.getOrder, { orderId: slug as Id<"orders"> });
-  const confirmOrder = useMutation(api.order.confirmOrder);
-  const denyOrder = useMutation(api.order.denyOrder);
+  const { data: order, isLoading } = useOrderById(slug as Id<"orders">);
+  const confirmOrder = useConfirmOrder();
+  const denyOrder = useDenyOrder();
 
-  if (!order) {
+  if (isLoading || !order) {
     return (
-      <div className="p-4 pt-0">
-        <div>Chargement...</div>
+      <div className="p-4 pt-0 flex justify-center">
+        <ClipLoader color="#000" size={50} />
       </div>
     );
   }
 
   const handleConfirm = async () => {
-    await confirmOrder({ orderId: slug as Id<"orders"> });
+    await confirmOrder.mutateAsync({ orderId: slug as Id<"orders"> });
   };
 
   const handleDeny = async () => {
-    await denyOrder({ orderId: slug as Id<"orders"> });
+    await denyOrder.mutateAsync({ orderId: slug as Id<"orders"> });
   };
 
   const totalCost = order.subTotalCost + order.deliveryCost;

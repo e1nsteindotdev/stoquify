@@ -7,8 +7,6 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { useFieldContext } from "@/hooks/form-context.tsx";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -21,12 +19,13 @@ import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Id } from "api/data-model";
+import { useAllCollections, useCreateCollection } from "@/hooks/use-convex-queries";
 
 export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
   const field = useFieldContext<Set<string>>();
   console.log("selected collections :", selectedCollections)
-  const createCollection = useMutation(api.collections.createCollection);
-  const collections = useQuery(api.collections.listAllCollections, {})
+  const createCollection = useCreateCollection();
+  const { data: collections } = useAllCollections();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -36,7 +35,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
     if (!name.trim() || isAdding) return;
     setIsAdding(true);
     try {
-      const res = await createCollection({ title: name });
+      const res = await createCollection.mutateAsync({ title: name });
       if (res.ok) {
         toast.success('Collection ajoutée avec succès')
       } else {

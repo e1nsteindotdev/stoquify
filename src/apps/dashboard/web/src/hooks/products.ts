@@ -1,12 +1,11 @@
 import { useRouter } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
-import { api } from "api/convex";
+import { useInitiateProduct as useInitiateProductBase, useGetImageUrl as useGetImageUrlBase } from "@/hooks/use-convex-queries";
 import type { Id } from "api/data-model";
 
 export function useInitiateProduct() {
-  const mutation = useMutation(api.products.initiateProduct);
+  const mutation = useInitiateProductBase();
   return async function initiateProduct() {
-    return await mutation();
+    return await mutation.mutateAsync({});
   };
 }
 
@@ -21,8 +20,9 @@ export function useNavigateToProduct() {
 }
 
 export function useGetImageUrl() {
-  const mutation = useMutation(api.images.getUrl);
+  const mutation = useGetImageUrlBase();
   return async function getImageUrl(storageId: Id<"_storage">) {
-    return await mutation({ storageId });
+    return await mutation.mutateAsync({ storageId });
   };
 }
+

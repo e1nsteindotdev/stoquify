@@ -1,10 +1,10 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
 import type { Id } from "api/data-model";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCustomerById } from "@/hooks/use-convex-queries";
+import { ClipLoader } from "react-spinners";
 
 export const Route = createFileRoute("/_dashboard/clients/$slug")({
   component: ClientDetailComponent,
@@ -24,14 +24,12 @@ const statusLabels = {
 
 function ClientDetailComponent() {
   const { slug } = useParams({ from: "/_dashboard/clients/$slug" });
-  const client = useQuery(api.customers.getCustomer, {
-    customerId: slug as Id<"customers">,
-  });
+  const { data: client, isLoading } = useCustomerById(slug as Id<"customers">);
 
-  if (!client) {
+  if (isLoading || !client) {
     return (
-      <div className="p-4 pt-0">
-        <div>Chargement...</div>
+      <div className="p-4 pt-0 flex justify-center">
+        <ClipLoader color="#000" size={50} />
       </div>
     );
   }
