@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 import { useCartStore } from '@/lib/state';
 import { AnimatePresence, motion } from 'motion/react';
 import { LoadingScreen } from '@/components/loading-spinner';
-
+import { api as effectApi } from 'server/effect-rpc';
+import { Effect } from 'effect';
 
 export const Route = createFileRoute('/products/$slug')({
   component: RouteComponent,
@@ -29,6 +30,14 @@ function RouteComponent() {
   const params = useParams({ from: "/products/$slug" });
   let { source: { sourceType, sourceName } } = useSearch({ from: Route.fullPath })
   const productId = params.slug as Id<'products'>
+
+  useEffect(() => {
+    async function foo() {
+      const program = effectApi.greet.sayHi({ payload: { name: "Stoq User" } })
+      const data = await Effect.runPromise(program)
+    }
+  }, [])
+
 
 
   const cart = useCartStore((state) => state.cart);
