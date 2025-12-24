@@ -25,10 +25,9 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
     },
     onSubmit: async ({ value }) => {
       try {
-        void signIn("password", { ...value, step });
-        //void signIn().then(value => console.log("then value :", value)).catch(e => console.log("error : ", e))
+        await signIn("password", { ...value, flow: step });
       } catch (error) {
-        console.log(error)
+        console.error("error while trying to sign up :", error)
       }
     },
   });

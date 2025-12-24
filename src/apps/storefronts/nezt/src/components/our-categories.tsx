@@ -1,8 +1,8 @@
 import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { api } from "@repo/backend/_generated/api";
 import { RightChevron } from "./icons/right-chevron";
 import { DownChevron } from "./icons/down-chevron";
-import type { Doc } from "api/data-model";
+import type { Doc } from "@repo/backend/_generated/dataModel";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 

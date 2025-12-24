@@ -18,7 +18,7 @@ import {
 import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox"
-import type { Id } from "api/data-model";
+import type { Id } from "@repo/backend/_generated/dataModel";
 import { useAllCollections, useCreateCollection } from "@/hooks/use-convex-queries";
 
 export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {

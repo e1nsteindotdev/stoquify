@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useInitiateProduct as useInitiateProductBase, useGetImageUrl as useGetImageUrlBase } from "@/hooks/use-convex-queries";
-import type { Id } from "api/data-model";
+import type { Id } from "@repo/backend/_generated/dataModel";
 
 export function useInitiateProduct() {
   const mutation = useInitiateProductBase();

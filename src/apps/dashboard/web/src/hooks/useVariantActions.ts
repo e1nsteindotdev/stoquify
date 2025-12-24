@@ -1,4 +1,4 @@
-import type { Doc } from "api/data-model";
+import type { Doc } from "@repo/backend/_generated/dataModel";
 import { useCallback } from "react";
 
 export type VariantOption = {

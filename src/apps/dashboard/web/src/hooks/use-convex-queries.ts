@@ -1,7 +1,7 @@
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api } from "api/convex";
-import type { Id } from "api/data-model";
+import { api } from "@repo/backend/_generated/api";
+import type { Id } from "@repo/backend/_generated/dataModel";
 
 // ============= Products =============
 export function useProducts() {

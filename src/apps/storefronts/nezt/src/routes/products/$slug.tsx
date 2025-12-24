@@ -2,8 +2,6 @@
 import { Footer } from '@/components/footer';
 import { HeaderAnonc, Navbar } from '@/components/navbar';
 import { createFileRoute, Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { api } from 'api/convex';
-import type { Id } from 'api/data-model';
 import { useQuery } from 'convex/react';
 import { z } from 'zod'
 import { Check, MinusIcon, PlusIcon } from 'lucide-react';
@@ -13,6 +11,9 @@ import { cn } from '@/lib/utils';
 import { useCartStore } from '@/lib/state';
 import { AnimatePresence, motion } from 'motion/react';
 import { LoadingScreen } from '@/components/loading-spinner';
+
+import { api } from "@repo/backend/_generated/api"
+import type { Id } from "@repo/backend/_generated/dataModel"
 
 
 export const Route = createFileRoute('/products/$slug')({

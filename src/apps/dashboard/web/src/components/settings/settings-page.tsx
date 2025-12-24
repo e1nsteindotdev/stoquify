@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { type Id } from "api/data-model";
+import { type Id } from "@repo/backend/_generated/dataModel";
 import { useSettings, useFAQs, useUpdateSettings, useCreateFAQ, useUpdateFAQ, useDeleteFAQ } from "@/hooks/use-convex-queries";
 
 export function SettingsPage() {

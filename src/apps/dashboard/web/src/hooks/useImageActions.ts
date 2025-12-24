@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { type Id } from "api/data-model";
+import { type Id } from "@repo/backend/_generated/dataModel";
 
 export type LocalImage = {
   order: number;

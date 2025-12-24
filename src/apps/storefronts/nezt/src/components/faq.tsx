@@ -1,7 +1,7 @@
 import { DownChevron } from "./icons/down-chevron";
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { api } from "@repo/backend/_generated/api";
 
 export function FAQs() {
   const faqs = useQuery(api.settings.getFAQs) || [];

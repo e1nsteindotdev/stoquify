@@ -2,8 +2,8 @@ import { Footer } from '@/components/footer';
 import { HeaderAnonc, Navbar } from '@/components/navbar';
 import { Product } from '@/components/products';
 import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
-import { api } from 'api/convex';
-import type { Id } from 'api/data-model';
+import { api } from "@repo/backend/_generated/api";
+import type { Id } from "@repo/backend/_generated/dataModel";
 import { useQuery } from 'convex/react';
 
 export const Route = createFileRoute('/categories/$slug')({

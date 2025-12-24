@@ -1,0 +1,27 @@
+{
+  "name": "@repo/backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "convex dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "exports": {
+    "./_generated/*": {
+      "types": "./convex/_generated/*.d.ts",
+      "default": "./convex/_generated/*.js"
+    }
+  },
+  "dependencies": {
+    "@auth/core": "0.37.0",
+    "@convex-dev/auth": "^0.0.88",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "convex": "^1.25.4",
+    "recharts": "^2.15.4"
+  }
+}

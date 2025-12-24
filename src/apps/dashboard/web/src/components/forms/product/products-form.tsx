@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
-import { type Doc, type Id } from "api/data-model";
+import { type Doc, type Id } from "@repo/backend/_generated/dataModel";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
 import { useProductById, useSelectedCollectionIds, useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
 

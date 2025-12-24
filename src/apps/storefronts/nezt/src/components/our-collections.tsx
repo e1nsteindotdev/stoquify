@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react"
-import { api } from "api/convex"
+import { api } from "@repo/backend/_generated/api"
 import { SimpleChevronDownIcon } from "./icons/simple-down-chevron"
 import { CollectionProduct, Product } from "./products"
 

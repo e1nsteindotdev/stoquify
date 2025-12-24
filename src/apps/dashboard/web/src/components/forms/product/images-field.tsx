@@ -3,7 +3,7 @@ import { useFieldContext } from "@/hooks/form-context.tsx";
 import { Label } from "@radix-ui/react-label";
 import { useRef, useState } from "react";
 
-import { type Id } from "api/data-model";
+import { type Id } from "@repo/backend/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { useMutation as useTanstackMutation } from "@tanstack/react-query";
 import ImageItem from "./image-item";

@@ -27,11 +27,11 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
         const data = new FormData()
         data.set("email", value.email)
         data.set("password", value.password)
-        data.set("flow", "signUp")
+        data.set("flow", "signIn")
 
-        void signIn("password", data);
+        await signIn("password", data);
       } catch (error) {
-        console.log("error while trying to sign in :", error)
+        console.error("error while trying to sign in :", error)
       }
     },
   });

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Image } from "./ui/image";
 import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { api } from "@repo/backend/_generated/api";
 import { MenuIcon } from "./icons/menu-icon";
 import { OrderIcon } from "./icons/order-icon";
 import { Cart } from "./cart";

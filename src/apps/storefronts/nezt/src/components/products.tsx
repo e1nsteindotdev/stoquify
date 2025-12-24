@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { Doc } from "api/data-model";
+import type { Doc } from "@repo/backend/_generated/dataModel";
 import { useState, useEffect } from "react";
 
 export function Product({

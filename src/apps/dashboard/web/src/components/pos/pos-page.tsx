@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useCategories, useProducts, useCreateSale, useProductById } from "@/hooks/use-convex-queries";
-import type { Id } from "api/data-model";
+import type { Id } from "@repo/backend/_generated/dataModel";
 
 interface CartItem {
   productId: string;
