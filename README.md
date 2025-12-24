@@ -33,3 +33,18 @@
 - [ ] Webhooks to keep inventory updated in real-time
 - [ ] CI/CD pipeline for staging/production
 - [ ] Feature flags to test new integrations
+
+
+
+
+-> MIGRATE TO EFFECT & TANSTACK DB
+    - reduce the cost because now we're with cloudflare not 
+    - have wide event tracing to easily debug
+    - support offline writes & reads
+    - never have an empty state.
+
+-> STAY WTIH CONVEX
+    - reactive queries out of the box
+    - less code
+    - less time migrating
+    

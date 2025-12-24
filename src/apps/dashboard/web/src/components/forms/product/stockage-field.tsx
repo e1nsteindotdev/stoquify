@@ -23,7 +23,6 @@ export default function StockageField({ variants, strat }: Props) {
 
 }
 
-
 function ByNumberForm({ inventoryVariants, field }: any) {
   const fp = ""
   const quantity = inventoryVariants.get(fp)?.quantity ?? 0
@@ -43,12 +42,12 @@ function ByNumberForm({ inventoryVariants, field }: any) {
         </div>
         <div className="flex gap-2 items-center">
           <p className="text-[14px] text-neutral-700">Quantité</p>
-          <Input 
+          <Input
             type="number"
-            onChange={(e) => changeQuantity(Number(e.target.value))} 
-            placeholder="eg. 100" 
-            defaultValue={quantity} 
-            className="text-[14px] py-1 w-24" 
+            onChange={(e) => changeQuantity(Number(e.target.value))}
+            placeholder="eg. 100"
+            defaultValue={quantity}
+            className="text-[14px] py-1 w-24"
           />
         </div>
       </div>
@@ -67,7 +66,7 @@ function ByDemandForm({ field }: any) {
     <div className="rounded-2xl border border-input-border p-4 bg-muted/50 flex flex-col gap-1">
       <p className="font-semibold text-[14px]">Sur commande</p>
       <p className="text-[13px] text-neutral-500 leading-relaxed">
-        Ce produit n'a pas de stock limité. Chaque commande sera traitée à la demande. 
+        Ce produit n'a pas de stock limité. Chaque commande sera traitée à la demande.
         Aucun suivi de stock ne sera effectué pour ce produit.
       </p>
     </div>

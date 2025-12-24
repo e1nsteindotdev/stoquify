@@ -1,0 +1,27 @@
+{
+  "name": "stoquify-api",
+  "compatibility_date": "2025-10-31",
+  "main": "src/index.ts",
+  "kv_namespaces": [
+    {
+      "binding": "IGNITE_KV",
+      "id": "cf9b5e0fb47641eeacaf5489469df92e",
+      "preview_id": "03960828f40f4524a0c386734ec56dbc"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "D1", // This is how you access it in code (env.DB)
+      "database_name": "stoquify-d1",
+      "database_id": "D32Kbj12l"
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
+  }
+}
