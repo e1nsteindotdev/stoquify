@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { type Id } from "@repo/backend/_generated/dataModel";
+import { type Id } from "api/data-model";
 
 export type LocalImage = {
   order: number;
@@ -15,20 +15,6 @@ type FieldLike = {
   state: { value: ImagesRecord };
   setValue: (updater: (prev: ImagesRecord) => ImagesRecord) => void;
 };
-
-// function normalizeForServer(images: ImagesRecord) {
-//   // Include any image that has a storageId (regardless of local status),
-//   // otherwise it would be dropped from the server when we patch.
-//   return Object.values(images)
-//     .filter((img) => !!img.storageId)
-//     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-//     .map((img) => ({
-//       storageId: img.storageId as Id<"_storage">,
-//       hidden: !!img.hidden,
-//       order: img.order ?? 0,
-//     }));
-// }
-
 function reindexSequential(images: ImagesRecord): ImagesRecord {
   const entries = Object.entries(images)
     .sort(([, a], [, b]) => a.order - b.order)
@@ -37,16 +23,6 @@ function reindexSequential(images: ImagesRecord): ImagesRecord {
 }
 
 export function useImageActions(productId: any | null, field: FieldLike) {
-  // const updateProduct = useMutation(api.products.updateProduct);
-  // const persist = useCallback(
-  //   async (images: ImagesRecord) => {
-  //     await updateProduct({
-  //       productId: productId as Id<"products">,
-  //       images: normalizeForServer(images),
-  //     });
-  //   },
-  //   [productId, updateProduct]
-  // );
 
   const deleteImage = useCallback(
     (key: string) => {

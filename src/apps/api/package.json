@@ -8,6 +8,10 @@
     "dev": "convex dev"
   },
   "exports": {
+    "./schema": {
+      "types": "./convex/schema.ts",
+      "default": "./convex/schema.ts"
+    },
     "./convex": {
       "types": "./convex/_generated/api.js",
       "default": "./convex/_generated/api.js"
