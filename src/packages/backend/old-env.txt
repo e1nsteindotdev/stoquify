@@ -1,4 +1,0 @@
-# Deployment used by `npx convex dev`
-CONVEX_DEPLOYMENT=dev:exciting-salmon-786 # team: e1nstein-dev, project: stoquify-d3689
-CONVEX_URL=https://exciting-salmon-786.convex.cloud
-CONVEX_SITE_URL=https://exicting-salmon-786.convex.site
