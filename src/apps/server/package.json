@@ -1,9 +1,10 @@
 {
-  "name": "trpc-effect",
+  "name": "server",
   "module": "src/index.ts",
   "type": "module",
   "private": true,
   "scripts": {
+    "dev": "pnpm wrangler dev",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -12,6 +13,7 @@
     "test:watch": "bun run --run vitest"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251225.0",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/opentelemetry": "^0.59.3",
     "@effect/vitest": "^0.27.0",
@@ -42,11 +44,16 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@repo/trpc": "workspace:*",
     "@trpc/client": "^11.8.0",
     "@trpc/server": "^11.8.0",
     "effect": "^3.19.12",
     "ws": "^8.18.3",
     "zod": "3"
+  },
+  "exports": {
+    "./*": {
+      "type": "./src/*.ts",
+      "default": "./src/*.ts"
+    }
   }
 }

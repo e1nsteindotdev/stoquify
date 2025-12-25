@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PosRouteImport } from './routes/pos'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
+import { Route as DashboardHelloRouteImport } from './routes/_dashboard/hello'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
 import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
 import { Route as DashboardCommandesIndexRouteImport } from './routes/_dashboard/commandes/index'
@@ -29,6 +30,11 @@ const PosRoute = PosRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/_dashboard',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardHelloRoute = DashboardHelloRouteImport.update({
+  id: '/hello',
+  path: '/hello',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProduitsIndexRoute = DashboardProduitsIndexRouteImport.update({
   id: '/produits/',
@@ -79,6 +85,7 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/pos': typeof PosRoute
+  '/hello': typeof DashboardHelloRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/pos': typeof PosRoute
+  '/hello': typeof DashboardHelloRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
   '/pos': typeof PosRoute
+  '/_dashboard/hello': typeof DashboardHelloRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/pos'
+    | '/hello'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/pos'
+    | '/hello'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_dashboard'
     | '/pos'
+    | '/_dashboard/hello'
     | '/_dashboard/clients/$slug'
     | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
@@ -175,6 +187,13 @@ declare module '@tanstack/react-router' {
       fullPath: ''
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_dashboard/hello': {
+      id: '/_dashboard/hello'
+      path: '/hello'
+      fullPath: '/hello'
+      preLoaderRoute: typeof DashboardHelloRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/_dashboard/produits/': {
       id: '/_dashboard/produits/'
@@ -243,6 +262,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface DashboardRouteChildren {
+  DashboardHelloRoute: typeof DashboardHelloRoute
   DashboardClientsSlugRoute: typeof DashboardClientsSlugRoute
   DashboardCommandesSlugRoute: typeof DashboardCommandesSlugRoute
   DashboardProduitsSlugRoute: typeof DashboardProduitsSlugRoute
@@ -255,6 +275,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardHelloRoute: DashboardHelloRoute,
   DashboardClientsSlugRoute: DashboardClientsSlugRoute,
   DashboardCommandesSlugRoute: DashboardCommandesSlugRoute,
   DashboardProduitsSlugRoute: DashboardProduitsSlugRoute,
