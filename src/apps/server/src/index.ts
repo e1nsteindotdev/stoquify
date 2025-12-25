@@ -1,6 +1,6 @@
+import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
 import { appRouter } from "./router"
 import type { AppRouter } from "./router"
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
 
 type Env = {
   D1: D1Database
@@ -24,7 +24,8 @@ export default {
       router: appRouter,
       createContext() {
         return {
-          d1: env.D1
+          d1: env.D1,
+          my_service: { message: "hello from dynamic context" }
         }
       }
     })

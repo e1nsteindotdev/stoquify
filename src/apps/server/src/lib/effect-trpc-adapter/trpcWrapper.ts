@@ -1,7 +1,7 @@
 import type { AnyTRPCProcedure, AnyTRPCRouter, TRPCProcedureBuilder, TRPCRouterRecord } from "@trpc/server"
 import { initTRPC } from "@trpc/server"
 import type { Lazy, Parser, ProcedureType, UnsetMarker } from "@trpc/server/unstable-core-do-not-import"
-import { Effect } from "effect"
+import { Context, Effect } from "effect"
 import type { ManagedRuntime } from "effect"
 import type { YieldWrap } from "effect/Utils"
 
@@ -374,10 +374,11 @@ export const addSpanStackTrace = () => {
 /**
  * Wrap Effect procedures in a router record, converting them to standard tRPC procedures.
  */
-function wrapProcedures<R>(
+function wrapProcedures<R, TContext>(
   record: EffectRouterRecord,
   runtime: ManagedRuntime.ManagedRuntime<R, never>,
-  parentPath: string
+  parentPath: string,
+  contextTag?: Context.Tag<any, TContext>
 ): TRPCRouterRecord {
   const result: TRPCRouterRecord = {}
 
@@ -392,20 +393,30 @@ function wrapProcedures<R>(
 
       if (_tag === "query") {
         result[key] = (_builder.query as any)((opts: any) => {
-          const effect = Effect.withSpan(currentPath, { captureStackTrace: _captureStackTrace })(tracedResolver({
+          let effect = Effect.withSpan(currentPath, { captureStackTrace: _captureStackTrace })(tracedResolver({
             ctx: opts.ctx,
             input: opts.input,
             signal: opts.signal
           })) as Effect.Effect<any, any, R>
+          
+          if (contextTag) {
+            effect = Effect.provideService(effect, contextTag, opts.ctx) as any
+          }
+
           return runtime.runPromise(effect, { signal: opts.signal })
         })
       } else {
         result[key] = (_builder.mutation as any)((opts: any) => {
-          const effect = Effect.withSpan(currentPath, { captureStackTrace: _captureStackTrace })(tracedResolver({
+          let effect = Effect.withSpan(currentPath, { captureStackTrace: _captureStackTrace })(tracedResolver({
             ctx: opts.ctx,
             input: opts.input,
             signal: opts.signal
           })) as Effect.Effect<any, any, R>
+          
+          if (contextTag) {
+            effect = Effect.provideService(effect, contextTag, opts.ctx) as any
+          }
+
           return runtime.runPromise(effect, { signal: opts.signal })
         })
       }
@@ -414,7 +425,7 @@ function wrapProcedures<R>(
       result[key] = value as AnyTRPCProcedure
     } else if (typeof value === "object" && value !== null) {
       // This is a nested router record, recurse
-      result[key] = wrapProcedures(value as EffectRouterRecord, runtime, currentPath)
+      result[key] = wrapProcedures(value as EffectRouterRecord, runtime, currentPath, contextTag)
     } else {
       // Pass through anything else
       result[key] = value
@@ -571,13 +582,21 @@ export interface EffectTRPC<TContext extends object, TMeta extends object, TRequ
  * Extends the standard tRPC create options with a required runtime.
  *
  * @typeParam R - The Effect requirements provided by the ManagedRuntime
+ * @typeParam TContext - The tRPC context type
+ * @typeParam I - The Effect Tag Identifier type
  */
-export interface EffectTRPCCreateOptions<R> {
+export interface EffectTRPCCreateOptions<R, TContext, I = never> {
   /**
    * The ManagedRuntime that provides services for Effect procedures.
    * All Effect procedures in the router will use this runtime.
    */
   readonly runtime: ManagedRuntime.ManagedRuntime<R, never>
+
+  /**
+   * Optional Context Tag to inject the TRPC context as a service.
+   * If provided, the context object will be provided as this service for every request.
+   */
+  readonly contextTag?: Context.Tag<I, TContext>
 
   /**
    * Use a data transformer
@@ -644,43 +663,9 @@ class EffectTRPCBuilder<TContext extends object, TMeta extends object> {
    *
    * @param opts - Options including the ManagedRuntime and standard tRPC options
    * @returns An EffectTRPC instance with `.procedure`, `.effect`, and `.router`
-   *
-   * @example
-   * ```ts
-   * import { Layer, ManagedRuntime } from "effect"
-   * import { initEffectTRPC } from "./trpcWrapper"
-   *
-   * // Define your services
-   * class UserService extends Effect.Tag("UserService")<
-   *   UserService,
-   *   { findById: (id: string) => Effect.Effect<User | undefined> }
-   * >() {}
-   *
-   * // Create a runtime with your services
-   * const AppLayer = Layer.succeed(UserService, {
-   *   findById: (id) => Effect.succeed({ id, name: "Alice" })
-   * })
-   * const runtime = ManagedRuntime.make(AppLayer)
-   *
-   * // Create Effect-aware tRPC instance
-   * const t = initEffectTRPC.create({ runtime })
-   *
-   * export const appRouter = t.router({
-   *   // Regular tRPC procedure
-   *   hello: t.procedure.query(() => "Hello, World!"),
-   *
-   *   // Effect procedure using services from the runtime
-   *   getUser: t.effect
-   *     .input(z.object({ id: z.string() }))
-   *     .query(function*({ input }) {
-   *       const userService = yield* UserService
-   *       return yield* userService.findById(input.id)
-   *     })
-   * })
-   * ```
    */
-  create<R>(opts: EffectTRPCCreateOptions<R>): EffectTRPC<TContext, TMeta, R> {
-    const { runtime, ...trpcOptions } = opts
+  create<R, I = never>(opts: EffectTRPCCreateOptions<R, TContext, I>): EffectTRPC<TContext, TMeta, R | I> {
+    const { runtime, contextTag, ...trpcOptions } = opts
     const trpc = initTRPC.create(trpcOptions as any)
 
     return {
@@ -702,10 +687,10 @@ class EffectTRPCBuilder<TContext extends object, TMeta extends object> {
         UnsetMarker,
         UnsetMarker,
         UnsetMarker,
-        R
+        R | I
       >(trpc.procedure as any),
       router: <T extends EffectRouterRecord>(procedures: T) => {
-        const wrappedProcedures = wrapProcedures(procedures, runtime, "")
+        const wrappedProcedures = wrapProcedures(procedures, runtime, "", contextTag)
         const router = trpc.router(wrappedProcedures)
         return router as any
       }

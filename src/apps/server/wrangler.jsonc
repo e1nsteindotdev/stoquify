@@ -13,7 +13,7 @@
     {
       "binding": "D1", // This is how you access it in code (env.DB)
       "database_name": "stoquify-d1",
-      "database_id": "D32Kbj12l"
+      "database_id": "ce01b973-458c-40b2-a7a4-3aed8a3faa02"
     }
   ],
   "observability": {
