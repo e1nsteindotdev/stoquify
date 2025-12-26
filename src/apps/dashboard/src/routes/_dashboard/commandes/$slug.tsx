@@ -1,9 +1,10 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
-import type { Id } from "@repo/backend/_generated/dataModel";
+import type { Id } from "api/data-model";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useOrderById, useConfirmOrder, useDenyOrder } from "@/hooks/use-convex-queries";
+import { useConfirmOrder, useDenyOrder } from "@/hooks/use-convex-queries";
+import { useGetOrderById } from "@/database/orders";
 import { ClipLoader } from "react-spinners";
 
 export const Route = createFileRoute("/_dashboard/commandes/$slug")({
@@ -24,7 +25,7 @@ const statusLabels = {
 
 function OrderDetailComponent() {
   const { slug } = useParams({ from: "/_dashboard/commandes/$slug" });
-  const { data: order, isLoading } = useOrderById(slug as Id<"orders">);
+  const { data: order, isLoading } = useGetOrderById(slug as Id<"orders">);
   const confirmOrder = useConfirmOrder();
   const denyOrder = useDenyOrder();
 

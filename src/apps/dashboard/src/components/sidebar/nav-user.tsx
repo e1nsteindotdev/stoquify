@@ -27,16 +27,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useAuthActions } from "@convex-dev/auth/react"
-import { useCurrentUser } from "@/hooks/use-convex-queries"
+import { useGetCurrentUser } from "@/database/users"
 
 import { ClipLoader } from "react-spinners"
 
 export function NavUser({ avatar }: { avatar: string }) {
 
   const { isMobile } = useSidebar()
-  const { signOut } = useAuthActions()
-  const { data: user, isLoading } = useCurrentUser();
+  const { data: user, isLoading } = useGetCurrentUser();
   if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center p-4">
@@ -44,6 +42,7 @@ export function NavUser({ avatar }: { avatar: string }) {
       </div>
     )
   }
+
   const name = user.name ?? "user"
   const email = user.profile?.email ?? ""
 
@@ -108,10 +107,10 @@ export function NavUser({ avatar }: { avatar: string }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { console.log("going to logout"); void signOut() }}>
-              <LogOut />
-              Logout
-            </DropdownMenuItem>
+            {/* <DropdownMenuItem onClick={() => { console.log("going to logout"); void signOut() }}> */}
+            {/*   <LogOut /> */}
+            {/*   Logout */}
+            {/* </DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

@@ -11,12 +11,12 @@ import type { Id } from "api/data-model"
 
 const queryClient = new QueryClient()
 
-export const ordersCollection = createCollection(
+export const collectionsCollection = createCollection(
   queryCollectionOptions({
-    queryKey: ['orders'],
+    queryKey: ['collections'],
     queryFn: async (ctx) => {
-      const orders = await convex.query(api.order.listOrders)
-      return orders
+      const collections = await convex.query(api.collections.listAllCollections)
+      return collections
     },
     queryClient,
     getKey: (item) => item._id,
@@ -24,13 +24,13 @@ export const ordersCollection = createCollection(
   })
 )
 
-export const useGetOrders = () => {
-  return useLiveQuery(q => q.from({ orders: ordersCollection }))
+export const useGetAllCollections = () => {
+  return useLiveQuery(q => q.from({ collections: collectionsCollection }))
 }
 
-export const useGetOrderById = (orderId: Id<"orders"> | undefined) => {
+export const useGetSelectedCollectionIds = (productId: Id<"products"> | undefined) => {
   return useQuery({
-    ...convexQuery(api.order.getOrder, orderId ? { orderId } : "skip"),
-    enabled: !!orderId,
+    ...convexQuery(api.collections.listSelectedCollectionsIds, productId ? { productId } : "skip"),
+    enabled: !!productId,
   })
 }

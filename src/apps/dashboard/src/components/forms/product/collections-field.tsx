@@ -18,14 +18,16 @@ import {
 import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox"
-import type { Id } from "@repo/backend/_generated/dataModel";
-import { useAllCollections, useCreateCollection } from "@/hooks/use-convex-queries";
+import type { Id } from "api/data-model";
+import { useCreateCollection } from "@/hooks/use-convex-queries";
+import { useGetAllCollections } from "@/database/collections";
 
 export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
   const field = useFieldContext<Set<string>>();
   console.log("selected collections :", selectedCollections)
   const createCollection = useCreateCollection();
-  const { data: collections } = useAllCollections();
+  const collectionsResult = useGetAllCollections();
+  const collections = collectionsResult?.data;
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");

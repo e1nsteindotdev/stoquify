@@ -1,10 +1,12 @@
 import { columns, type OrderRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useOrders } from "@/hooks/use-convex-queries";
+import { useGetOrders } from "@/database/orders";
 import { ClipLoader } from "react-spinners";
 
 export function OrdersTable() {
-  const { data: orders = [], isLoading } = useOrders();
+  const ordersResult = useGetOrders();
+  const orders = ordersResult?.data ?? [];
+  const isLoading = !ordersResult?.isEnabled;
 
   const rows: OrderRow[] = orders.map((order: any) => ({
     _id: order._id,

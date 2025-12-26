@@ -3,24 +3,25 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection'
 import { api } from 'api/convex'
 import { QueryClient } from "@tanstack/query-core"
 import { createCollection } from "@tanstack/db"
-import { useLiveQuery } from '@tanstack/react-db'
+import { convexQuery } from "@convex-dev/react-query"
+import { useQuery } from "@tanstack/react-query"
 
 
 const queryClient = new QueryClient()
 
-export const faqsCollection = createCollection(
+export const usersCollection = createCollection(
   queryCollectionOptions({
-    queryKey: ['faqs'],
+    queryKey: ['users'],
     queryFn: async (ctx) => {
-      const faqs = await convex.query(api.settings.getFAQs)
-      return faqs
+      const user = await convex.query(api.users.get)
+      return user ? [user] : []
     },
     queryClient,
-    getKey: (item) => item._id,
+    getKey: (item: any) => item._id ?? item.subject,
     syncMode: 'on-demand',
   })
 )
 
-export const useGetFAQs = () => {
-  return useLiveQuery(q => q.from({ faqs: faqsCollection }))
+export const useGetCurrentUser = () => {
+  return useQuery(convexQuery(api.users.get, {}))
 }

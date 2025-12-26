@@ -1,12 +1,15 @@
 import { columns, type ProductRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useAllProducts, useRemoveProduct } from "@/hooks/use-convex-queries";
+import { useRemoveProduct } from "@/hooks/use-convex-queries";
+import { useGetAllProducts } from "@/database/products";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { ClipLoader } from "react-spinners";
 
 export function ProductsTable() {
-  const { data: products = [], isLoading } = useAllProducts();
+  const productsResult = useGetAllProducts();
+  const products = productsResult?.data ?? [];
+  const isLoading = !productsResult?.isEnabled;
   const removeProduct = useRemoveProduct();
 
   const rows: ProductRow[] = products.map((p: any) => ({

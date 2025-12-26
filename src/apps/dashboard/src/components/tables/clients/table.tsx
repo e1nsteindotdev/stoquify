@@ -1,9 +1,10 @@
 import { columns, type ClientRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useCustomers } from "@/hooks/use-convex-queries";
+import { useGetCustomers } from "@/database/customers";
 
 export function ClientsTable() {
-  const { data: clients = [], isLoading } = useCustomers();
+  const clientsResult = useGetCustomers();
+  const clients = clientsResult?.data ?? [];
 
   const rows: ClientRow[] = clients.map((client: any) => ({
     _id: client._id,

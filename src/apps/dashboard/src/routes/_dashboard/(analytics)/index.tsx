@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
-import { useSalesData, useSalesByTimePeriod, useProductPerformance } from "@/hooks/use-convex-queries";
+import { useGetSalesData, useGetSalesByTimePeriod, useGetProductPerformance } from "@/database/analytics";
 
 type TimePeriod = "today" | "week" | "month" | "year" | "all";
 
@@ -30,9 +30,9 @@ function Page() {
   const [period, setPeriod] = useState<TimePeriod>("today");
   
   // Use TanStack Query hooks with automatic caching and reactivity
-  const { data: salesData } = useSalesData(period);
-  const { data: salesByPeriod } = useSalesByTimePeriod(period);
-  const { data: productPerformance } = useProductPerformance(period);
+  const { data: salesData } = useGetSalesData(period);
+  const { data: salesByPeriod } = useGetSalesByTimePeriod(period);
+  const { data: productPerformance } = useGetProductPerformance(period);
 
   const chartConfig = {
     online: {

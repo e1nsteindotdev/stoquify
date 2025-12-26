@@ -3,6 +3,8 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection'
 import { api } from 'api/convex'
 import { QueryClient } from "@tanstack/query-core"
 import { createCollection } from "@tanstack/db"
+import { convexQuery } from "@convex-dev/react-query"
+import { useQuery } from "@tanstack/react-query"
 
 
 const queryClient = new QueryClient()
@@ -16,6 +18,10 @@ export const settingsCollection = createCollection(
     },
     queryClient,
     getKey: (item) => item._id,
-    syncMode: 'on-demand', // ← Enable query-driven sync
+    syncMode: 'on-demand',
   })
 )
+
+export const useGetSettings = () => {
+  return useQuery(convexQuery(api.settings.getSettings, {}))
+}

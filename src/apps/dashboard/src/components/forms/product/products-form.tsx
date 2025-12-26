@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/select";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
-import { type Doc, type Id } from "@repo/backend/_generated/dataModel";
+import { type Id } from "api/data-model";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
-import { useProductById, useSelectedCollectionIds, useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
+import { useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
+import { useGetProductById } from "@/database/products";
+import { useGetSelectedCollectionIds } from "@/database/collections";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
@@ -24,10 +26,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const initiateProduct = useInitiateProduct();
   const updateProduct = useUpdateProduct();
 
-  const { data: product } = useProductById(isNew ? undefined : slug as Id<"products">);
-  const { data: selectedCollectionIds } = useSelectedCollectionIds(product?._id);
+  const { data: product } = useGetProductById(isNew ? undefined : slug as Id<"products">);
+  const { data: selectedCollectionIds } = useGetSelectedCollectionIds(product?._id);
   const productCollections = new Set(selectedCollectionIds ?? []);
-  console.log('product collections : ', productCollections)
 
   const defaultValues = useMemo(
     () => ({

@@ -18,7 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { useAllCategories, useCreateCategory } from "@/hooks/use-convex-queries";
+import { useCreateCategory } from "@/hooks/use-convex-queries";
+import { useGetAllCategories } from "@/database/categories";
 
 type Props = {
   label?: string;
@@ -26,7 +27,8 @@ type Props = {
 
 export default function CategoriesField({ label }: Props) {
   const field = useFieldContext<string>();
-  const { data: categories = [] } = useAllCategories();
+  const categoriesResult = useGetAllCategories();
+  const categories = categoriesResult?.data ?? [];
   const createCategory = useCreateCategory();
 
   const [createOpen, setCreateOpen] = useState(false);

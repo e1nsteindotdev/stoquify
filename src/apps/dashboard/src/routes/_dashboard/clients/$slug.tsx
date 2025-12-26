@@ -1,9 +1,9 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
-import type { Id } from "@repo/backend/_generated/dataModel";
+import type { Id } from "api/data-model";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCustomerById } from "@/hooks/use-convex-queries";
+import { useGetCustomerById } from "@/database/customers";
 import { ClipLoader } from "react-spinners";
 
 export const Route = createFileRoute("/_dashboard/clients/$slug")({
@@ -24,7 +24,7 @@ const statusLabels = {
 
 function ClientDetailComponent() {
   const { slug } = useParams({ from: "/_dashboard/clients/$slug" });
-  const { data: client, isLoading } = useCustomerById(slug as Id<"customers">);
+  const { data: client, isLoading } = useGetCustomerById(slug as Id<"customers">);
 
   if (isLoading || !client) {
     return (

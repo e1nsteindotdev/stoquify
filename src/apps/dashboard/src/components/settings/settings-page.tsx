@@ -11,12 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { type Id } from "@repo/backend/_generated/dataModel";
-import { useSettings, useFAQs, useUpdateSettings, useCreateFAQ, useUpdateFAQ, useDeleteFAQ } from "@/hooks/use-convex-queries";
+import { type Id } from "api/data-model";
+import { useUpdateSettings, useCreateFAQ, useUpdateFAQ, useDeleteFAQ } from "@/hooks/use-convex-queries";
+import { useGetSettings } from "@/database/settings";
+import { useGetFAQs } from "@/database/faqs";
 
 export function SettingsPage() {
-  const { data: settings } = useSettings();
-  const { data: faqs = [] } = useFAQs();
+  const settingsData = useGetSettings();
+  const faqsResult = useGetFAQs();
+  const faqs = faqsResult?.data ?? [];
   const updateSettings = useUpdateSettings();
   const createFAQ = useCreateFAQ();
   const updateFAQ = useUpdateFAQ();
