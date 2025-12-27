@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
-import { useGetSalesData, useGetSalesByTimePeriod, useGetProductPerformance } from "@/database/analytics";
+import { useGetProductPerformance, useGetSalesData, useGetSalesRevenue } from "@/database/analytics";
 
 type TimePeriod = "today" | "week" | "month" | "year" | "all";
 
@@ -28,11 +28,15 @@ export const Route = createFileRoute("/_dashboard/(analytics)/")({
 
 function Page() {
   const [period, setPeriod] = useState<TimePeriod>("today");
-  
+
   // Use TanStack Query hooks with automatic caching and reactivity
-  const { data: salesData } = useGetSalesData(period);
-  const { data: salesByPeriod } = useGetSalesByTimePeriod(period);
-  const { data: productPerformance } = useGetProductPerformance(period);
+  const salesData = useGetSalesData(period)
+  const salesByPeriod = useGetSalesRevenue(period)
+  const productPerformance = useGetProductPerformance(period);
+  // console.log("sales Data :", salesData)
+  // console.log('salesByPeriod :', salesByPeriod)
+  // console.log("product performance", productPerformance)
+
 
   const chartConfig = {
     online: {
@@ -192,16 +196,16 @@ function Page() {
                     <YAxis />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <ChartLegend content={<ChartLegendContent />} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="totalCount" 
-                      stroke="var(--color-totalCount)" 
+                    <Line
+                      type="monotone"
+                      dataKey="totalCount"
+                      stroke="var(--color-totalCount)"
                       strokeWidth={3}
-                      name="Ventes totales" 
+                      name="Ventes totales"
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      isAnimationActive={true} 
-                      animationDuration={1000} 
+                      isAnimationActive={true}
+                      animationDuration={1000}
                     />
                   </LineChart>
                 </ChartContainer>

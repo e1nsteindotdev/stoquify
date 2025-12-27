@@ -18,6 +18,27 @@ export const productsCollection = createCollection(
       const products = await convex.query(api.products.listProducts)
       return products
     },
+    onUpdate: async ({ transaction }) => {
+      return await Promise.all(
+        transaction.mutations.map(async ({ changes }) => {
+          if (changes._id) {
+            await convex.mutation(api.products.updateProduct, { ...changes, _id: changes._id })
+          }
+        }
+        ))
+    },
+    onDelete: async ({ transaction }) => {
+      await Promise.all(
+        transaction.mutations.map(async ({ changes }) =>
+          convex.mutation(api.products.removeProduct, { id: changes._id })
+        ))
+    },
+    onInsert: async ({ transaction }) => {
+      return await Promise.all(
+        transaction.mutations.map(async () =>
+          await convex.mutation(api.products.initiateProduct, {})
+        ))
+    },
     queryClient,
     getKey: (item) => item._id,
     syncMode: 'on-demand',

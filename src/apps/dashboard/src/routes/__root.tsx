@@ -5,16 +5,32 @@ import { Toaster } from "@/components/ui/sonner"
 import "@/App.css";
 import { AuthForm } from "@/components/forms/auth/auth-form";
 
-const queryClient = new QueryClient()
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    },
+  },
+})
+
+const asyncStoragePersister = createAsyncStoragePersister({
+  storage: window.localStorage,
+})
 export const Route = createRootRoute({
   component: () => {
     return (
       <>
         <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{ persister: asyncStoragePersister }}
+          >
             <Outlet />
             <Toaster />
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </ThemeProvider >
       </>
     );

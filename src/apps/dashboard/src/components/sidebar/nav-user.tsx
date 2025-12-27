@@ -27,14 +27,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useGetCurrentUser } from "@/database/users"
 
 import { ClipLoader } from "react-spinners"
 
 export function NavUser({ avatar }: { avatar: string }) {
 
   const { isMobile } = useSidebar()
-  const { data: user, isLoading } = useGetCurrentUser();
+  const user = { name: 'test', profile: { email: 'test@gmail.com' } }
+  const isLoading = false
   if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center p-4">

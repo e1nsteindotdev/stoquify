@@ -11,8 +11,7 @@ export const salesCollection = createCollection(
   queryCollectionOptions({
     queryKey: ['sales'],
     queryFn: async (ctx) => {
-      // Assuming listSales exists or will exist to match pattern
-      const sales = await convex.query((api.sales as any).listSales)
+      const sales = await convex.query(api.sales.listSales)
       return sales
     },
     queryClient,

@@ -16,7 +16,7 @@ import { useAppForm } from "@/hooks/form";
 import { type Id } from "api/data-model";
 import { formatVariantsInventory } from "@/hooks/useVariantActions";
 import { useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
-import { useGetProductById } from "@/database/products";
+import { productsCollection, useGetProductById } from "@/database/products";
 import { useGetSelectedCollectionIds } from "@/database/collections";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
