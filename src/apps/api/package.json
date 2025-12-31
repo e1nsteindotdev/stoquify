@@ -2,10 +2,9 @@
   "name": "api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "convex dev"
+    "dev": "pnpm wrangler dev"
   },
   "exports": {
     "./schema": {
@@ -21,15 +20,25 @@
       "default": "./convex/_generated/dataModel.d.ts"
     }
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
-    "@auth/core": "0.37.0",
-    "@convex-dev/auth": "^0.0.90",
-    "@radix-ui/react-dialog": "^1.1.14",
-    "convex": "^1.31.2",
-    "recharts": "^2.15.4"
+    "dashboard": "workspace:*",
+    "@livestore/adapter-cloudflare": "0.0.0-snapshot-8452e32b7fbfc129741b253b9c853f866b52129f",
+    "@livestore/livestore": "0.0.0-snapshot-8452e32b7fbfc129741b253b9c853f866b52129f",
+    "@livestore/sync-cf": "0.0.0-snapshot-8452e32b7fbfc129741b253b9c853f866b52129f",
+    "@livestore/wa-sqlite": "1.0.5-dev.2"
+  },
+  "resolutions": {
+    "@cloudflare/workers-types": "4.20241106.0"
+  },
+  "devDependencies": {
+    "dashboard": "workspace:*",
+    "@cloudflare/workers-types": "4.20241106.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.4",
+    "wrangler": "^4.14.4"
+  },
+  "engines": {
+    "node": ">=23.0.0"
   }
 }

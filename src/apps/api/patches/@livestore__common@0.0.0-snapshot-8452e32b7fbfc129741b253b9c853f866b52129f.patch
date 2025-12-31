@@ -1,0 +1,14 @@
+diff --git a/dist/version.js b/dist/version.js
+index 608c2441adea56f24620e498502241db03238a99..f631b576f97fe4acfed7a030d7c23555406dc362 100644
+--- a/dist/version.js
++++ b/dist/version.js
+@@ -1,8 +1,7 @@
+ // TODO bring back when Expo and Playwright supports `with` imports
+ // import packageJson from '../package.json' with { type: 'json' }
+ // export const liveStoreVersion = packageJson.version
+-export const liveStoreVersion = '0.0.0-snapshot-8452e32b7fbfc129741b253b9c853f866b52129f;
+-' as const;
++export const liveStoreVersion = '0.0.0-snapshot-8452e32b7fbfc129741b253b9c853f866b52129f';
+ /**
+  * This version number is incremented whenever the internal storage format changes in a breaking way.
+  * Whenever this version changes, LiveStore will start with fresh database files. Old database files are not deleted.

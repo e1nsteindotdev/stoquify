@@ -1,0 +1,28 @@
+name = "livestore-api-1"
+main = "./src/index.ts"
+compatibility_date = "2025-05-08"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "WEBSOCKET_SERVER"
+class_name = "WebSocketServer"
+
+[[durable_objects.bindings]]
+name = "CLIENT_DO"
+class_name = "LiveStoreClientDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LiveStoreClientDO", "WebSocketServer"]
+
+[vars]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "livestore-events"
+database_id = "1cbad0fd-afe3-4c8f-a5b8-89e4b541fd30"
+
+[[d1_databases]]
+binding = "LIVE_DB"
+database_name = "livestore-live"
+database_id = "92a87464-2e2b-4dbd-9955-cf3f0e46796d"

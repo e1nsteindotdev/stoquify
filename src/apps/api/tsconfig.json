@@ -1,32 +1,37 @@
 {
-  /* This TypeScript project config describes the environment that
-   * Convex functions run in and is used to typecheck them.
-   * You can modify it, but some settings are required to use Convex.
-   */
   "compilerOptions": {
-    /* These settings are not required by Convex and can be modified. */
-    "allowJs": true,
-    "strict": true,
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    /* These compiler options are required by Convex */
-    "verbatimModuleSyntax": false,
-    "target": "ESNext",
-    "lib": [
-      "ES2021",
-      "dom"
+    "target": "ES2022",
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
     ],
-    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    /* Linting */
+    "strict": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "./**/*"
+    "./src"
   ],
   "exclude": [
-    "./_generated"
+    "node_modules"
   ]
 }

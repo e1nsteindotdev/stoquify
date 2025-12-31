@@ -1,0 +1,14 @@
+diff --git a/dist/declare/cf-declare.js b/dist/declare/cf-declare.js
+index 523772d8c646faedd7730dd68ac952129f61029b..316030ba96981e741dd799f38d9185a5eaa58a22 100644
+--- a/dist/declare/cf-declare.js
++++ b/dist/declare/cf-declare.js
+@@ -1,2 +1,8 @@
+-export { ReadableStream, Request, Response, Rpc, WebSocket, WebSocketPair, WebSocketRequestResponsePair, } from '@cloudflare/workers-types';
++export const ReadableStream = globalThis.ReadableStream;
++export const Request = globalThis.Request;
++export const Response = globalThis.Response;
++export const WebSocket = globalThis.WebSocket;
++export const Rpc = globalThis.Rpc;
++export const WebSocketPair = globalThis.WebSocketPair;
++export const WebSocketRequestResponsePair = globalThis.WebSocketRequestResponsePair;
+ //# sourceMappingURL=cf-declare.js.map

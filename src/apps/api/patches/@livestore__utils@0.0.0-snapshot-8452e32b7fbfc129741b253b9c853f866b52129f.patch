@@ -1,0 +1,65 @@
+diff --git a/dist/effect/RpcClient.js b/dist/effect/RpcClient.js
+index 19a3124a99f3063153523c4b6e3082cb24447e89..ab2da465997c35de1dc2df5a868f8120b121e0d1 100644
+--- a/dist/effect/RpcClient.js
++++ b/dist/effect/RpcClient.js
+@@ -1,6 +1,6 @@
+ export * from '@effect/rpc/RpcClient';
+ import { Socket } from '@effect/platform';
+-import { RpcClient, RpcClientError, RpcSerialization } from '@effect/rpc';
++import { RpcClient, RpcSerialization } from '@effect/rpc';
+ import { Protocol } from '@effect/rpc/RpcClient';
+ import { constPing } from '@effect/rpc/RpcMessage';
+ import { Cause, Deferred, Effect, Layer, Option, Schedule } from 'effect';
+@@ -49,7 +49,7 @@ export const makeProtocolSocketWithIsConnected = (options) => Protocol.make(Effe
+             catch (defect) {
+                 return writeResponse({
+                     _tag: 'ClientProtocolError',
+-                    error: new RpcClientError.RpcClientError({
++                    error: new RpcClientError({
+                         reason: 'Protocol',
+                         message: 'Error decoding message',
+                         cause: Cause.fail(defect),
+@@ -78,7 +78,7 @@ export const makeProtocolSocketWithIsConnected = (options) => Protocol.make(Effe
+         }
+         return yield* writeResponse({
+             _tag: 'ClientProtocolError',
+-            error: new RpcClientError.RpcClientError({
++            error: new RpcClientError({
+                 reason: 'Protocol',
+                 message: 'Error in socket',
+                 cause: Cause.squash(cause),
+@@ -139,3 +139,12 @@ const makePinger = Effect.fnUntraced(function* (writePing, pingSchedule = Schedu
+     return { timeout: latch.await, reset, onPong, ping };
+ });
+ //# sourceMappingURL=RpcClient.js.map
++export class RpcClientError {
++    constructor(options) {
++        this.reason = options.reason;
++        this.message = options.message;
++        this.cause = options.cause;
++    // Fixed RpcClientError
++    }
++}
++// End of file
+\ No newline at end of file
+diff --git a/dist/effect/index.js b/dist/effect/index.js
+index 37e56d8def692a45e08c04c9b8c718b50a3046a6..600e1e49e5e6af6c45b883e70d44b070ba69775f 100644
+--- a/dist/effect/index.js
++++ b/dist/effect/index.js
+@@ -4,7 +4,7 @@ export { Command, CommandExecutor, Error as PlatformError, FetchHttpClient, File
+ export { BrowserWorker, BrowserWorkerRunner } from '@effect/platform-browser';
+ export { Rpc, 
+ // RpcClient, // TODO bring back "original" RpcClient from effect/rpc
+-RpcClientError, RpcGroup, RpcMessage, RpcMiddleware, RpcSchema, RpcSerialization, RpcServer, RpcTest, RpcWorker, } from '@effect/rpc';
++RpcGroup, RpcMessage, RpcMiddleware, RpcSchema, RpcSerialization, RpcServer, RpcTest, RpcWorker, } from '@effect/rpc';
+ export * as StandardSchema from '@standard-schema/spec';
+ export { Array as ReadonlyArray, Brand, Cache, Cause, Channel, Chunk, 
+ // Logger,
+@@ -18,6 +18,7 @@ export * as BucketQueue from "./BucketQueue.js";
+ export * as Logger from "./Logger.js";
+ export * as OtelTracer from "./OtelTracer.js";
+ export * as RpcClient from "./RpcClient.js";
++export { RpcClientError } from "./RpcClient.js";
+ export * as Schema from "./Schema/index.js";
+ export * as Stream from "./Stream.js";
+ export * as Subscribable from "./Subscribable.js";
