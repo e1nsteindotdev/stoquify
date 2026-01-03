@@ -1,74 +1,39 @@
-import { convex } from "@/lib/convex-client"
-import { queryCollectionOptions } from '@tanstack/query-db-collection'
-import { api } from 'api/convex'
-import { QueryClient } from "@tanstack/query-core"
-import { createCollection } from "@tanstack/db"
-import { useLiveQuery } from '@tanstack/react-db'
-import { convexQuery } from "@convex-dev/react-query"
-import { useQuery } from "@tanstack/react-query"
-import type { Id } from "api/data-model"
-
-
-const queryClient = new QueryClient()
-
-export const productsCollection = createCollection(
-  queryCollectionOptions({
-    queryKey: ['products'],
-    queryFn: async (ctx) => {
-      const products = await convex.query(api.products.listProducts)
-      return products
-    },
-    onUpdate: async ({ transaction }) => {
-      return await Promise.all(
-        transaction.mutations.map(async ({ changes }) => {
-          if (changes._id) {
-            await convex.mutation(api.products.updateProduct, { ...changes, _id: changes._id })
-          }
-        }
-        ))
-    },
-    onDelete: async ({ transaction }) => {
-      await Promise.all(
-        transaction.mutations.map(async ({ changes }) =>
-          convex.mutation(api.products.removeProduct, { id: changes._id })
-        ))
-    },
-    onInsert: async ({ transaction }) => {
-      return await Promise.all(
-        transaction.mutations.map(async () =>
-          await convex.mutation(api.products.initiateProduct, {})
-        ))
-    },
-    queryClient,
-    getKey: (item) => item._id,
-    syncMode: 'on-demand',
-  })
-)
-
-export const allProductsCollection = createCollection(
-  queryCollectionOptions({
-    queryKey: ['allProducts'],
-    queryFn: async (ctx) => {
-      const products = await convex.query(api.products.listAllProduts)
-      return products
-    },
-    queryClient,
-    getKey: (item) => item._id,
-    syncMode: 'on-demand',
-  })
-)
+import { useQuery } from "@tanstack/react-query";
+import { api } from "api/convex";
+import { convex } from "@/lib/convex-client";
+import type { Id } from "api/data-model";
 
 export const useGetProducts = () => {
-  return useLiveQuery(q => q.from({ products: productsCollection }))
-}
+    return useQuery({
+        queryKey: ["products", "list"],
+        queryFn: async () => {
+            return await convex.query(api.products.listProducts);
+        },
+        staleTime: Infinity,
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    });
+};
 
 export const useGetAllProducts = () => {
-  return useLiveQuery(q => q.from({ products: allProductsCollection }))
-}
+    return useQuery({
+        queryKey: ["products", "listAll"],
+        queryFn: async () => {
+            return await convex.query(api.products.listAllProduts);
+        },
+        staleTime: Infinity,
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    });
+};
 
 export const useGetProductById = (id: Id<"products"> | undefined) => {
-  return useQuery({
-    ...convexQuery(api.products.getProductById, id ? { id } : "skip"),
-    enabled: !!id,
-  })
-}
+    return useQuery({
+        queryKey: ["products", "detail", id],
+        queryFn: async () => {
+            if (!id) return null;
+            return await convex.query(api.products.getProductById, { id });
+        },
+        enabled: !!id,
+        staleTime: Infinity,
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    });
+};

@@ -1,11 +1,11 @@
 import { useQuery } from "convex/react"
-import { api } from "@repo/backend/_generated/api"
-import { SimpleChevronDownIcon } from "./icons/simple-down-chevron"
+import { api } from "api/convex"
 import { CollectionProduct, Product } from "./products"
 
 export function OurCollections() {
   const collections = useQuery(api.collections.listAllCollections)?.filter(c => c.productIds?.length !== 0)
   const products = useQuery(api.products.listProducts)
+  console.log('our categories :', products)
   return (
     <div id="collections" className="flex flex-col gap-4 py-3">
       <div className="relative mx-auto">

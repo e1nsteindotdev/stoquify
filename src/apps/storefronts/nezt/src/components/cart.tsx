@@ -7,7 +7,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { useQuery } from "convex/react";
-import { api } from "@repo/backend/_generated/api";
+import { api } from "api/convex";
 import { CartIcon } from "./icons/cart-icon";
 import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";

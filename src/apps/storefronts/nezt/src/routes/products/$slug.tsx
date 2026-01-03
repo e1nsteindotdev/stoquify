@@ -12,8 +12,8 @@ import { useCartStore } from '@/lib/state';
 import { AnimatePresence, motion } from 'motion/react';
 import { LoadingScreen } from '@/components/loading-spinner';
 
-import { api } from "@repo/backend/_generated/api"
-import type { Id } from "@repo/backend/_generated/dataModel"
+import { api } from "api/convex";
+import type { Id } from "api/data-model"
 
 
 export const Route = createFileRoute('/products/$slug')({

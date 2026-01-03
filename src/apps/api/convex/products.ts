@@ -5,6 +5,7 @@ import { type Id } from "./_generated/dataModel";
 
 export const listProducts = query({
   handler: async (ctx) => {
+    console.log('goingto list productsc')
     const storeId = (await ctx.db.query("stores").first())?._id
 
     // get active all products
@@ -23,7 +24,7 @@ export const listProducts = query({
           }) ?? [])
       }
     ))
-
+    console.log('producst from convex ; ', products)
     return products.map(product => {
       return {
         ...product,
@@ -82,7 +83,7 @@ export const initiateProduct = mutation({
 
 export const updateProduct = mutation({
   args: {
-    productId: v.id("products"),
+    _id: v.id("products"),
     title: v.optional(v.string()),
     desc: v.optional(v.string()),
     price: v.optional(v.number()),
@@ -134,22 +135,23 @@ export const updateProduct = mutation({
   },
   handler: async (ctx, args) => {
     console.log("update product args :", args)
-    const { productId, variants, variantsInventory, collections, ...updateData } = args;
+    const { _id, variants, variantsInventory, collections, ...updateData } = args;
+
     const cleanUpdateData = updateData
-    await ctx.db.patch(productId, cleanUpdateData);
+    await ctx.db.patch(_id, cleanUpdateData);
 
     if (variants && variants.length > 0) {
-      deleteVariants(ctx, productId)
-      insertVariants(ctx, variants, productId)
+      deleteVariants(ctx, _id)
+      insertVariants(ctx, variants, _id)
     }
     if (variantsInventory && variantsInventory.length > 0) {
-      deleteVariantsInventory(ctx, productId)
-      insertVariantsInventory(ctx, variantsInventory, productId)
+      deleteVariantsInventory(ctx, _id)
+      insertVariantsInventory(ctx, variantsInventory, _id)
     }
 
     let past_collections = (await ctx.db.query('collections').collect())
       .filter(c => {
-        const ids = c?.productIds?.filter(id => id === args.productId)?.length
+        const ids = c?.productIds?.filter(id => id === _id)?.length
         if (ids && ids > 0)
           return true
         else
@@ -165,7 +167,7 @@ export const updateProduct = mutation({
       })
       .forEach(async id => {
         const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
-        await ctx.db.patch(id, { productIds: [...past_product_ids, productId] })
+        await ctx.db.patch(id, { productIds: [...past_product_ids, _id] })
       })
 
     // remove removed collections
@@ -175,9 +177,9 @@ export const updateProduct = mutation({
       })
       .forEach(async id => {
         const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
-        await ctx.db.patch(id, { productIds: past_product_ids?.filter(id => id !== productId) })
+        await ctx.db.patch(id, { productIds: past_product_ids?.filter(id => id !== _id) })
       })
-    return productId;
+    return _id;
   },
 });
 

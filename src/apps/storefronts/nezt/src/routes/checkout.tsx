@@ -13,10 +13,10 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { getTotal, useCartStore } from "@/lib/state";
 import { useMutation, useQuery } from 'convex/react';
-import { api } from "@repo/backend/_generated/api";
+import { api } from "api/convex";
 import { XIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import type { Id } from "@repo/backend/_generated/dataModel";
+import type { Id } from "api/data-model";
 
 
 export const Route = createFileRoute('/checkout')({

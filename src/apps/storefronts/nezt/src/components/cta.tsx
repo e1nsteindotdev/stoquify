@@ -1,7 +1,6 @@
-import { ChevronDown } from "lucide-react"
 import { DownChevron } from "./icons/down-chevron"
 import { useQuery } from "convex/react"
-import { api } from "@repo/backend/_generated/api"
+import { api } from "api/convex"
 
 import { smoothScrollTo } from "../lib/scroll"
 

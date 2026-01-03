@@ -1,4 +1,4 @@
-import type { Id } from "@repo/backend/_generated/dataModel"
+import type { Id } from "api/data-model"
 import { create } from "zustand"
 
 type CartContentType = {

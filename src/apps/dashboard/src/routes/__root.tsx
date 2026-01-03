@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
   },
 })
 
-const asyncStoragePersister = createAsyncStoragePersister({
+const syncStoragePersister = createAsyncStoragePersister({
   storage: window.localStorage,
 })
 export const Route = createRootRoute({
@@ -26,7 +26,7 @@ export const Route = createRootRoute({
         <ThemeProvider>
           <PersistQueryClientProvider
             client={queryClient}
-            persistOptions={{ persister: asyncStoragePersister }}
+            persistOptions={{ persister: syncStoragePersister }}
           >
             <Outlet />
             <Toaster />

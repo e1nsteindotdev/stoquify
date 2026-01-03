@@ -1,6 +1,6 @@
 import { UpArrow } from "./icons/up-arrow";
 import { useQuery } from "convex/react";
-import { api } from "@repo/backend/_generated/api";
+import { api } from "api/convex";
 import { smoothScrollTo } from "../lib/scroll";
 
 

@@ -33,8 +33,8 @@ export default function POSPage() {
 
   const categoriesResult = useGetCategories();
   const productsResult = useGetProducts();
-  const categories = categoriesResult?.data ?? [];
-  const products = productsResult?.data ?? [];
+  const categories = categoriesResult.data ?? [];
+  const products = productsResult.data ?? [];
   const createSale = useCreateSale();
 
   const filteredProducts = selectedCategory 

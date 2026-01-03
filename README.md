@@ -8,15 +8,10 @@
 - [ ] Make the whole app a PWA and finish its ui
 - [ ] Figure out how to deploy for 10 clients with $0 cost and how to do it fast, and with a seamless to fixes bugs
 
-## FEATURES PHASE 01 (NO AI)
-- [ ] Add POS system, analytics, advanced inventory tracking and weekly ai reports.
-- [ ] Make the dashboard a mobile app instead of PWA
-
 ## FEATURES PHASE 02
 - [ ] Add loyalty system (notify for discounts and gifts)
 - [ ] Add telegram ai texter (notify for discounts, track orders ...)
 - [ ] Add AI image generator & social media posters/stories generator
-
 
 
 ### PORTFOLIO ONES
@@ -33,9 +28,6 @@
 - [ ] Webhooks to keep inventory updated in real-time
 - [ ] CI/CD pipeline for staging/production
 - [ ] Feature flags to test new integrations
-
-
-
 
 -> MIGRATE TO EFFECT & TANSTACK DB
     - reduce the cost because now we're with cloudflare not 

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
+import { Doc, Id } from "./_generated/dataModel";
 
 export const listCustomers = query({
   handler: async (ctx) => {
@@ -25,7 +26,32 @@ export const listCustomers = query({
       }
     }))
   }
-})
+});
+
+export const createOrUpdateCustomer = mutation({
+  args: v.any(), 
+  handler: async (ctx, args: Doc<'customers'>) => {
+    // Destructure system fields to avoid sending them during update/insert
+    const { _id, _creationTime, ...data } = args;
+
+    // Check if we have a potentially valid ID
+    const normalizedId = ctx.db.normalizeId('customers', _id);
+
+    if (normalizedId) {
+        // Check if it actually exists to decide between patch and insert
+        // This handles cases where client generated a valid-looking ID but it's not in DB (unlikely for Convex IDs but possible)
+        // Or essentially standard update path.
+        const existing = await ctx.db.get(normalizedId);
+        if (existing) {
+            await ctx.db.patch(normalizedId, data);
+            return normalizedId;
+        }
+    }
+
+    // Fallback found no existing doc, or invalid ID -> Insert
+    return await ctx.db.insert('customers', data);
+  }
+});
 
 export const getCustomer = query({
   args: { customerId: v.id('customers') },

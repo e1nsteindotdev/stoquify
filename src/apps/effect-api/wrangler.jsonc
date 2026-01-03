@@ -1,0 +1,22 @@
+{
+  "name": "effect-api",
+  "compatibility_date": "2025-08-03",
+  "main": "src/index.ts",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "D1",
+      "database_name": "stoquify-d1",
+      "database_id": "ce01b973-458c-40b2-a7a4-3aed8a3faa02"
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true
+    }
+  }
+}

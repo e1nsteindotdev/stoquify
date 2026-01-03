@@ -34,25 +34,19 @@ function getTimeRange(period: TimePeriod): { start: number; end: number } {
 }
 
 export const getSalesData = query({
-  args: { period: v.union(v.literal("today"), v.literal("week"), v.literal("month"), v.literal("year"), v.literal("all")) },
   handler: async (ctx, { period }) => {
-    const { start, end } = getTimeRange(period);
-    
+
     // Get confirmed online orders (orders)
     const filteredOrders = await ctx.db
       .query("orders")
       .withIndex("by_createdAt")
       .filter((q) => q.eq(q.field("status"), "confirmed"))
-      .filter((q) => q.gte(q.field("createdAt"), start))
-      .filter((q) => q.lte(q.field("createdAt"), end))
       .collect();
 
     // Get POS sales
     const sales = await ctx.db
       .query("sales")
       .withIndex("by_createdAt")
-      .filter((q) => q.gte(q.field("createdAt"), start))
-      .filter((q) => q.lte(q.field("createdAt"), end))
       .collect();
 
     // Calculate online sales pure profit (Revenue - Cost)
@@ -110,7 +104,7 @@ export const getSalesByTimePeriod = query({
     filteredOrders.forEach((order) => {
       const date = new Date(order.createdAt);
       let key: string;
-      
+
       if (isAll) {
         // Group by month
         key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -134,7 +128,7 @@ export const getSalesByTimePeriod = query({
     sales.forEach((sale) => {
       const date = new Date(sale.createdAt);
       let key: string;
-      
+
       if (isAll) {
         // Group by month
         key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -229,7 +223,7 @@ export const getProductPerformance = query({
 
     // Sort by count
     const sorted = productData.sort((a, b) => b.count - a.count);
-    
+
     // Get best 3 and worst 3 (excluding products with 0 sales)
     const withSales = sorted.filter((p) => p.count > 0);
     const best = withSales.slice(0, 3);

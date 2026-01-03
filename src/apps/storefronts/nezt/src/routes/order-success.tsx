@@ -3,7 +3,7 @@ import { Image } from '@/components/ui/image'
 import { Check } from 'lucide-react'
 import { getTotal, useCartStore } from '@/lib/state'
 import { useQuery } from 'convex/react'
-import { api } from "@repo/backend/_generated/api"
+import { api } from "api/convex";
 import { cn } from '@/lib/utils'
 import { LoadingSpinner, LoadingScreen } from '@/components/loading-spinner'
 
