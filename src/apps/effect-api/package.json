@@ -29,9 +29,9 @@
     "changeset-publish": "pnpm build && TEST_DIST= pnpm vitest && changeset publish"
   },
   "dependencies": {
-    "@effect/platform": "^0.94.0",
+    "@effect/platform": "^0.82.0",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.17.7",
+    "effect": "^3.15.2",
     "i": "^0.3.7",
     "wrangler": "^4.28.1"
   },

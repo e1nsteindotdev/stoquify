@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodosRouteImport } from './routes/todos'
 import { Route as PosRouteImport } from './routes/pos'
+import { Route as LivestoreRouteImport } from './routes/livestore'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
 import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
@@ -30,6 +31,11 @@ const TodosRoute = TodosRouteImport.update({
 const PosRoute = PosRouteImport.update({
   id: '/pos',
   path: '/pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LivestoreRoute = LivestoreRouteImport.update({
+  id: '/livestore',
+  path: '/livestore',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -84,6 +90,7 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/livestore': typeof LivestoreRoute
   '/pos': typeof PosRoute
   '/todos': typeof TodosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/livestore': typeof LivestoreRoute
   '/pos': typeof PosRoute
   '/todos': typeof TodosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
@@ -112,6 +120,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
+  '/livestore': typeof LivestoreRoute
   '/pos': typeof PosRoute
   '/todos': typeof TodosRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
@@ -127,6 +136,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/livestore'
     | '/pos'
     | '/todos'
     | '/clients/$slug'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/livestore'
     | '/pos'
     | '/todos'
     | '/clients/$slug'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_dashboard'
+    | '/livestore'
     | '/pos'
     | '/todos'
     | '/_dashboard/clients/$slug'
@@ -169,6 +181,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
+  LivestoreRoute: typeof LivestoreRoute
   PosRoute: typeof PosRoute
   TodosRoute: typeof TodosRoute
 }
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/pos'
       fullPath: '/pos'
       preLoaderRoute: typeof PosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/livestore': {
+      id: '/livestore'
+      path: '/livestore'
+      fullPath: '/livestore'
+      preLoaderRoute: typeof LivestoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard': {
@@ -292,6 +312,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
+  LivestoreRoute: LivestoreRoute,
   PosRoute: PosRoute,
   TodosRoute: TodosRoute,
 }

@@ -1,0 +1,16 @@
+name = "stoquify-livestore-worker"
+main = "./src/cf-worker/index.ts"
+compatibility_date = "2025-05-08"
+
+[[durable_objects.bindings]]
+name = "WEBSOCKET_SERVER"
+class_name = "WebSocketServer"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "livestore-sync-cf-demo"
+database_id = "1c9b5dae-f1fa-49d8-83fa-7bd5b39c4121"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["WebSocketServer"]

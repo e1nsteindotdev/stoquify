@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process'
+import { livestoreDevtoolsPlugin } from '@livestore/devtools-vite'
 import { defineConfig } from "vite";
 import viteReact from "@vitejs/plugin-react";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -7,6 +9,10 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    port: process.env.PORT ? Number(process.env.PORT) : 60_001,
+  },
+  worker: { format: 'es' },
   plugins: [
     tanstackRouter({ autoCodeSplitting: true }),
     tailwindcss(),
@@ -41,6 +47,29 @@ export default defineConfig({
         ],
       },
     }),
+    livestoreDevtoolsPlugin({ schemaPath: './src/livestore/schema/index.ts' }),
+    // Running `wrangler dev` as part of `vite dev` needed for `@livestore/sync-cf`
+    // {
+    //   name: 'wrangler-dev',
+    //   configureServer: async (server) => {
+    //     const wrangler = spawn('./node_modules/.bin/wrangler', ['dev', '--port', '8780'], {
+    //       stdio: ['ignore', 'inherit', 'inherit'],
+    //     })
+    //
+    //     const shutdown = () => {
+    //       if (wrangler.killed === false) {
+    //         wrangler.kill()
+    //       }
+    //       process.exit(0)
+    //     }
+    //
+    //     server.httpServer?.on('close', shutdown)
+    //     process.on('SIGTERM', shutdown)
+    //     process.on('SIGINT', shutdown)
+    //
+    //     wrangler.on('exit', (code) => console.error(`wrangler dev exited with code ${code}`))
+    //   }
+    // }
   ],
   resolve: {
     alias: {
