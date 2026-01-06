@@ -1,13 +1,9 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import type { ProductRow } from "@/livestore/schema/products/types";
 
-export type ProductRow = {
-  _id: string;
-  title: string;
-  price: number;
-  imageUrl?: string;
-};
+export { ProductRow };
 
 export const columns: ColumnDef<ProductRow>[] = [
   {

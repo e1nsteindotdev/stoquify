@@ -1,35 +1,47 @@
-import { Events, Schema, State } from '@livestore/livestore'
+import { Events, Schema, State } from "@livestore/livestore";
 
 export const ordersTable = State.SQLite.table({
   name: "orders",
   columns: {
     id: State.SQLite.text({ primaryKey: true }),
+    shop_id: State.SQLite.text(),
     address: State.SQLite.text(),
     status: State.SQLite.text(),
-    deletedAt: State.SQLite.integer({ nullable: true, schema: Schema.DateFromNumber }),
-  }
-})
+    createdAt: State.SQLite.integer({ schema: Schema.DateFromNumber }),
+    deletedAt: State.SQLite.integer({
+      nullable: true,
+      schema: Schema.DateFromNumber,
+    }),
+  },
+});
+
+const orderPartialSchema = ordersTable.rowSchema.pipe(Schema.partial);
+const deletedSchema = Schema.Struct({
+  id: Schema.String,
+  deletedAt: Schema.Date,
+});
 
 export const ordersEvents = {
   orderCreated: Events.synced({
-    name: 'v1.OrderCreated',
-    schema: Schema.Struct({ id: Schema.String, address: Schema.String, status: Schema.String }),
+    name: "v1.OrderCreated",
+    schema: ordersTable.rowSchema,
   }),
   orderUpdated: Events.synced({
-    name: 'v1.OrderUpdated',
-    schema: Schema.Struct({ id: Schema.String, address: Schema.String, status: Schema.String }),
+    name: "v1.OrderUpdated",
+    schema: orderPartialSchema,
   }),
 
-  todoDeleted: Events.synced({
-    name: 'v1.OrderDeleted',
-    schema: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
+  orderDeleted: Events.synced({
+    name: "v1.OrderDeleted",
+    schema: deletedSchema,
   }),
-
-}
+};
 
 export const ordersMaterializers = State.SQLite.materializers(ordersEvents, {
-  'v1.OrderCreated': ({ id, address, status }) => ordersTable.insert({ id, address, status }),
-  'v1.OrderUpdated': ({ id, address, status }) => ordersTable.update({ address, status }).where({ id }),
-  'v1.OrderDeleted': ({ id, deletedAt }) => ordersTable.update({ deletedAt }).where({ id }),
-})
-
+  "v1.OrderCreated": ({ id, shop_id, address, status, createdAt }) =>
+    ordersTable.insert({ id, shop_id, address, status, createdAt }),
+  "v1.OrderUpdated": ({ id, shop_id, address, status }) =>
+    ordersTable.update({ shop_id, address, status }).where({ id }),
+  "v1.OrderDeleted": ({ id, deletedAt }) =>
+    ordersTable.update({ deletedAt }).where({ id }),
+});

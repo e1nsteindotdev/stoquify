@@ -9,33 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TodosRouteImport } from './routes/todos'
-import { Route as PosRouteImport } from './routes/pos'
 import { Route as LivestoreRouteImport } from './routes/livestore'
+import { Route as DebugRouteImport } from './routes/debug'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
-import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
-import { Route as DashboardCommandesIndexRouteImport } from './routes/_dashboard/commandes/index'
-import { Route as DashboardClientsIndexRouteImport } from './routes/_dashboard/clients/index'
-import { Route as DashboardanalyticsIndexRouteImport } from './routes/_dashboard/(analytics)/index'
 import { Route as DashboardProduitsCreateRouteImport } from './routes/_dashboard/produits/create'
 import { Route as DashboardProduitsSlugRouteImport } from './routes/_dashboard/produits/$slug'
 import { Route as DashboardCommandesSlugRouteImport } from './routes/_dashboard/commandes/$slug'
 import { Route as DashboardClientsSlugRouteImport } from './routes/_dashboard/clients/$slug'
 
-const TodosRoute = TodosRouteImport.update({
-  id: '/todos',
-  path: '/todos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PosRoute = PosRouteImport.update({
-  id: '/pos',
-  path: '/pos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LivestoreRoute = LivestoreRouteImport.update({
   id: '/livestore',
   path: '/livestore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugRoute = DebugRouteImport.update({
+  id: '/debug',
+  path: '/debug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -45,27 +35,6 @@ const DashboardRoute = DashboardRouteImport.update({
 const DashboardProduitsIndexRoute = DashboardProduitsIndexRouteImport.update({
   id: '/produits/',
   path: '/produits/',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardParametresIndexRoute =
-  DashboardParametresIndexRouteImport.update({
-    id: '/parametres/',
-    path: '/parametres/',
-    getParentRoute: () => DashboardRoute,
-  } as any)
-const DashboardCommandesIndexRoute = DashboardCommandesIndexRouteImport.update({
-  id: '/commandes/',
-  path: '/commandes/',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardClientsIndexRoute = DashboardClientsIndexRouteImport.update({
-  id: '/clients/',
-  path: '/clients/',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardanalyticsIndexRoute = DashboardanalyticsIndexRouteImport.update({
-  id: '/(analytics)/',
-  path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProduitsCreateRoute = DashboardProduitsCreateRouteImport.update({
@@ -90,123 +59,85 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/debug': typeof DebugRoute
   '/livestore': typeof LivestoreRoute
-  '/pos': typeof PosRoute
-  '/todos': typeof TodosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
   '/produits/create': typeof DashboardProduitsCreateRoute
-  '/': typeof DashboardanalyticsIndexRoute
-  '/clients': typeof DashboardClientsIndexRoute
-  '/commandes': typeof DashboardCommandesIndexRoute
-  '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/debug': typeof DebugRoute
   '/livestore': typeof LivestoreRoute
-  '/pos': typeof PosRoute
-  '/todos': typeof TodosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
   '/produits/create': typeof DashboardProduitsCreateRoute
-  '/': typeof DashboardanalyticsIndexRoute
-  '/clients': typeof DashboardClientsIndexRoute
-  '/commandes': typeof DashboardCommandesIndexRoute
-  '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
+  '/debug': typeof DebugRoute
   '/livestore': typeof LivestoreRoute
-  '/pos': typeof PosRoute
-  '/todos': typeof TodosRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
   '/_dashboard/produits/create': typeof DashboardProduitsCreateRoute
-  '/_dashboard/(analytics)/': typeof DashboardanalyticsIndexRoute
-  '/_dashboard/clients/': typeof DashboardClientsIndexRoute
-  '/_dashboard/commandes/': typeof DashboardCommandesIndexRoute
-  '/_dashboard/parametres/': typeof DashboardParametresIndexRoute
   '/_dashboard/produits/': typeof DashboardProduitsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/debug'
     | '/livestore'
-    | '/pos'
-    | '/todos'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
     | '/produits/create'
-    | '/'
-    | '/clients'
-    | '/commandes'
-    | '/parametres'
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/debug'
     | '/livestore'
-    | '/pos'
-    | '/todos'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
     | '/produits/create'
-    | '/'
-    | '/clients'
-    | '/commandes'
-    | '/parametres'
     | '/produits'
   id:
     | '__root__'
     | '/_dashboard'
+    | '/debug'
     | '/livestore'
-    | '/pos'
-    | '/todos'
     | '/_dashboard/clients/$slug'
     | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
     | '/_dashboard/produits/create'
-    | '/_dashboard/(analytics)/'
-    | '/_dashboard/clients/'
-    | '/_dashboard/commandes/'
-    | '/_dashboard/parametres/'
     | '/_dashboard/produits/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
+  DebugRoute: typeof DebugRoute
   LivestoreRoute: typeof LivestoreRoute
-  PosRoute: typeof PosRoute
-  TodosRoute: typeof TodosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/todos': {
-      id: '/todos'
-      path: '/todos'
-      fullPath: '/todos'
-      preLoaderRoute: typeof TodosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pos': {
-      id: '/pos'
-      path: '/pos'
-      fullPath: '/pos'
-      preLoaderRoute: typeof PosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/livestore': {
       id: '/livestore'
       path: '/livestore'
       fullPath: '/livestore'
       preLoaderRoute: typeof LivestoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug': {
+      id: '/debug'
+      path: '/debug'
+      fullPath: '/debug'
+      preLoaderRoute: typeof DebugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard': {
@@ -221,34 +152,6 @@ declare module '@tanstack/react-router' {
       path: '/produits'
       fullPath: '/produits'
       preLoaderRoute: typeof DashboardProduitsIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/_dashboard/parametres/': {
-      id: '/_dashboard/parametres/'
-      path: '/parametres'
-      fullPath: '/parametres'
-      preLoaderRoute: typeof DashboardParametresIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/_dashboard/commandes/': {
-      id: '/_dashboard/commandes/'
-      path: '/commandes'
-      fullPath: '/commandes'
-      preLoaderRoute: typeof DashboardCommandesIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/_dashboard/clients/': {
-      id: '/_dashboard/clients/'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof DashboardClientsIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/_dashboard/(analytics)/': {
-      id: '/_dashboard/(analytics)/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof DashboardanalyticsIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/produits/create': {
@@ -287,10 +190,6 @@ interface DashboardRouteChildren {
   DashboardCommandesSlugRoute: typeof DashboardCommandesSlugRoute
   DashboardProduitsSlugRoute: typeof DashboardProduitsSlugRoute
   DashboardProduitsCreateRoute: typeof DashboardProduitsCreateRoute
-  DashboardanalyticsIndexRoute: typeof DashboardanalyticsIndexRoute
-  DashboardClientsIndexRoute: typeof DashboardClientsIndexRoute
-  DashboardCommandesIndexRoute: typeof DashboardCommandesIndexRoute
-  DashboardParametresIndexRoute: typeof DashboardParametresIndexRoute
   DashboardProduitsIndexRoute: typeof DashboardProduitsIndexRoute
 }
 
@@ -299,10 +198,6 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCommandesSlugRoute: DashboardCommandesSlugRoute,
   DashboardProduitsSlugRoute: DashboardProduitsSlugRoute,
   DashboardProduitsCreateRoute: DashboardProduitsCreateRoute,
-  DashboardanalyticsIndexRoute: DashboardanalyticsIndexRoute,
-  DashboardClientsIndexRoute: DashboardClientsIndexRoute,
-  DashboardCommandesIndexRoute: DashboardCommandesIndexRoute,
-  DashboardParametresIndexRoute: DashboardParametresIndexRoute,
   DashboardProduitsIndexRoute: DashboardProduitsIndexRoute,
 }
 
@@ -312,9 +207,8 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
+  DebugRoute: DebugRoute,
   LivestoreRoute: LivestoreRoute,
-  PosRoute: PosRoute,
-  TodosRoute: TodosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

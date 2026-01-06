@@ -4,51 +4,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { NewVariantInput } from "@/livestore/schema/products/types";
 
-type TVariant = {
-  order: number;
-  parentVariantId?: string;
-  name: string;
-  options: {
-    name: string;
-  }[];
-};
-export function NewVariantForm({ addNewVariant, isEmpty }: { isEmpty?: boolean, addNewVariant: (name: string, options: string[]) => void }) {
+export function NewVariantForm({
+  addNewVariant,
+  isEmpty,
+}: {
+  isEmpty?: boolean;
+  addNewVariant: (input: NewVariantInput) => void;
+}) {
   const [isModifying, setIsModifying] = useState<boolean>(false);
   const [variantName, setVariantName] = useState<string | null>();
   const [options, setOptions] = useState<string[]>([]);
   useEffect(() => {
     if (isEmpty) {
-      setVariantName('Taille')
-      setOptions(['S', 'M', 'L', 'XL'])
+      setVariantName("Taille");
+      setOptions(["S", "M", "L", "XL"]);
     }
-  }, [isEmpty])
+  }, [isEmpty]);
 
   function handleAddOption() {
     setOptions((prev) => {
-      if (prev)
-        return [...prev, ""]
-      else
-        return [""]
+      if (prev) return [...prev, ""];
+      else return [""];
     });
   }
 
   function handleRemoveOption(index: number) {
     setOptions((prev) => {
       if (prev)
-        return prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)
-      else return []
-    }
-    );
+        return prev.length <= 1 ? prev : prev.filter((_, i) => i !== index);
+      else return [];
+    });
   }
 
   function handleOptionChange(index: number, value: string) {
     setOptions((prev) => {
-      return prev.map((opt, i) => (i === index ? value : opt))
+      return prev.map((opt, i) => (i === index ? value : opt));
     });
-    const lastOption = options[options.length - 1]
+    const lastOption = options[options.length - 1];
     if (index === options.length - 1 && lastOption === "") {
-      handleAddOption()
+      handleAddOption();
     }
   }
 
@@ -60,10 +56,10 @@ export function NewVariantForm({ addNewVariant, isEmpty }: { isEmpty?: boolean, 
       const name = variantName.trim();
       if (!name || cleanedOptions.length === 0) return;
 
-      addNewVariant(variantName, options)
+      addNewVariant({ name, options: cleanedOptions });
       setIsModifying(false);
-      setVariantName("")
-      setOptions([])
+      setVariantName("");
+      setOptions([]);
     }
   }
 
@@ -77,8 +73,10 @@ export function NewVariantForm({ addNewVariant, isEmpty }: { isEmpty?: boolean, 
 
   if (isModifying) {
     return (
-      <div className={cn("grid gap-2",)}>
-        <p className="font-semibold text-[18px]">Ajouter une nouvelle variante</p>
+      <div className={cn("grid gap-2")}>
+        <p className="font-semibold text-[18px]">
+          Ajouter une nouvelle variante
+        </p>
         <div className="grid gap-4 border border-neutral-300 rounded-[15px] p-4">
           <div className="grid gap-3">
             <Label className="font-semibold">Nom de la variante</Label>
@@ -107,13 +105,14 @@ export function NewVariantForm({ addNewVariant, isEmpty }: { isEmpty?: boolean, 
                     disabled={options.length <= 1}
                     aria-label="Remove option"
                   >
-                    <Trash2 color={i === options.length - 1 ? "#DEDEDE" : "#FF383C"} className="size-5" />
+                    <Trash2
+                      color={i === options.length - 1 ? "#DEDEDE" : "#FF383C"}
+                      className="size-5"
+                    />
                   </button>
                 </div>
               ))}
-              <div>
-
-              </div>
+              <div></div>
             </div>
           </div>
           <div className="flex w-full justify-between">
@@ -128,32 +127,37 @@ export function NewVariantForm({ addNewVariant, isEmpty }: { isEmpty?: boolean, 
             <Button
               type="button"
               variant={"destructive"}
-              onClick={() => { setIsModifying(false) }}
+              onClick={() => {
+                setIsModifying(false);
+              }}
             >
               Annuler
             </Button>
           </div>
         </div>
       </div>
-
-    )
+    );
   } else {
-    return <div>
-      <Button
-        type="button"
-        variant="ghost"
-        className="flex gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
-        onClick={() => { handleAddOption(); setIsModifying(true) }}
-      >
-        <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
-          <AddIcon />
-        </div>
-        <p className="text-[14px]">Ajouter une nouvelle variante</p>
-      </Button>
-    </div>
+    return (
+      <div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="flex gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
+          onClick={() => {
+            handleAddOption();
+            setIsModifying(true);
+          }}
+        >
+          <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
+            <AddIcon />
+          </div>
+          <p className="text-[14px]">Ajouter une nouvelle variante</p>
+        </Button>
+      </div>
+    );
   }
 }
-
 
 function AddIcon() {
   return (

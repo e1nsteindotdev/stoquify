@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process'
-import { livestoreDevtoolsPlugin } from '@livestore/devtools-vite'
+import { spawn } from "node:child_process";
+import { livestoreDevtoolsPlugin } from "@livestore/devtools-vite";
 import { defineConfig } from "vite";
 import viteReact from "@vitejs/plugin-react";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -11,8 +11,12 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 60_001,
+    headers: {
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+    },
   },
-  worker: { format: 'es' },
+  worker: { format: "es" },
   plugins: [
     tanstackRouter({ autoCodeSplitting: true }),
     tailwindcss(),
@@ -47,7 +51,7 @@ export default defineConfig({
         ],
       },
     }),
-    livestoreDevtoolsPlugin({ schemaPath: './src/livestore/schema/index.ts' }),
+    livestoreDevtoolsPlugin({ schemaPath: "./src/livestore/schema/index.ts" }),
     // Running `wrangler dev` as part of `vite dev` needed for `@livestore/sync-cf`
     // {
     //   name: 'wrangler-dev',

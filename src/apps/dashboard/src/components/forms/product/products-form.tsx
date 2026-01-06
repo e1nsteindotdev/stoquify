@@ -3,7 +3,13 @@ import { useEffect, useMemo } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -13,82 +19,385 @@ import {
 } from "@/components/ui/select";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
-import { type Id } from "api/data-model";
-import { formatVariantsInventory } from "@/hooks/useVariantActions";
-import { useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
-import { productsCollection, useGetProductById } from "@/database/products";
-import { useGetSelectedCollectionIds } from "@/database/collections";
+import { useStore } from "@livestore/react";
+import { products$ } from "@/livestore/schema/products";
+import { events, shopId$ } from "@/livestore/schema";
+import type { ProductImage } from "@/livestore/schema/products/types";
 
-export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
+export function ProductForm({ slug }: { slug?: string }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
-  const productId: Id<"products"> | null = isNew ? null : slug;
-  const initiateProduct = useInitiateProduct();
-  const updateProduct = useUpdateProduct();
 
-  const { data: product } = useGetProductById(isNew ? undefined : slug as Id<"products">);
-  const { data: selectedCollectionIds } = useGetSelectedCollectionIds(product?._id);
-  const productCollections = new Set(selectedCollectionIds ?? []);
+  type CollectionWithProductId = {
+    id: string;
+    name: string;
+    collection_product_id: string;
+  };
 
-  const defaultValues = useMemo(
-    () => ({
-      categoryId: product?.categoryId ?? "",
-      title: product?.title ?? "",
-      desc: product?.desc ?? "",
-      price: product?.price ?? 0,
-      cost: product?.cost ?? 0,
-      discount: product?.discount ?? undefined,
-      oldPrice: product?.oldPrice ?? undefined,
-      stockingStrategy: product?.stockingStrategy ?? "by_variants",
-      status: product?.status ?? "incomplete",
-      images: product?.images ?? [],
-      variants: product?.variants ?? [],
-      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : new Map(),
-      collections: productCollections ?? []
-    }),
-    [product, productCollections]
+  const { store } = useStore();
+  const product =
+    store.useQuery(products$(isNew ? undefined : slug))?.[0] ?? null;
+  const productId = useMemo(
+    () => product?.id ?? crypto.randomUUID(),
+    [product?.id],
   );
+
+  const defaultValues = useMemo(() => {
+    if (!product) {
+      return {
+        title: "Random Product Title",
+        desc: "desc",
+        categoryId: "",
+        price: 12000,
+        cost: 2500,
+        discount: undefined,
+        status: "incomplete" as const,
+        quantity: 0,
+        oldPrice: undefined,
+        stockingStrategy: "by_variants" as const,
+        images: [] as ProductImage[],
+        variants: [],
+        collections: new Set<string>(),
+      };
+    }
+
+    const collections = new Set((product.collections ?? []).map((c) => c.id));
+    const images: ProductImage[] = (product.images ?? []).map((img) => ({
+      id: img.id,
+      shop_id: product.shop_id,
+      product_id: product.id,
+      url: img.url,
+      localUrl: (img as any).localUrl || img.url,
+      order: img.order,
+      hidden: img.hidden ? 1 : 0,
+      createdAt: new Date(),
+      deletedAt: null,
+    }));
+    return {
+      title: product.title ?? "",
+      desc: product.desc ?? "",
+      categoryId: product.category_id ?? "",
+      price: product.price ?? 0,
+      cost: product.cost ?? 0,
+      discount: product.discount ?? undefined,
+      status: product.status ?? "incomplete",
+      quantity: product.quantity ?? 0,
+      oldPrice: product.oldPrice ?? undefined,
+      stockingStrategy: product.stockingStrategy ?? "by_variants",
+      images,
+      variants: product.variants ?? [],
+      collections,
+    };
+  }, [product]);
 
   const form = useAppForm({
     defaultValues,
-    onSubmit: async ({ value }: { value: any }) => {
-      // because somehow value.images is an object
-      if (value.images) value.images = Object.values(value.images)
-      if (value.variantsInventory) {
-        value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any
+    onSubmit: async ({ value }) => {
+      const { images, variants, collections, ...productValues } = value;
+      const createdAt = new Date();
+      const deletedAt = new Date();
+      const shopId = store.query(shopId$);
+
+      const productValuesToInsert: Record<string, any> = {
+        title: productValues.title,
+        desc: productValues.desc || null,
+        category_id: productValues.categoryId,
+        price: Number(productValues.price),
+        cost: Number(productValues.cost) || null,
+        status: productValues.status,
+        discount: productValues.discount ?? null,
+        oldPrice: productValues.oldPrice ?? null,
+        stockingStrategy: productValues.stockingStrategy,
+        quantity: productValues.quantity ?? null,
+        createdAt,
+        deletedAt: null,
+      };
+
+      console.log("values : ", productValuesToInsert)
+
+      if (isNew) {
+        store.commit(
+          events.productInserted({
+            ...productValuesToInsert,
+            id: productId,
+            shop_id: shopId,
+          } as any),
+        );
+      } else {
+        const {
+          createdAt: _,
+          deletedAt: __,
+          ...updateValues
+        } = productValuesToInsert;
+        store.commit(
+          events.productPartialUpdated({
+            id: productId,
+            ...updateValues,
+          } as any),
+        );
       }
-      value.price = Number(value.price) ?? 0
-      value.cost = Number(value.cost) ?? 0
-      const dirtyValues = Object.fromEntries(
-        Object.entries(value).filter(([k]) => {
-          const decision = form.getFieldMeta(k as any)?.isDefaultValue
-          return !decision
-        })
+
+      // handle images - create productImageInserted events for all images
+      if (images.length > 0) {
+        images.forEach((image) => {
+          console.log('inserting image into db :', image)
+          store.commit(
+            events.productImageInserted({
+              id: image.id,
+              shop_id: shopId,
+              product_id: productId,
+              url: image.url,
+              localUrl: image.localUrl,
+              order: image.order,
+              hidden: image.hidden,
+              createdAt: image.createdAt,
+              deletedAt: null,
+            } as any),
+          );
+        });
+      }
+
+      // handle variants
+      if (!form.getFieldMeta("variants")?.isDefaultValue) {
+        const newVariants = variants.filter(
+          (v) => !product?.variants.some((oldV) => oldV.id === v.id),
+        );
+        const deletedVariants = product?.variants.filter(
+          (oldV) => !variants.some((v) => v.id === oldV.id),
+        );
+
+        if (isNew) {
+          newVariants.forEach((variant, variantIndex) => {
+            const variantId = variant.id || crypto.randomUUID();
+            const optionIds: string[] = [];
+            const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+
+            for (let i = 0; i < variant.options.length; i++) {
+              const optionId = crypto.randomUUID();
+              optionIds.push(optionId);
+              store.commit(
+                events.variantOptionInserted({
+                  id: optionId,
+                  shop_id: shopId,
+                  variant_id: variantId,
+                  value: variant.options[i],
+                  createdAt,
+                  deletedAt: null,
+                }),
+              );
+            }
+
+            store.commit(
+              events.skuInserted({
+                id: skuId,
+                shop_id: shopId,
+                product_id: productId,
+                quantity: 0,
+                createdAt,
+                deletedAt: null,
+              }),
+            );
+
+            for (const optionId of optionIds) {
+              store.commit(
+                events.skuOptionInserted({
+                  id: `${skuId}_${optionId}`,
+                  shop_id: shopId,
+                  sku_id: skuId,
+                  option_id: optionId,
+                  createdAt,
+                  deletedAt: null,
+                }),
+              );
+            }
+
+            store.commit(
+              events.variantInserted({
+                id: variantId,
+                shop_id: shopId,
+                product_id: productId,
+                name: variant.name,
+                createdAt,
+                options: optionIds.map((id, i) => ({
+                  id,
+                  value: variant.options[i],
+                  createdAt,
+                })),
+                skus: [
+                  {
+                    id: skuId,
+                    quantity: 0,
+                    createdAt,
+                    option_ids: optionIds,
+                  },
+                ],
+              }),
+            );
+
+            store.commit(
+              (events as any).variantOrderUpdated({
+                id: variantId,
+                order: variantIndex + 1,
+              }),
+            );
+          });
+        } else {
+          deletedVariants?.forEach((variant) => {
+            store.commit(events.variantDeleted({ id: variant.id, deletedAt }));
+          });
+          newVariants.forEach((variant, variantIndex) => {
+            const variantId = crypto.randomUUID();
+            const optionIds: string[] = [];
+            const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+
+            for (let i = 0; i < variant.options.length; i++) {
+              const optionId = crypto.randomUUID();
+              optionIds.push(optionId);
+              store.commit(
+                events.variantOptionInserted({
+                  id: optionId,
+                  shop_id: shopId,
+                  variant_id: variantId,
+                  value: variant.options[i],
+                  createdAt,
+                  deletedAt: null,
+                }),
+              );
+            }
+
+            store.commit(
+              events.skuInserted({
+                id: skuId,
+                shop_id: shopId,
+                product_id: productId,
+                quantity: 0,
+                createdAt,
+                deletedAt: null,
+              }),
+            );
+
+            for (const optionId of optionIds) {
+              store.commit(
+                events.skuOptionInserted({
+                  id: `${skuId}_${optionId}`,
+                  shop_id: shopId,
+                  sku_id: skuId,
+                  option_id: optionId,
+                  createdAt,
+                  deletedAt: null,
+                }),
+              );
+            }
+
+            store.commit(
+              events.variantInserted({
+                id: variantId,
+                shop_id: shopId,
+                product_id: productId,
+                name: variant.name,
+                createdAt,
+                options: optionIds.map((id, i) => ({
+                  id,
+                  value: variant.options[i],
+                  createdAt,
+                })),
+                skus: [
+                  {
+                    id: skuId,
+                    quantity: 0,
+                    createdAt,
+                    option_ids: optionIds,
+                  },
+                ],
+              }),
+            );
+
+            store.commit(
+              (events as any).variantOrderUpdated({
+                id: variantId,
+                order: variantIndex + 1,
+              }),
+            );
+          });
+        }
+      }
+
+      // handle collections
+      const currentCollectionIds = Array.from(collections);
+      const previousCollectionIds = (product?.collections ?? []).map(
+        (c) => c.id,
       );
-      if (value.collections) {
-        dirtyValues['collections'] = Array.from(value.collections)
+      const collectionsChanged =
+        currentCollectionIds.length !== previousCollectionIds.length ||
+        !currentCollectionIds.every((id) => previousCollectionIds.includes(id));
+
+      if (collectionsChanged) {
+        const newCollectionIds = currentCollectionIds.filter(
+          (id) => !previousCollectionIds.includes(id),
+        );
+        const deletedCollections: CollectionWithProductId[] = (
+          product?.collections ?? []
+        ).filter(
+          (oldC) => !currentCollectionIds.includes(oldC.id),
+        ) as CollectionWithProductId[];
+
+        if (isNew) {
+          newCollectionIds.forEach((collectionId) => {
+            store.commit(
+              events.collectionProductInserted({
+                id: crypto.randomUUID(),
+                shop_id: shopId,
+                collection_id: collectionId,
+                product_id: productId,
+                createdAt,
+                deletedAt: null,
+              } as any),
+            );
+          });
+        } else {
+          deletedCollections.forEach((collection) => {
+            store.commit(
+              events.collectionProductDeleted({
+                id: collection.collection_product_id,
+                deletedAt: createdAt,
+              }),
+            );
+          });
+          newCollectionIds.forEach((collectionId) => {
+            store.commit(
+              events.collectionProductInserted({
+                id: crypto.randomUUID(),
+                shop_id: shopId,
+                collection_id: collectionId,
+                product_id: productId,
+                createdAt,
+                deletedAt: null,
+              } as any),
+            );
+          });
+        }
       }
 
       if (isNew) {
-        const id = await initiateProduct.mutateAsync({});
-        await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
-        router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
-      } else {
-        if (productId) {
-          dirtyValues["productId"] = productId;
-          await updateProduct.mutateAsync(dirtyValues as any);
-        }
+        router.navigate({ to: "/produits/$slug", params: { slug: productId } });
       }
     },
   });
 
   // Keep form in sync when product loads
   useEffect(() => {
-    form.reset(defaultValues);
-  }, [defaultValues]);
+    if (product?.id) {
+      form.reset(defaultValues);
+    }
+  }, [product?.id]);
 
-  const isCompleted = (form.getFieldValue('images') && form.getFieldValue('price') !== 0 && form.getFieldValue('title') && form.getFieldValue('categoryId')) ? true : false
-
+  const isCompleted =
+    form.getFieldValue("images") &&
+      form.getFieldValue("price") !== 0 &&
+      form.getFieldValue("title") &&
+      form.getFieldValue("categoryId")
+      ? true
+      : false;
 
   return (
     <div className="w-full flex items-start justify-center p-6 pb-20">
@@ -142,19 +451,14 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 <div className="grid grid-cols-2 gap-4">
                   <form.AppField
                     name="price"
-                    children={(field) => (
-                      <field.PricingField />
-                    )}
+                    children={(field) => <field.PricingField />}
                   />
                   <form.AppField
                     name="cost"
                     children={(field) => (
                       <div className="grid">
                         <Label className="font-semibold pb-[12px]">Coût</Label>
-                        <field.TextField
-                          type="number"
-                          placeholder="2500"
-                        />
+                        <field.TextField type="number" placeholder="2500" />
                       </div>
                     )}
                   />
@@ -162,42 +466,15 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               </InputsContainer>
             </div>
 
-
             <div className="flex flex-col gap-3">
               <InputsTitle>Variants</InputsTitle>
               <InputsContainer className="">
                 <form.AppField
                   name="variants"
-                  children={(field) => <field.VariantsField />}
-                />
-              </InputsContainer>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <InputsTitle>Stockage</InputsTitle>
-              <InputsContainer>
-
-                <form.AppField
-                  name="stockingStrategy"
                   children={(field) => (
-                    <field.StockageStratField />
-                  )} />
-
-                <form.Subscribe
-                  selector={(state) => ({ variants: state.values.variants, strat: state.values.stockingStrategy })}
-                  children={({ variants, strat, }) => {
-                    return (
-                      <form.AppField
-                        name="variantsInventory"
-                        children={(field) => (
-                          <field.StockageField
-                            strat={strat}
-                            variants={variants}
-                          />
-                        )}
-                      />
-                    )
-                  }} />
+                    <field.VariantsField productId={productId} />
+                  )}
+                />
               </InputsContainer>
             </div>
           </div>
@@ -208,7 +485,10 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               <Card className="gap-2 border-white">
                 <CardHeader>
                   <CardTitle>Statut</CardTitle>
-                  <CardDescription>Vous devez remplir les champs importants pour pouvoir rendre le produit actif dans la boutique</CardDescription>
+                  <CardDescription>
+                    Vous devez remplir les champs importants pour pouvoir rendre
+                    le produit actif dans la boutique
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form.Subscribe
@@ -220,7 +500,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                     ]}
                     children={([categoryId, title, price, images]) => {
                       if (categoryId && title && price && images) {
-                        form.setFieldValue("status", "active")
+                        form.setFieldValue("status", "active");
                       }
                       return (
                         <form.Field
@@ -228,36 +508,51 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                           children={(field) => (
                             <Select
                               value={field.state.value}
-                              onValueChange={(v) => field.handleChange(v as any)}
+                              onValueChange={(v) =>
+                                field.handleChange(v as any)
+                              }
                             >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Sélectionner le statut" />
                               </SelectTrigger>
                               <SelectContent className="bg-card">
-                                <SelectItem value="incomplete">incomplet</SelectItem>
-                                <SelectItem value="hidden" disabled={!isCompleted}>caché</SelectItem>
-                                <SelectItem value="active" disabled={!isCompleted}>actif</SelectItem>
+                                <SelectItem value="incomplete">
+                                  incomplet
+                                </SelectItem>
+                                <SelectItem
+                                  value="hidden"
+                                  disabled={!isCompleted}
+                                >
+                                  caché
+                                </SelectItem>
+                                <SelectItem
+                                  value="active"
+                                  disabled={!isCompleted}
+                                >
+                                  actif
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           )}
-                        />)
+                        />
+                      );
                     }}
                   />
                 </CardContent>
               </Card>
 
-
-
               <form.Subscribe
-                selector={(state) => [
-                  state.values.collections,
-                ]}
-                children={([collections]) => <form.AppField
-                  name="collections"
-                  children={(field) => (
-                    <field.CollectionsField selectedCollections={collections} />
-                  )}
-                />}
+                selector={(state) => [state.values.collections]}
+                children={([collections]) => (
+                  <form.AppField
+                    name="collections"
+                    children={(field) => (
+                      <field.CollectionsField
+                        selectedCollections={collections}
+                      />
+                    )}
+                  />
+                )}
               />
               <Card className="gap-2 border-white">
                 <CardHeader>

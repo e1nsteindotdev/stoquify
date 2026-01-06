@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+// import { createFileRoute } from "@tanstack/react-router";
 // import { useState } from "react";
 // import {
 //   ChartContainer,
@@ -305,59 +305,4 @@ import { createFileRoute } from "@tanstack/react-router";
 //     </div>
 //   );
 // }
-export const Route = createFileRoute("/_dashboard/(analytics)/")({
-  component: Page,
-});
-
-function Page() {
-  return (
-    <div className="p-4 pt-0 w-full h-full flex flex-col gap-4">
-      <div className="flex-1">
-        <OrdersTable />
-      </div>
-    </div>
-  )
-}
-
-import { DataTable } from "@/components/tables/data-table";
-import { type ColumnDef } from "@tanstack/react-table";
-import { queryDb } from "@livestore/livestore";
-import { tables } from "@/livestore/schema";
-import { useStore } from "@livestore/react";
-
-
-
-const orders$ = queryDb(tables.orders.select())
-
-
-type Mutable<T> = {
-  -readonly [K in keyof T]: T[K];
-};
-
-export function OrdersTable() {
-  const { store } = useStore()
-  const orders = store.useQuery(orders$) as unknown as Mutable<typeof tables.orders.Type>[];
-
-  return (
-    <div className="container mx-auto py-10 space-y-4">
-      <DataTable columns={columns} data={orders} />
-    </div>
-  );
-}
-
-type OrderRow = typeof tables.orders.Type
-
-const columns: ColumnDef<OrderRow>[] = [
-  {
-    accessorKey: "id",
-    header: "ID",
-  },
-  {
-    accessorKey: "address",
-    header: "Address",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-  },
-];
+//

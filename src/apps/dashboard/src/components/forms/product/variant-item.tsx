@@ -3,15 +3,15 @@ import { UpArrow } from "@/components/icons/up-arrow";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useVariantActions } from "@/hooks/useVariantActions";
-import type { VariantElement } from "@/hooks/useVariantActions";
+import type { NewVariantInput } from "@/livestore/schema/products/types";
 import { useFieldContext } from "@/hooks/form-context";
 
-type VariantItemProps = {
-  variant: VariantElement;
+interface VariantItemProps {
+  variant: NewVariantInput;
   index: number;
   isFirst?: boolean;
   isLast?: boolean;
-};
+}
 
 export default function VariantItem({
   variant,
@@ -19,14 +19,17 @@ export default function VariantItem({
   isFirst = false,
   isLast = false,
 }: VariantItemProps) {
-  const field = useFieldContext<VariantElement[]>();
+  const field = useFieldContext<NewVariantInput[]>();
   const { deleteVariant, moveVariantUp, moveVariantDown } =
     useVariantActions(field);
+
   return (
     <div className="bg-neutral-200 rounded-2xl border border-input-border  p-4">
       <div className="flex  items-center gap-4">
-        {/* <DragIcon /> */}
-        <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600"> {index + 1} </span>
+        <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600">
+          {" "}
+          {index + 1}{" "}
+        </span>
         <div className="h-[24px] rounded-md py-0.5 bg-primary/10 w-[2px]" />
 
         <div className="flex-1 flex flex-col gap-2">
@@ -34,10 +37,10 @@ export default function VariantItem({
           <div className="flex flex-wrap gap-2">
             {variant.options.map((opt, i) => (
               <span
-                key={`${opt.name}-${i}`}
+                key={`${opt}-${i}`}
                 className="rounded-[6px] bg-primary/10 px-3 py-1 text-primary text-sm"
               >
-                {opt.name}
+                {opt}
               </span>
             ))}
           </div>
@@ -50,7 +53,6 @@ export default function VariantItem({
             disabled={isLast}
             onClick={() => moveVariantDown(index)}
           >
-            {/* <ArrowDown className="size-5" color="black" /> */}
             <DownArrow />
           </Button>
           <Button
@@ -60,7 +62,6 @@ export default function VariantItem({
             disabled={isFirst}
             onClick={() => moveVariantUp(index)}
           >
-            {/* <ArrowUp className="size-5" color="black" /> */}
             <UpArrow />
           </Button>
           <div className="h-6 w-px bg-black/10" />
@@ -70,7 +71,6 @@ export default function VariantItem({
             aria-label="Delete variant"
             onClick={() => deleteVariant(index)}
           >
-            {/* <Trash2 color="red" className="size-5" /> */}
             <Trash2 color="red" className="size-5" />
           </Button>
         </div>
@@ -78,4 +78,3 @@ export default function VariantItem({
     </div>
   );
 }
-

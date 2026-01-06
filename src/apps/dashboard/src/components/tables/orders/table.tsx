@@ -1,12 +1,18 @@
 import { columns, type OrderRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useGetOrders } from "@/database/orders";
-import { ClipLoader } from "react-spinners";
+import { tables } from "@/livestore/schema";
+import { queryDb } from "@livestore/livestore";
+import { useStore } from "@livestore/react";
+
+const orders$ = queryDb(tables.orders.select())
+
+type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};
 
 export function OrdersTable() {
-  const ordersResult = useGetOrders();
-  const orders = ordersResult?.data ?? [];
-  const isLoading = !ordersResult?.isEnabled;
+  const { store } = useStore()
+  const orders = store.useQuery(orders$) as unknown as Mutable<typeof tables.orders.Type>[];
 
   const rows: OrderRow[] = orders.map((order: any) => ({
     _id: order._id,
@@ -19,13 +25,6 @@ export function OrdersTable() {
     createdAt: order.createdAt,
   }));
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-10 flex justify-center">
-        <ClipLoader color="#000" size={50} />
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-10 space-y-4">

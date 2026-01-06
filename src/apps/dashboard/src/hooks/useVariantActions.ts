@@ -1,30 +1,15 @@
-import type { Doc } from "api/data-model";
 import { useCallback } from "react";
-
-export type VariantOption = {
-  id?: string;
-  name: string;
-};
-
-export type VariantElement = {
-  id?: string;
-  name: string;
-  order: number;
-  parentVariantId?: string;
-  options: VariantOption[];
-};
-
-export type TVariantsInventory = Map<string, { _id?: string, _creationTime?: number, path: string[], quantity: number }>
+import type { NewVariantInput } from "@/livestore/schema/products/types";
 
 type FieldLike = {
-  state: { value: VariantElement[] };
-  setValue: (updater: (prev: VariantElement[]) => VariantElement[]) => void;
+  state: { value: NewVariantInput[] };
+  setValue: (updater: (prev: NewVariantInput[]) => NewVariantInput[]) => void;
 };
 
-function reindexSequential(variants: VariantElement[]): VariantElement[] {
+function reindexSequential(variants: NewVariantInput[]): NewVariantInput[] {
   return variants
-    .sort((a, b) => a.order - b.order)
-    .map((variant, index) => ({ ...variant, order: index + 1 }));
+    .map((variant, index) => ({ ...variant }))
+    .map((variant, index) => ({ ...variant }));
 }
 
 export function useVariantActions(field: FieldLike) {
@@ -32,10 +17,10 @@ export function useVariantActions(field: FieldLike) {
     (index: number) => {
       field.setValue((prev) => {
         const newVariants = prev.filter((_, i) => i !== index);
-        return reindexSequential(newVariants);
+        return newVariants;
       });
     },
-    [field]
+    [field],
   );
 
   const moveVariantUp = useCallback(
@@ -47,20 +32,13 @@ export function useVariantActions(field: FieldLike) {
         const currentVariant = newVariants[index];
         const previousVariant = newVariants[index - 1];
 
-        // Swap the variants
-        newVariants[index] = {
-          ...previousVariant,
-          order: currentVariant.order,
-        };
-        newVariants[index - 1] = {
-          ...currentVariant,
-          order: previousVariant.order,
-        };
+        newVariants[index] = previousVariant;
+        newVariants[index - 1] = currentVariant;
 
-        return reindexSequential(newVariants);
+        return newVariants;
       });
     },
-    [field]
+    [field],
   );
 
   const moveVariantDown = useCallback(
@@ -72,85 +50,19 @@ export function useVariantActions(field: FieldLike) {
         const currentVariant = newVariants[index];
         const nextVariant = newVariants[index + 1];
 
-        // Swap the variants
-        newVariants[index] = { ...nextVariant, order: currentVariant.order };
-        newVariants[index + 1] = {
-          ...currentVariant,
-          order: nextVariant.order,
-        };
+        newVariants[index] = nextVariant;
+        newVariants[index + 1] = currentVariant;
 
-        return reindexSequential(newVariants);
+        return newVariants;
       });
     },
-    [field]
+    [field],
   );
 
   return { deleteVariant, moveVariantUp, moveVariantDown } as const;
 }
 
-export function generateVIFingerPrint(path: string[]) {
-  let fp = ""
-  path.forEach(n => {
-    if (n) {
-      if (fp != "") fp = fp.concat("-")
-      fp = fp.concat(n)
-    }
-  })
-  return fp
-}
-export function formatVariantsInventory(vis: Doc<'variantsInventory'>[]) {
-  const result: TVariantsInventory = new Map()
-  vis.forEach(vi => result.set(
-    generateVIFingerPrint(vi.path),
-    vi
-  ))
-  return result
-
-}
-
-
-function deepEqual(a: any, b: any): boolean {
-  if (a === b) return true
-
-  // handle null and undefined
-  if (a == null || b == null) return a === b
-
-  // handle Map
-  if (a instanceof Map && b instanceof Map) {
-    if (a.size !== b.size) return false
-    for (const [key, valA] of a) {
-      if (!b.has(key)) return false
-      const valB = b.get(key)
-      if (!deepEqual(valA, valB)) return false
-    }
-    return true
-  }
-
-  // handle Array
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false
-    for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false
-    }
-    return true
-  }
-
-  // handle Object
-  if (typeof a === "object" && typeof b === "object") {
-    const keysA = Object.keys(a)
-    const keysB = Object.keys(b)
-    if (keysA.length !== keysB.length) return false
-    for (const key of keysA) {
-      if (!Object.prototype.hasOwnProperty.call(b, key)) return false
-      if (!deepEqual(a[key], b[key])) return false
-    }
-    return true
-  }
-
-  // fallback for primitives, functions, symbols, etc.
-  return false
-}
-
-export function mapsDeepEqual<K, V>(a: Map<K, V>, b: Map<K, V>): boolean {
-  return deepEqual(a, b)
+export function generateSkuId(): string {
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  return `SKU-${digits}`;
 }

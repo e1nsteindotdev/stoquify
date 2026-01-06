@@ -1,33 +1,37 @@
 import { columns, type ProductRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useRemoveProduct } from "@/hooks/use-convex-queries";
-import { useGetAllProducts } from "@/database/products";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { ClipLoader } from "react-spinners";
+import { useStore } from "@livestore/react";
+import { products$ } from "@/livestore/schema/products";
+import { events } from "@/livestore/schema";
 
 export function ProductsTable() {
-  const productsResult = useGetAllProducts();
-  const products = productsResult?.data ?? [];
-  const isLoading = !productsResult?.isEnabled;
-  const removeProduct = useRemoveProduct();
+  const { store } = useStore();
+  const productsResult = store.useQuery(products$());
+  const products = productsResult ?? [];
+  const isLoading = productsResult === undefined;
 
-  const rows: ProductRow[] = products.map((p: any) => ({
-    _id: p._id,
+  const rows: ProductRow[] = products.map((p) => ({
+    _id: p.id,
     title: p.title,
     price: p.price,
-    imageUrl:
-      p.images?.filter((img: any) => !img.hidden && img.url).sort((a: any, b: any) => a.order - b.order)[0]?.url,
+    imageUrl: p.images
+      ?.filter((img) => !img.hidden && img.url)
+      .sort((a, b) => a.order - b.order)[0]?.url,
   }));
 
-  const onClick = async (e: React.MouseEvent) => {
+  const onClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const button = target.closest(
-      "button[data-product-id]"
+      "button[data-product-id]",
     ) as HTMLButtonElement | null;
     if (button) {
-      const id = button.getAttribute("data-product-id") as any;
-      await removeProduct.mutate({ id });
+      const id = button.getAttribute("data-product-id");
+      if (id) {
+        store.commit(events.productDeleted({ id, deletedAt: new Date() }));
+      }
     }
   };
 
@@ -50,4 +54,3 @@ export function ProductsTable() {
     </div>
   );
 }
-

@@ -1,0 +1,32 @@
+{
+  "name": "convex-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm convex dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    "./schema": {
+      "types": "./convex/schema.ts",
+      "default": "./convex/schema.ts"
+    },
+    "./convex": {
+      "types": "./convex/_generated/api.js",
+      "default": "./convex/_generated/api.js"
+    },
+    "./data-model": {
+      "types": "./convex/_generated/dataModel.d.ts",
+      "default": "./convex/_generated/dataModel.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "type": "module",
+  "dependencies": {
+    "convex": "^1.31.2"
+  }
+}

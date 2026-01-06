@@ -2,55 +2,60 @@ import { useFieldContext } from "@/hooks/form-context.tsx";
 import VariantItem from "./variant-item";
 import { NewVariantForm } from "./new-variant-form";
 import { cn } from "@/lib/utils";
-import { type VariantElement } from "@/hooks/useVariantActions";
+import type { NewVariantInput } from "@/livestore/schema/products/types";
 
-type TVariant = VariantElement;
+interface VariantsFieldProps {
+  productId?: string;
+}
 
-export default function VariantsField() {
-  const field = useFieldContext<TVariant[]>();
+export default function VariantsField({ productId }: VariantsFieldProps) {
+  const field = useFieldContext<NewVariantInput[]>();
 
-  function addNewVariant(name: string, options: string[]) {
+  function addNewVariant(input: NewVariantInput) {
     field.setValue((prev) => {
-      let order = 1;
-      for (let i of field.state.value) {
-        if (order <= i.order) order += 1;
-      }
-      const newVariant: TVariant = {
-        name,
-        order,
-        options: options.filter(o => o !== "").map((o) => ({ name: o })),
+      const newVariant: NewVariantInput = {
+        name: input.name,
+        options: input.options,
       };
       return [...prev, newVariant];
     });
   }
+
   const variants = field.state.value;
+
   return (
     <div className={cn("grid gap-3")}>
       <div className="">
         <p className="text-[20px] font-semibold">Variantes existantes</p>
-        <p className="text-[16px] text-neutral-500">L'ordre des variantes est important car c'est ainsi que vous pouvez gérer votre inventaire</p>
+        <p className="text-[16px] text-neutral-500">
+          L&apos;ordre des variantes est important car c&apos;est ainsi que vous
+          pouvez gérer votre inventaire
+        </p>
       </div>
-      {variants?.length ? (
+      {variants.length ? (
         <div className="grid gap-2">
-          {variants?.map((v, i) => (
+          {variants.map((v, i) => (
             <VariantItem
               key={i}
               variant={v}
               index={i}
               isFirst={i === 0}
-              isLast={i === field.state.value.length - 1}
+              isLast={i === variants.length - 1}
             />
           ))}
         </div>
       ) : (
         <div className="rounded-2xl border border-input-border p-4">
           <p className="italic text-[14px] text-neutral-500">
-            Aucune variante n'existe encore pour ce produit.
+            Aucune variante n&apos;existe encore pour ce produit.
           </p>
         </div>
       )}
       <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-1" />
-      <NewVariantForm addNewVariant={addNewVariant} isEmpty={variants.length === 0} />
+      <NewVariantForm
+        addNewVariant={addNewVariant}
+        isEmpty={variants.length === 0}
+      />
     </div>
   );
 }

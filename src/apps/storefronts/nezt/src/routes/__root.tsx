@@ -24,10 +24,6 @@ function RootComponent() {
             style={{ pointerEvents: "none" }}>
             {[1, 2, 3, 4, 5].map((i, index) => (
               <>
-                {/* <motion.div */}
-                {/*   initial={{ opacity: 100 }} */}
-                {/*   animate={{ opacity: 0, transition: { duration: 5 } }} */}
-                {/*   className="absolute h-screen w-screen bg-white" /> */}
                 <motion.div
                   key={index}
                   initial={{ top: 0 }}

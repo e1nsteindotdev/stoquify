@@ -4,7 +4,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import { useFieldContext } from "@/hooks/form-context.tsx";
 import { Button } from "@/components/ui/button";
@@ -17,36 +17,43 @@ import {
 } from "@/components/ui/popover";
 import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox"
-import type { Id } from "api/data-model";
-import { useCreateCollection } from "@/hooks/use-convex-queries";
-import { useGetAllCollections } from "@/database/collections";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useStore } from "@livestore/react";
+import { collections$, shopId$, events } from "@/livestore/schema";
 
-export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
+export default function CollectionsField({
+  selectedCollections,
+}: {
+  selectedCollections: Set<string>;
+}) {
   const field = useFieldContext<Set<string>>();
-  console.log("selected collections :", selectedCollections)
-  const createCollection = useCreateCollection();
-  const collectionsResult = useGetAllCollections();
-  const collections = collectionsResult?.data;
+  const { store } = useStore();
+  const shopId = store.query(shopId$);
+  const collectionsResult = store.useQuery(collections$);
+  const collections = collectionsResult ?? [];
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
   async function handleCreate() {
-    if (!name.trim() || isAdding) return;
+    if (!name.trim() || isAdding || !shopId) return;
     setIsAdding(true);
     try {
-      const res = await createCollection.mutateAsync({ title: name });
-      if (res.ok) {
-        toast.success('Collection ajoutée avec succès')
-      } else {
-        toast.error(res.msg,)
-      }
-      // Select the newly created category
-      //field.handleChange(String(id) as any);
+      store.commit(
+        events.collectionInserted({
+          id: crypto.randomUUID(),
+          shop_id: shopId,
+          name: name.trim(),
+          createdAt: new Date(),
+          deletedAt: null,
+        }),
+      );
+      toast.success("Collection ajoutée avec succès");
       setCreateOpen(false);
       setName("");
+    } catch (error) {
+      toast.error("Erreur lors de la création");
     } finally {
       setIsAdding(false);
     }
@@ -57,60 +64,75 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
       <Card className="gap-2 border-white">
         <CardHeader>
           <CardTitle>Collections</CardTitle>
-          <CardDescription>Ajouter un produit à des collections le fera apparaître sur la page d'accueil de la boutique</CardDescription>
+          <CardDescription>
+            Ajouter un produit à des collections le fera apparaître sur la page
+            d'accueil de la boutique
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <Popover>
+          <Popover open={createOpen} onOpenChange={setCreateOpen}>
             <PopoverTrigger asChild>
               <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent">
                 <PlusIcon />
-                Ajouter à une nouvelle collection</Button>
+                Ajouter à une nouvelle collection
+              </Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
-              {
-                collections?.length !== 0 ?
-                  collections?.map(c =>
-                    <div className="flex gap-2 items-center uppercase">
-                      <Checkbox
-                        checked={selectedCollections.has(c._id)}
-                        onCheckedChange={(checked) => {
-                          return checked ?
-                            field.setValue(prev =>
-                              prev.add(c._id))
-                            : field.setValue(prev => {
-                              prev.delete(c._id)
-                              return prev
-                            })
-                        }}
-                      />
-                      <p className="text-[12px]">{c.title}</p>
-                    </div>)
-                  :
-                  <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
-                    Aucune collection n'existe, créez d'abord une nouvelle collection.
+              {collections.length !== 0 ? (
+                collections.map((c) => (
+                  <div className="flex gap-2 items-center uppercase" key={c.id}>
+                    <Checkbox
+                      checked={selectedCollections.has(c.id)}
+                      onCheckedChange={(checked) => {
+                        return checked
+                          ? field.setValue((prev) => prev.add(c.id))
+                          : field.setValue((prev) => {
+                              prev.delete(c.id);
+                              return prev;
+                            });
+                      }}
+                    />
+                    <p className="text-[12px]">{c.name}</p>
                   </div>
-              }
+                ))
+              ) : (
+                <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
+                  Aucune collection n'existe, créez d'abord une nouvelle
+                  collection.
+                </div>
+              )}
             </PopoverContent>
           </Popover>
 
-          {selectedCollections.size === 0 ?
+          {selectedCollections.size === 0 ? (
             <div className="pt-3 text-red-400 italic text-[12px] uppercase">
               Le produit n'est ajouté à aucune collection
             </div>
-            :
+          ) : (
             <div className="flex flex-col gap-2 pt-3">
-              {Array.from(selectedCollections).map(c => (
-                <div className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]">
-                  <p className="text-[12px]">{collections?.filter(i => i._id === c)?.[0].title}</p>
-                  <CircleX color="red" size={20} onClick={() => {
-                    field.setValue(prev => { prev.delete(c); return prev })
-                  }} />
+              {Array.from(selectedCollections).map((c) => (
+                <div
+                  className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]"
+                  key={c}
+                >
+                  <p className="text-[12px]">
+                    {collections.find((i) => i.id === c)?.name}
+                  </p>
+                  <CircleX
+                    color="red"
+                    size={20}
+                    onClick={() => {
+                      field.setValue((prev) => {
+                        prev.delete(c);
+                        return prev;
+                      });
+                    }}
+                  />
                 </div>
               ))}
-
             </div>
-          }
+          )}
           <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
 
           <Popover>
@@ -128,7 +150,9 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD] shadow-black/40 shadow-lg ">
               <div className="flex flex-col gap-4">
-                <p className="text-[14px] font-medium">Nom de la collection :</p>
+                <p className="text-[14px] font-medium">
+                  Nom de la collection :
+                </p>
                 <Input
                   placeholder="e.g. New Arrival"
                   value={name}
@@ -147,7 +171,6 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
           </Popover>
         </CardContent>
       </Card>
-
     </div>
   );
 }

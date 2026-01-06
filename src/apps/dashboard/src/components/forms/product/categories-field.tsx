@@ -18,8 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { useCreateCategory } from "@/hooks/use-convex-queries";
-import { useGetAllCategories } from "@/database/categories";
+import { useStore } from "@livestore/react";
+import { categories$, shopId$, events } from "@/livestore/schema";
 
 type Props = {
   label?: string;
@@ -27,23 +27,36 @@ type Props = {
 
 export default function CategoriesField({ label }: Props) {
   const field = useFieldContext<string>();
-  const categoriesResult = useGetAllCategories();
-  const categories = categoriesResult?.data ?? [];
-  const createCategory = useCreateCategory();
+  const { store } = useStore();
+  const shopId = store.query(shopId$);
+  const categoriesResult = store.useQuery(categories$);
+  const categories = categoriesResult ?? [];
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [newCategoryId, setNewCategoryId] = useState<string | null>(null);
 
   async function handleCreate() {
-    if (!name.trim() || isCreating) return;
+    if (!name.trim() || isCreating || !shopId) return;
     setIsCreating(true);
     try {
-      const id = await createCategory.mutateAsync({ name });
-      // Select the newly created category
-      field.handleChange(String(id) as any);
+      const id = crypto.randomUUID();
+      store.commit(
+        events.categoryInserted({
+          id,
+          shop_id: shopId,
+          name: name.trim(),
+          createdAt: new Date(),
+          deletedAt: null,
+        }),
+      );
+      field.handleChange(id as any);
+      setNewCategoryId(id);
       setCreateOpen(false);
       setName("");
+    } catch (e) {
+      console.log("erorr while creating a new category", e)
     } finally {
       setIsCreating(false);
     }
@@ -54,19 +67,18 @@ export default function CategoriesField({ label }: Props) {
       {label && <Label className="font-semibold pb-[12px]">{label}</Label>}
       <div className="space-y-1 border border-neutral-300 rounded-[15px] p-3">
         <Select
-          value={(field.state.value as string) ?? ""}
-          onValueChange={(v) => field.handleChange(v as any)}
+          value={(newCategoryId || (field.state.value as string)) ?? ""}
+          onValueChange={(v) => {
+            setNewCategoryId(null);
+            field.handleChange(v as any);
+          }}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Sélectionner une option" />
           </SelectTrigger>
           <SelectContent className="bg-card">
             {categories.map((c) => (
-              <SelectItem
-                key={c._id}
-                className="focus:bg-black/5"
-                value={String(c._id)}
-              >
+              <SelectItem key={c.id} className="focus:bg-black/5" value={c.id}>
                 {c.name}
               </SelectItem>
             ))}
@@ -75,7 +87,7 @@ export default function CategoriesField({ label }: Props) {
 
         <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
 
-        <Popover>
+        <Popover open={createOpen} onOpenChange={setCreateOpen}>
           <PopoverTrigger asChild>
             <Button
               type="button"
