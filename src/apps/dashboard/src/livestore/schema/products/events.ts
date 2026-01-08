@@ -106,7 +106,7 @@ export const productEvents = {
     name: "v1.VariantOrderUpdated",
     schema: Schema.Struct({
       id: Schema.String,
-      order: Schema.Number,
+      displayOrder: Schema.Number,
     }),
   }),
   variantDeleted: Events.synced({
@@ -157,7 +157,7 @@ export const productEvents = {
     schema: Schema.Array(
       Schema.Struct({
         id: Schema.String,
-        order: Schema.Number,
+        displayOrder: Schema.Number,
       }),
     ),
   }),

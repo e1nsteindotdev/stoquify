@@ -5,7 +5,7 @@ export interface StoredFile {
   size: number;
   blob: Blob;
   productId: string | null;
-  order: number;
+  displayOrder: number;
   status: "pending" | "uploading" | "uploaded" | "failed";
   retryCount: number;
   error?: string;

@@ -16,7 +16,7 @@ export interface UploadState {
   error?: string;
   previewUrl?: string;
   fileName: string;
-  order: number;
+  displayOrder: number;
   url?: string;
 }
 
@@ -57,7 +57,7 @@ export function useUploadQueue(
     async (
       uuid: string,
       file: File,
-      order: number,
+      displayOrder: number,
       existingPreviewUrl?: string,
     ): Promise<void> => {
       const previewUrl = existingPreviewUrl ?? URL.createObjectURL(file);
@@ -67,7 +67,7 @@ export function useUploadQueue(
         retryCount: 0,
         previewUrl,
         fileName: file.name,
-        order,
+        displayOrder,
       });
 
       try {
@@ -178,7 +178,7 @@ export function useUploadQueue(
                 const fileObj = new File([blob], file.name, {
                   type: file.type,
                 });
-                uploadFile(file.uuid, fileObj, file.order, previewUrl);
+                uploadFile(file.uuid, fileObj, file.displayOrder, previewUrl);
               }
             });
           }, RETRY_INTERVAL_MS);
@@ -206,7 +206,7 @@ export function useUploadQueue(
 
       const blob = file.blob;
       const fileObj = new File([blob], file.name, { type: file.type });
-      await uploadFile(file.uuid, fileObj, file.order);
+      await uploadFile(file.uuid, fileObj, file.displayOrder);
     },
     [uploadFile],
   );

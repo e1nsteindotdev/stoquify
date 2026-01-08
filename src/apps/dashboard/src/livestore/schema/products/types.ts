@@ -32,7 +32,7 @@ export type ProductImage = {
   product_id: string;
   url: string;
   localUrl: string | null;
-  order: number;
+  displayOrder: number;
   hidden: number;
   createdAt: Date;
   deletedAt: Date | null;
@@ -43,7 +43,7 @@ export type Variant = {
   shop_id: string;
   product_id: string;
   name: string;
-  order: number;
+  displayOrder: number;
   createdAt: Date;
   deletedAt: Date | null;
 };
@@ -107,7 +107,9 @@ export type ProductWithDetails = Omit<
   category_id: string | null;
   discount: number | null;
   category: Pick<Category, "id" | "name"> | null;
-  images: Array<Pick<ProductImage, "id" | "url" | "localUrl" | "order" | "hidden">>;
+  images: Array<
+    Pick<ProductImage, "id" | "url" | "localUrl" | "displayOrder" | "hidden">
+  >;
   collections: Array<{
     id: CollectionProduct["id"];
     name: Collection["name"];
@@ -116,7 +118,7 @@ export type ProductWithDetails = Omit<
   variants: Array<{
     id: Variant["id"];
     name: Variant["name"];
-    order: Variant["order"];
+    displayOrder: Variant["displayOrder"];
     createdAt: Variant["createdAt"];
     options: VariantOption["value"][];
     skus: Array<{
@@ -136,7 +138,7 @@ export type VariantWithDetails = {
   shop_id: Variant["shop_id"];
   product_id: Variant["product_id"];
   variant_name: Variant["name"];
-  variant_order: Variant["order"];
+  variant_displayOrder: Variant["displayOrder"];
   variant_createdAt: Variant["createdAt"];
   options: VariantOption["value"][];
   skus: Array<{

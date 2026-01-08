@@ -35,12 +35,11 @@ export function ProductForm({ slug }: { slug?: string }) {
   };
 
   const { store } = useStore();
-  const product =
-    store.useQuery(products$(isNew ? undefined : slug))?.[0] ?? null;
-  const productId = useMemo(
-    () => product?.id ?? crypto.randomUUID(),
-    [product?.id],
-  );
+
+  const product = store.query(products$(slug))?.[0];
+  const productId = useMemo(() => product?.id ?? crypto.randomUUID(), []);
+
+  console.log(productId);
 
   const defaultValues = useMemo(() => {
     if (!product) {
@@ -68,7 +67,7 @@ export function ProductForm({ slug }: { slug?: string }) {
       product_id: product.id,
       url: img.url,
       localUrl: (img as any).localUrl || img.url,
-      order: img.order,
+      displayOrder: img.displayOrder,
       hidden: img.hidden ? 1 : 0,
       createdAt: new Date(),
       deletedAt: null,
@@ -88,7 +87,7 @@ export function ProductForm({ slug }: { slug?: string }) {
       variants: product.variants ?? [],
       collections,
     };
-  }, [product]);
+  }, []);
 
   const form = useAppForm({
     defaultValues,
@@ -113,14 +112,15 @@ export function ProductForm({ slug }: { slug?: string }) {
         deletedAt: null,
       };
 
-      console.log("values : ", productValuesToInsert)
+      console.log("values : ", productValuesToInsert);
 
       if (isNew) {
         store.commit(
           events.productInserted({
-            ...productValuesToInsert,
             id: productId,
             shop_id: shopId,
+            deletedAt: null,
+            ...productValuesToInsert,
           } as any),
         );
       } else {
@@ -140,7 +140,7 @@ export function ProductForm({ slug }: { slug?: string }) {
       // handle images - create productImageInserted events for all images
       if (images.length > 0) {
         images.forEach((image) => {
-          console.log('inserting image into db :', image)
+          console.log("inserting image into db :", image);
           store.commit(
             events.productImageInserted({
               id: image.id,
@@ -148,7 +148,7 @@ export function ProductForm({ slug }: { slug?: string }) {
               product_id: productId,
               url: image.url,
               localUrl: image.localUrl,
-              order: image.order,
+              displayOrder: image.displayOrder,
               hidden: image.hidden,
               createdAt: image.createdAt,
               deletedAt: null,
@@ -222,6 +222,7 @@ export function ProductForm({ slug }: { slug?: string }) {
                   id,
                   value: variant.options[i],
                   createdAt,
+                  deletedAt: null,
                 })),
                 skus: [
                   {
@@ -237,7 +238,7 @@ export function ProductForm({ slug }: { slug?: string }) {
             store.commit(
               (events as any).variantOrderUpdated({
                 id: variantId,
-                order: variantIndex + 1,
+                displayOrder: variantIndex + 1,
               }),
             );
           });
@@ -315,7 +316,7 @@ export function ProductForm({ slug }: { slug?: string }) {
             store.commit(
               (events as any).variantOrderUpdated({
                 id: variantId,
-                order: variantIndex + 1,
+                displayOrder: variantIndex + 1,
               }),
             );
           });

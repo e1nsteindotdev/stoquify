@@ -48,7 +48,7 @@ export default function ImageField({
       product_id: productId || "",
       url: img.url,
       localUrl: img.localUrl || img.url,
-      order: img.order,
+      displayOrder: img.displayOrder,
       hidden: img.hidden,
       createdAt: new Date(),
       deletedAt: null,
@@ -63,11 +63,13 @@ export default function ImageField({
       };
     });
 
-    return [...newImages, ...existingImages].sort((a, b) => a.order - b.order);
+    return [...newImages, ...existingImages].sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
   }, [formImages, dbImages, productId, uploadStates]);
 
   const calculateNextOrder = useCallback((): number => {
-    const maxOrder = Math.max(0, ...allImages.map((img) => img.order));
+    const maxOrder = Math.max(0, ...allImages.map((img) => img.displayOrder));
     return maxOrder + 1;
   }, [allImages]);
 
@@ -83,7 +85,7 @@ export default function ImageField({
         if (!file.type.startsWith("image/")) continue;
 
         const id = crypto.randomUUID();
-        const order = nextOrder + i;
+        const displayOrder = nextOrder + i;
         const localUrl = URL.createObjectURL(file);
 
         await fileStorage.save({
@@ -93,7 +95,7 @@ export default function ImageField({
           size: file.size,
           blob: file,
           productId: null,
-          order,
+          displayOrder,
           status: "pending",
           retryCount: 0,
           createdAt: Date.now(),
@@ -106,7 +108,7 @@ export default function ImageField({
           retryCount: 0,
         });
 
-        await uploadFile(id, file, order);
+        await uploadFile(id, file, displayOrder);
 
         newImages.push({
           id,
@@ -114,7 +116,7 @@ export default function ImageField({
           product_id: "",
           url: "",
           localUrl,
-          order,
+          displayOrder,
           hidden: 0,
           createdAt: new Date(),
           deletedAt: null,
@@ -133,7 +135,9 @@ export default function ImageField({
   const handleReorder = useCallback(
     (image: ProductImage, direction: "up" | "down") => {
       field.setValue((prev) => {
-        const sorted = [...(prev || [])].sort((a, b) => a.order - b.order);
+        const sorted = [...(prev || [])].sort(
+          (a, b) => a.displayOrder - b.displayOrder,
+        );
         const idx = sorted.findIndex((img) => img.id === image.id);
 
         if (idx === -1) return prev;
@@ -146,7 +150,7 @@ export default function ImageField({
 
         return sorted.map((img, i) => ({
           ...img,
-          order: i + 1,
+          displayOrder: i + 1,
         }));
       });
     },

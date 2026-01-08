@@ -68,8 +68,8 @@ export const productMaterializers = State.SQLite.materializers(productEvents, {
   },
   "v1.VariantPartialUpdated": (changes) =>
     variantsTable.update(changes).where({ id: changes.id }),
-  "v1.VariantOrderUpdated": ({ id, order }) =>
-    variantsTable.update({ order }).where({ id }),
+  "v1.VariantOrderUpdated": ({ id, displayOrder }) =>
+    variantsTable.update({ displayOrder }).where({ id }),
   "v1.VariantDeleted": ({ id, deletedAt }) =>
     variantsTable.update({ deletedAt }).where({ id }),
   "v1.SkuInserted": (sku) => skusTable.insert(sku),
@@ -91,8 +91,8 @@ export const productMaterializers = State.SQLite.materializers(productEvents, {
     );
   },
   "v1.ProductImagesReordered": (updates) => {
-    return updates.map(({ id, order }) =>
-      productImagesTable.update({ order }).where({ id }),
+    return updates.map(({ id, displayOrder }) =>
+      productImagesTable.update({ displayOrder }).where({ id }),
     );
   },
 });

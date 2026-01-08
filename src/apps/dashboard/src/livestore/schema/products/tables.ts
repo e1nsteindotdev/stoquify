@@ -45,7 +45,7 @@ export const productImagesTable = State.SQLite.table({
     product_id: State.SQLite.text(),
     url: State.SQLite.text(),
     localUrl: State.SQLite.text({ nullable: true }),
-    order: State.SQLite.integer(),
+    displayOrder: State.SQLite.integer(),
     hidden: State.SQLite.integer({ default: 0 }),
     createdAt: State.SQLite.integer({ schema: Schema.DateFromNumber }),
     deletedAt: State.SQLite.integer({
@@ -62,7 +62,7 @@ export const variantsTable = State.SQLite.table({
     shop_id: State.SQLite.text(),
     product_id: State.SQLite.text(),
     name: State.SQLite.text(),
-    order: State.SQLite.integer({ default: 0 }),
+    displayOrder: State.SQLite.integer({ default: 0 }),
     createdAt: State.SQLite.integer({ schema: Schema.DateFromNumber }),
     deletedAt: State.SQLite.integer({
       nullable: true,

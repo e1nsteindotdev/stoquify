@@ -19,7 +19,7 @@ export function ProductsTable() {
     price: p.price,
     imageUrl: p.images
       ?.filter((img) => !img.hidden && img.url)
-      .sort((a, b) => a.order - b.order)[0]?.url,
+      .sort((a, b) => a.displayOrder - b.displayOrder)[0]?.url,
   }));
 
   const onClick = (e: React.MouseEvent) => {
