@@ -9,6 +9,7 @@ import { events, productImages$, shopId$ } from "@/livestore/schema";
 import { useFieldContext } from "@/hooks/form-context.tsx";
 import ImageItem from "./image-item";
 import type { ProductImage } from "@/livestore/schema/products/types";
+import { generateUploadUrl, getImageUrl } from "@/actions/convex-uploads";
 
 type PropsType = {
   productId: string | null;
@@ -88,34 +89,53 @@ export default function ImageField({
         const displayOrder = nextOrder + i;
         const localUrl = URL.createObjectURL(file);
 
-        await fileStorage.save({
-          uuid: id,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          blob: file,
-          productId: null,
-          displayOrder,
-          status: "pending",
-          retryCount: 0,
-          createdAt: Date.now(),
+        // await fileStorage.save({
+        //   uuid: id,
+        //   name: file.name,
+        //   type: file.type,
+        //   size: file.size,
+        //   blob: file,
+        //   productId: null,
+        //   displayOrder,
+        //   status: "pending",
+        //   retryCount: 0,
+        //   createdAt: Date.now(),
+        // });
+        //
+        // await imageMetadataStorage.save({
+        //   id,
+        //   url: "",
+        //   status: "pending",
+        //   retryCount: 0,
+        // });
+
+        // const url = await uploadFile(id, file, displayOrder);
+        const uploadUrl = await generateUploadUrl();
+        const uploadRes = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
         });
 
-        await imageMetadataStorage.save({
-          id,
-          url: "",
-          status: "pending",
-          retryCount: 0,
-        });
-
-        await uploadFile(id, file, displayOrder);
+        if (!uploadRes.ok) {
+          throw new Error(`Upload failed: ${uploadRes.statusText}`);
+        }
+        const { storageId } = await uploadRes.json();
+        console.log("got storage id from convex");
+        let url = await getImageUrl(storageId);
+        if (url) {
+          console.log("got img url from convex");
+        } else {
+          console.log("didnt get the url :");
+          url = "no-url";
+        }
 
         newImages.push({
           id,
           shop_id: shopId,
           product_id: "",
-          url: "",
-          localUrl,
+          url: url,
+          localUrl: "",
           displayOrder,
           hidden: 0,
           createdAt: new Date(),

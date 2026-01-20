@@ -59,7 +59,7 @@ export function useUploadQueue(
       file: File,
       displayOrder: number,
       existingPreviewUrl?: string,
-    ): Promise<void> => {
+    ): Promise<string> => {
       const previewUrl = existingPreviewUrl ?? URL.createObjectURL(file);
 
       updateState(uuid, {
@@ -88,103 +88,109 @@ export function useUploadQueue(
         }
 
         const { storageId } = await uploadRes.json();
+        console.log('got storage id from convex')
 
         const shopId = getShopId();
+
         const imageUrl = await getImageUrl(storageId);
+
         if (!imageUrl) {
           throw new Error("Failed to get image URL");
         }
+        console.log("got image url from convex")
 
-        await fileStorage.update(uuid, {
-          status: "uploaded",
-          productId,
-        });
-
-        await imageMetadataStorage.update(uuid, {
-          url: imageUrl,
-          status: "uploaded",
-        });
+        // await fileStorage.update(uuid, {
+        //   status: "uploaded",
+        //   productId,
+        // });
+        //
+        // await imageMetadataStorage.update(uuid, {
+        //   url: imageUrl,
+        //   status: "uploaded",
+        // });
 
         updateState(uuid, { status: "uploaded", url: imageUrl });
-
         callbacks?.onUploadComplete?.(uuid, imageUrl);
+
+        return imageUrl
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-
-        const currentState = uploadStates.get(uuid);
-        const retryCount = (currentState?.retryCount ?? 0) + 1;
-
-        if (retryCount >= MAX_RETRIES) {
-          await fileStorage.update(uuid, {
-            status: "failed",
-            error: errorMessage,
-            retryCount,
-          });
-
-          await imageMetadataStorage.update(uuid, {
-            status: "failed",
-            error: errorMessage,
-            retryCount,
-          });
-
-          updateState(uuid, {
-            status: "failed",
-            retryCount,
-            error: errorMessage,
-          });
-
-          callbacks?.onUploadError?.(uuid, errorMessage);
-
-          const shopId = getShopId();
-          store.commit(
-            events.notificationInserted({
-              id: crypto.randomUUID(),
-              shop_id: shopId,
-              type: "upload_failed",
-              title: "Échec du téléversement",
-              message: `Le fichier "${file.name}" n'a pas pu être téléversé après ${MAX_RETRIES} tentatives.`,
-              data: JSON.stringify({
-                fileName: file.name,
-                error: errorMessage,
-              }),
-              read: 0,
-              createdAt: new Date(),
-              deletedAt: null,
-            }),
-          );
-        } else {
-          await fileStorage.update(uuid, {
-            status: "pending",
-            retryCount,
-          });
-
-          await imageMetadataStorage.update(uuid, {
-            status: "pending",
-            retryCount,
-          });
-
-          updateState(uuid, {
-            status: "pending",
-            retryCount,
-          });
-
-          const timeoutId = window.setTimeout(() => {
-            retryTimeouts.current.delete(uuid);
-            const stored = fileStorage.get(uuid);
-            stored.then((file) => {
-              if (file) {
-                const blob = file.blob;
-                const fileObj = new File([blob], file.name, {
-                  type: file.type,
-                });
-                uploadFile(file.uuid, fileObj, file.displayOrder, previewUrl);
-              }
-            });
-          }, RETRY_INTERVAL_MS);
-
-          retryTimeouts.current.set(uuid, timeoutId);
-        }
+        console.log('erorr uploading image to the cloud :', error)
+        // const errorMessage =
+        //   error instanceof Error ? error.message : "Unknown error";
+        //
+        // const currentState = uploadStates.get(uuid);
+        // const retryCount = (currentState?.retryCount ?? 0) + 1;
+        //
+        // if (retryCount >= MAX_RETRIES) {
+        //   await fileStorage.update(uuid, {
+        //     status: "failed",
+        //     error: errorMessage,
+        //     retryCount,
+        //   });
+        //
+        //   await imageMetadataStorage.update(uuid, {
+        //     status: "failed",
+        //     error: errorMessage,
+        //     retryCount,
+        //   });
+        //
+        //   updateState(uuid, {
+        //     status: "failed",
+        //     retryCount,
+        //     error: errorMessage,
+        //   });
+        //
+        //   callbacks?.onUploadError?.(uuid, errorMessage);
+        //
+        //   const shopId = getShopId();
+        //   store.commit(
+        //     events.notificationInserted({
+        //       id: crypto.randomUUID(),
+        //       shop_id: shopId,
+        //       type: "upload_failed",
+        //       title: "Échec du téléversement",
+        //       message: `Le fichier "${file.name}" n'a pas pu être téléversé après ${MAX_RETRIES} tentatives.`,
+        //       data: JSON.stringify({
+        //         fileName: file.name,
+        //         error: errorMessage,
+        //       }),
+        //       read: 0,
+        //       createdAt: new Date(),
+        //       deletedAt: null,
+        //     }),
+        //   );
+        // } else {
+        //   await fileStorage.update(uuid, {
+        //     status: "pending",
+        //     retryCount,
+        //   });
+        //
+        //   await imageMetadataStorage.update(uuid, {
+        //     status: "pending",
+        //     retryCount,
+        //   });
+        //
+        //   updateState(uuid, {
+        //     status: "pending",
+        //     retryCount,
+        //   });
+        //
+        //   const timeoutId = window.setTimeout(() => {
+        //     retryTimeouts.current.delete(uuid);
+        //     const stored = fileStorage.get(uuid);
+        //     stored.then((file) => {
+        //       if (file) {
+        //         const blob = file.blob;
+        //         const fileObj = new File([blob], file.name, {
+        //           type: file.type,
+        //         });
+        //         uploadFile(file.uuid, fileObj, file.displayOrder, previewUrl);
+        //       }
+        //     });
+        //   }, RETRY_INTERVAL_MS);
+        //
+        //   retryTimeouts.current.set(uuid, timeoutId);
+        // }
       }
     },
     [productId, store, getShopId, uploadStates, updateState, callbacks],
@@ -241,7 +247,7 @@ export function useUploadQueue(
     async (uuid: string): Promise<void> => {
       cancelRetry(uuid);
       await fileStorage.delete(uuid);
-      await imageMetadataStorage.delete(uuid).catch(() => {});
+      await imageMetadataStorage.delete(uuid).catch(() => { });
       setUploadStates((prev) => {
         const newMap = new Map(prev);
         newMap.delete(uuid);

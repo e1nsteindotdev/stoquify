@@ -17,6 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ImageField from "./images/images-field";
+import CategoriesField from "./product/categories-field";
+import CollectionsField from "./product/collections-field";
+import PricingField from "./product/pricing-field";
+import VariantsField from "./variants/variants-field";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { useStore } from "@livestore/react";
@@ -37,9 +42,10 @@ export function ProductForm({ slug }: { slug?: string }) {
   const { store } = useStore();
 
   const product = store.query(products$(slug))?.[0];
-  const productId = useMemo(() => product?.id ?? crypto.randomUUID(), []);
-
-  console.log(productId);
+  const productId = useMemo(
+    () => product?.id ?? crypto.randomUUID(),
+    [product],
+  );
 
   const defaultValues = useMemo(() => {
     if (!product) {
@@ -92,6 +98,7 @@ export function ProductForm({ slug }: { slug?: string }) {
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
+      console.log("submit in ", productId);
       const { images, variants, collections, ...productValues } = value;
       const createdAt = new Date();
       const deletedAt = new Date();
@@ -111,8 +118,6 @@ export function ProductForm({ slug }: { slug?: string }) {
         createdAt,
         deletedAt: null,
       };
-
-      console.log("values : ", productValuesToInsert);
 
       if (isNew) {
         store.commit(
@@ -140,7 +145,18 @@ export function ProductForm({ slug }: { slug?: string }) {
       // handle images - create productImageInserted events for all images
       if (images.length > 0) {
         images.forEach((image) => {
-          console.log("inserting image into db :", image);
+          console.log("inserting image into db :", {
+            id: image.id,
+            shop_id: shopId,
+            product_id: productId,
+            url: image.url,
+            localUrl: image.localUrl,
+            displayOrder: image.displayOrder,
+            hidden: image.hidden,
+            createdAt: image.createdAt,
+            deletedAt: null,
+          });
+
           store.commit(
             events.productImageInserted({
               id: image.id,
@@ -152,7 +168,7 @@ export function ProductForm({ slug }: { slug?: string }) {
               hidden: image.hidden,
               createdAt: image.createdAt,
               deletedAt: null,
-            } as any),
+            }),
           );
         });
       }
@@ -394,9 +410,9 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const isCompleted =
     form.getFieldValue("images") &&
-      form.getFieldValue("price") !== 0 &&
-      form.getFieldValue("title") &&
-      form.getFieldValue("categoryId")
+    form.getFieldValue("price") !== 0 &&
+    form.getFieldValue("title") &&
+    form.getFieldValue("categoryId")
       ? true
       : false;
 

@@ -1,5 +1,5 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { ProductForm } from "@/components/forms/product/products-form";
+import { ProductForm } from "@/components/forms/products/products-form";
 
 export const Route = createFileRoute("/_dashboard/produits/$slug")({
   component: function RouteComponent() {

@@ -174,7 +174,7 @@ export const products$ = (id?: string) =>
             category_name: Schema.NullOr(Schema.String),
             category_createdAt: Schema.NullOr(Schema.DateFromNumber),
             images: Schema.parseJson(
-              Schema.Array(productImagesTable.rowSchema),
+              Schema.Array(Schema.Any),
             ),
             collections: Schema.parseJson(
               Schema.Array(
@@ -209,7 +209,7 @@ export const products$ = (id?: string) =>
     },
     {
       label: "productsWithDetailsAndVariants",
-      map: id ? (rows) => rows[0] ?? undefined : undefined,
+      // map: id ? (rows) => (rows[0] ?? undefined) : undefined,
     },
   );
 

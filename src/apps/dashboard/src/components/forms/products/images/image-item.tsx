@@ -1,5 +1,5 @@
 import { Cloud, CloudOff, EyeOff, Loader2, Trash2 } from "lucide-react";
-import { Button } from "../../ui/button";
+import { Button } from "../../../ui/button";
 import { UpArrow } from "@/components/icons/up-arrow";
 import { DownArrow } from "@/components/icons/down-arrow";
 import type { ProductImage } from "@/livestore/schema/products/types";
@@ -58,28 +58,29 @@ export function ImageItem({
     }
   };
 
+  console.log('image url :', image.url)
+
   return (
     <div className="flex items-center justify-between rounded-2xl bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
       <div className="flex items-center gap-2.5">
         <div className="relative size-12 h-[60px] overflow-hidden rounded-lg bg-black/10">
           <img
-            src={image.localUrl ?? ""}
+            src={"https://wandering-cod-70.convex.cloud/api/storage/1aa42e2b-dcfd-4c8e-8648-e973d7c02763"}
             className="size-full object-contain"
             alt={`photo-${index + 1}`}
           />
-          {(isUploading || isPending || isFailed) && (
-            <div
-              className={`absolute inset-0 flex items-center justify-center ${
-                isFailed ? "bg-black/50 cursor-pointer" : "bg-black/30"
-              }`}
-              onClick={handleRetryClick}
-            >
-              {getStatusIcon()}
-            </div>
-          )}
+          {/* {(isUploading || isPending || isFailed) && ( */}
+          {/*   <div */}
+          {/*     className={`absolute inset-0 flex items-center justify-center ${isFailed ? "bg-black/50 cursor-pointer" : "bg-black/30" */}
+          {/*       }`} */}
+          {/*     onClick={handleRetryClick} */}
+          {/*   > */}
+          {/*     {getStatusIcon()} */}
+          {/*   </div> */}
+          {/* )} */}
         </div>
-        <div className="h-[16px] rounded-md py-0.5 bg-[#684FCA]/22 w-[2.5px]" />
-        <span className="rounded-md bg-[#6A4FFF]/15 px-2.5 py-1.5 text-[16px] font-semibold text-[#6A4FFF]">
+        <div className="h-[16px] rounded-md py-0.5 bg-[primary]/22 w-[2.5px]" />
+        <span className="rounded-md bg-[primary]/15 px-2.5 py-1.5 text-[16px] font-semibold text-[primary]">
           {index + 1}
         </span>
       </div>
@@ -114,9 +115,8 @@ export function ImageItem({
             size="icon"
             variant="outline"
             disabled={isUploading || isPending}
-            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${
-              isDbHidden ? "bg-black/20" : "bg-[#DADADA]"
-            }`}
+            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${isDbHidden ? "bg-black/20" : "bg-[#DADADA]"
+              }`}
             onClick={onHide}
           >
             <EyeOff className={`size-5 ${isDbHidden ? "opacity-70" : ""}`} />
