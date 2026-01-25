@@ -209,7 +209,14 @@ export const products$ = (id?: string) =>
     },
     {
       label: "productsWithDetailsAndVariants",
-      // map: id ? (rows) => (rows[0] ?? undefined) : undefined,
+      map: (rows) => {
+        console.log("rows from teh query : ", rows.length)
+        if (rows.length === 0) {
+          return null
+        } else {
+          return rows[0]
+        }
+      }
     },
   );
 

@@ -17,11 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ImageField from "./images/images-field";
-import CategoriesField from "./product/categories-field";
-import CollectionsField from "./product/collections-field";
-import PricingField from "./product/pricing-field";
-import VariantsField from "./variants/variants-field";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { useStore } from "@livestore/react";
@@ -41,7 +36,7 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const { store } = useStore();
 
-  const product = store.query(products$(slug))?.[0];
+  const product = store.query(products$(slug));
   const productId = useMemo(
     () => product?.id ?? crypto.randomUUID(),
     [product],
@@ -104,7 +99,7 @@ export function ProductForm({ slug }: { slug?: string }) {
       const deletedAt = new Date();
       const shopId = store.query(shopId$);
 
-      const productValuesToInsert: Record<string, any> = {
+      const productValuesToInsert = {
         title: productValues.title,
         desc: productValues.desc || null,
         category_id: productValues.categoryId,
@@ -124,7 +119,6 @@ export function ProductForm({ slug }: { slug?: string }) {
           events.productInserted({
             id: productId,
             shop_id: shopId,
-            deletedAt: null,
             ...productValuesToInsert,
           } as any),
         );
@@ -145,18 +139,20 @@ export function ProductForm({ slug }: { slug?: string }) {
       // handle images - create productImageInserted events for all images
       if (images.length > 0) {
         images.forEach((image) => {
-          console.log("inserting image into db :", {
-            id: image.id,
-            shop_id: shopId,
-            product_id: productId,
-            url: image.url,
-            localUrl: image.localUrl,
-            displayOrder: image.displayOrder,
-            hidden: image.hidden,
-            createdAt: image.createdAt,
-            deletedAt: null,
-          });
-
+          const oldImage = product?.images.find(img => img.id === image.id)
+          if (oldImage) {
+            store.commit(
+              events.productImagePartialUpdated({
+                product_id: productId,
+                url: image.url,
+                localUrl: image.localUrl,
+                displayOrder: image.displayOrder,
+                hidden: image.hidden,
+                createdAt: image.createdAt,
+                deletedAt: null,
+              }),
+            );
+          }
           store.commit(
             events.productImageInserted({
               id: image.id,
@@ -410,9 +406,9 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const isCompleted =
     form.getFieldValue("images") &&
-    form.getFieldValue("price") !== 0 &&
-    form.getFieldValue("title") &&
-    form.getFieldValue("categoryId")
+      form.getFieldValue("price") !== 0 &&
+      form.getFieldValue("title") &&
+      form.getFieldValue("categoryId")
       ? true
       : false;
 
@@ -454,7 +450,10 @@ export function ProductForm({ slug }: { slug?: string }) {
                 <form.AppField
                   name="images"
                   children={(field) => (
-                    <field.ImageField productId={productId} label="Photos" />
+                    <field.ImageField
+                      oldImages={product?.images as Array<{ id: string }> ?? null}
+                      productId={productId}
+                      label="Photos" />
                   )}
                 />
 

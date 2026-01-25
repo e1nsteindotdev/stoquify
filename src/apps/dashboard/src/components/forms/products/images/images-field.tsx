@@ -1,85 +1,45 @@
-import { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback } from "react";
 import { Label } from "@radix-ui/react-label";
 import { useStore } from "@livestore/react";
 import { Button } from "@/components/ui/button";
-import { fileStorage } from "@/hooks/storage/indexeddb";
-import { imageMetadataStorage } from "@/hooks/storage/image-metadata";
-import { useUploadQueue } from "@/hooks/useUploadQueue";
-import { events, productImages$, shopId$ } from "@/livestore/schema";
+import { events, shopId$ } from "@/livestore/schema";
 import { useFieldContext } from "@/hooks/form-context.tsx";
 import ImageItem from "./image-item";
 import type { ProductImage } from "@/livestore/schema/products/types";
-import { generateUploadUrl, getImageUrl } from "@/actions/convex-uploads";
 
 type PropsType = {
   productId: string | null;
+  oldImages: Array<{ id: string }> | null;
   label?: string;
 } & React.ComponentProps<"input">;
 
-type ImageWithStatus = ProductImage & {
-  status: "pending" | "uploading" | "uploaded" | "failed";
-};
-
 export default function ImageField({
   productId,
+  oldImages,
   label,
   className,
   type,
   ...props
 }: PropsType) {
-  const field = useFieldContext<ProductImage[]>();
   const { store } = useStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { uploadFile, retryUpload, deleteUpload, uploadStates } =
-    useUploadQueue(productId);
-
-  const dbImages = productId ? store.useQuery(productImages$(productId)) : null;
   const shopId = store.query(shopId$);
 
-  const formImages = field.state.value || [];
+  const field = useFieldContext<ProductImage[]>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const allImages = useMemo((): ImageWithStatus[] => {
-    const uploadStatesArray = Array.from(uploadStates.values());
-    const uploadStateMap = new Map(uploadStatesArray.map((s) => [s.uuid, s]));
+  const images = field.state.value;
 
-    const existingImages: ImageWithStatus[] = (dbImages ?? []).map((img) => ({
-      id: img.id,
-      shop_id: "",
-      product_id: productId || "",
-      url: img.url,
-      localUrl: img.localUrl || img.url,
-      displayOrder: img.displayOrder,
-      hidden: img.hidden,
-      createdAt: new Date(),
-      deletedAt: null,
-      status: "uploaded",
-    }));
-
-    const newImages: ImageWithStatus[] = formImages.map((img) => {
-      const uploadState = uploadStateMap.get(img.id);
-      return {
-        ...img,
-        status: uploadState?.status || "pending",
-      };
-    });
-
-    return [...newImages, ...existingImages].sort(
-      (a, b) => a.displayOrder - b.displayOrder,
-    );
-  }, [formImages, dbImages, productId, uploadStates]);
-
-  const calculateNextOrder = useCallback((): number => {
-    const maxOrder = Math.max(0, ...allImages.map((img) => img.displayOrder));
+  const calculateNextOrder = (): number => {
+    const maxOrder = Math.max(0, ...images.map((img) => img.displayOrder));
     return maxOrder + 1;
-  }, [allImages]);
+  };
 
   const handleFileSelect = useCallback(
     async (files: FileList | null) => {
       if (!files?.length) return;
 
       const nextOrder = calculateNextOrder();
-      const newImages: ProductImage[] = [];
+      const fileReadPromises: Promise<ProductImage>[] = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -87,65 +47,33 @@ export default function ImageField({
 
         const id = crypto.randomUUID();
         const displayOrder = nextOrder + i;
-        const localUrl = URL.createObjectURL(file);
 
-        // await fileStorage.save({
-        //   uuid: id,
-        //   name: file.name,
-        //   type: file.type,
-        //   size: file.size,
-        //   blob: file,
-        //   productId: null,
-        //   displayOrder,
-        //   status: "pending",
-        //   retryCount: 0,
-        //   createdAt: Date.now(),
-        // });
-        //
-        // await imageMetadataStorage.save({
-        //   id,
-        //   url: "",
-        //   status: "pending",
-        //   retryCount: 0,
-        // });
-
-        // const url = await uploadFile(id, file, displayOrder);
-        const uploadUrl = await generateUploadUrl();
-        const uploadRes = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
+        const fileReadPromise = new Promise<ProductImage>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            resolve({
+              id,
+              shop_id: shopId,
+              product_id: "",
+              url: (event?.target?.result as string) ?? "",
+              localUrl: "",
+              displayOrder,
+              hidden: 0,
+              createdAt: new Date(),
+              deletedAt: null,
+            });
+          };
+          reader.readAsDataURL(file);
         });
 
-        if (!uploadRes.ok) {
-          throw new Error(`Upload failed: ${uploadRes.statusText}`);
-        }
-        const { storageId } = await uploadRes.json();
-        console.log("got storage id from convex");
-        let url = await getImageUrl(storageId);
-        if (url) {
-          console.log("got img url from convex");
-        } else {
-          console.log("didnt get the url :");
-          url = "no-url";
-        }
-
-        newImages.push({
-          id,
-          shop_id: shopId,
-          product_id: "",
-          url: url,
-          localUrl: "",
-          displayOrder,
-          hidden: 0,
-          createdAt: new Date(),
-          deletedAt: null,
-        });
+        fileReadPromises.push(fileReadPromise);
       }
 
+      const newImages = await Promise.all(fileReadPromises);
       field.setValue((prev) => [...(prev || []), ...newImages]);
     },
-    [store, calculateNextOrder, productId, uploadFile, shopId, field],
+
+    [calculateNextOrder, shopId, field],
   );
 
   const handleClick = useCallback(() => {
@@ -178,16 +106,26 @@ export default function ImageField({
   );
 
   const handleDelete = useCallback(
-    async (image: ProductImage) => {
-      await deleteUpload(image.id);
-      await fileStorage.delete(image.id);
-      await imageMetadataStorage.delete(image.id);
-
-      field.setValue(
-        (prev) => prev?.filter((img) => img.id !== image.id) || [],
-      );
+    (image: ProductImage, isNew: boolean) => {
+      if (isNew) {
+        field.setValue(
+          (prev) => prev?.filter((img) => img.id !== image.id) || [],
+        );
+      } else {
+        field.setValue(
+          (prev) => {
+            const result = prev.map(prevImage => {
+              if (prevImage.id === image.id) {
+                return { ...prevImage, deletedAt: new Date() }
+              }
+              return prevImage
+            })
+            return result
+          },
+        );
+      }
     },
-    [store, deleteUpload, field],
+    [field],
   );
 
   const handleHide = useCallback(
@@ -200,15 +138,6 @@ export default function ImageField({
       );
     },
     [store],
-  );
-
-  const handleRetry = useCallback(
-    async (image: ImageWithStatus) => {
-      if (image.status === "failed") {
-        await retryUpload(image.id);
-      }
-    },
-    [retryUpload],
   );
 
   return (
@@ -224,7 +153,7 @@ export default function ImageField({
         {...props}
       />
 
-      {allImages.length === 0 ? (
+      {images.length === 0 ? (
         <div className="border border-black/30 rounded-[12px] border-dashed flex items-center justify-center h-30">
           <Button
             type="button"
@@ -237,19 +166,20 @@ export default function ImageField({
       ) : (
         <div className="flex flex-col gap-3 border border-neutral-300 rounded-[15px] p-3">
           <div className="flex flex-col gap-3">
-            {allImages.map((image, index) => (
-              <ImageItem
-                key={image.id}
-                index={index}
-                image={image}
-                status={image.status}
-                onRetry={() => handleRetry(image)}
-                onDelete={() => handleDelete(image)}
-                onHide={() => handleHide(image)}
-                onReorderUp={() => handleReorder(image, "up")}
-                onReorderDown={() => handleReorder(image, "down")}
-              />
-            ))}
+            {images.map((image, index) => {
+              const isNew = !oldImages?.some((oldImage: any) => image.id === oldImage.id)
+              return (
+                <ImageItem
+                  key={image.id}
+                  index={index}
+                  image={image}
+                  onDelete={() => handleDelete(image, isNew)}
+                  onHide={() => handleHide(image)}
+                  onReorderUp={() => handleReorder(image, "up")}
+                  onReorderDown={() => handleReorder(image, "down")}
+                />
+              )
+            })}
           </div>
           <div>
             <Button
