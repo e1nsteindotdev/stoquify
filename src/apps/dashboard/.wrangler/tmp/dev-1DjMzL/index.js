@@ -1376,11 +1376,11 @@ var require_utils2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.createTraceState = void 0;
     var tracestate_impl_1 = require_tracestate_impl();
-    function createTraceState2(rawTraceState) {
+    function createTraceState3(rawTraceState) {
       return new tracestate_impl_1.TraceStateImpl(rawTraceState);
     }
-    __name(createTraceState2, "createTraceState");
-    exports.createTraceState = createTraceState2;
+    __name(createTraceState3, "createTraceState");
+    exports.createTraceState = createTraceState3;
   }
 });
 
@@ -1846,10 +1846,10 @@ var require_src = __commonJS({
   }
 });
 
-// .wrangler/tmp/bundle-NYjNo9/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-VP85We/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-NYjNo9/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-VP85We/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cf-worker/index.ts
@@ -15217,14 +15217,14 @@ var globalClockScheduler = {
   }
 };
 var performanceNowNanos = /* @__PURE__ */ (function() {
-  const bigint1e62 = /* @__PURE__ */ BigInt(1e6);
+  const bigint1e63 = /* @__PURE__ */ BigInt(1e6);
   if (typeof performance === "undefined" || typeof performance.now !== "function") {
-    return () => BigInt(Date.now()) * bigint1e62;
+    return () => BigInt(Date.now()) * bigint1e63;
   }
   let origin;
   return () => {
     if (origin === void 0) {
-      origin = BigInt(Date.now()) * bigint1e62 - BigInt(Math.round(performance.now() * 1e6));
+      origin = BigInt(Date.now()) * bigint1e63 - BigInt(Math.round(performance.now() * 1e6));
     }
     return origin + BigInt(Math.round(performance.now() * 1e6));
   };
@@ -15953,6 +15953,13 @@ var nativeTracer = /* @__PURE__ */ make25({
   span: /* @__PURE__ */ __name((name, parent, context9, links, startTime, kind) => new NativeSpan(name, parent, context9, links, startTime, kind), "span"),
   context: /* @__PURE__ */ __name((f) => f(), "context")
 });
+var externalSpan = /* @__PURE__ */ __name((options) => ({
+  _tag: "ExternalSpan",
+  spanId: options.spanId,
+  traceId: options.traceId,
+  sampled: options.sampled ?? true,
+  context: options.context ?? empty3()
+}), "externalSpan");
 var addSpanStackTrace = /* @__PURE__ */ __name((options) => {
   if (options?.captureStackTrace === false) {
     return options;
@@ -16420,6 +16427,7 @@ var unsafeMake6 = unsafeMake5;
 
 // ../../../node_modules/effect/dist/esm/Tracer.js
 init_modules_watch_stub();
+var externalSpan2 = externalSpan;
 var tracerWith2 = tracerWith;
 
 // ../../../node_modules/effect/dist/esm/internal/fiberRefs/patch.js
@@ -42784,7 +42792,7 @@ var unknownToAttributeValue = /* @__PURE__ */ __name((value5) => {
   if (typeof value5 === "string" || typeof value5 === "number" || typeof value5 === "boolean") {
     return value5;
   } else if (typeof value5 === "bigint") {
-    return Number(value5);
+    return value5.toString();
   }
   return toStringUnknown(value5);
 }, "unknownToAttributeValue");
@@ -42798,12 +42806,21 @@ var kindMap = {
   "producer": OtelApi.SpanKind.PRODUCER,
   "consumer": OtelApi.SpanKind.CONSUMER
 };
+var getOtelParent = /* @__PURE__ */ __name((tracer3, otelContext, context9) => {
+  const active2 = tracer3.getSpan(otelContext);
+  const otelParent = active2 ? active2.spanContext() : void 0;
+  return otelParent ? some3(externalSpan2({
+    spanId: otelParent.spanId,
+    traceId: otelParent.traceId,
+    sampled: (otelParent.traceFlags & 1) === 1,
+    context: context9
+  })) : none2();
+}, "getOtelParent");
 var OtelSpan = class {
   static {
     __name(this, "OtelSpan");
   }
   name;
-  parent;
   context;
   links;
   kind;
@@ -42814,15 +42831,16 @@ var OtelSpan = class {
   traceId;
   attributes = /* @__PURE__ */ new Map();
   sampled;
+  parent;
   status;
-  constructor(contextApi, tracer3, name, parent, context9, links, startTime, kind) {
+  constructor(contextApi, traceApi, tracer3, name, effectParent, context9, links, startTime, kind, options) {
     this.name = name;
-    this.parent = parent;
     this.context = context9;
     this.links = links;
     this.kind = kind;
     this[OtelSpanTypeId] = OtelSpanTypeId;
     const active2 = contextApi.active();
+    this.parent = effectParent._tag === "Some" ? effectParent : options?.root !== true ? getOtelParent(traceApi, active2, context9) : none2();
     this.span = tracer3.startSpan(name, {
       startTime: nanosToHrTime(startTime),
       links: links.length > 0 ? links.map((link) => ({
@@ -42830,7 +42848,7 @@ var OtelSpan = class {
         attributes: recordToAttributes(link.attributes)
       })) : void 0,
       kind: kindMap[this.kind]
-    }, parent._tag === "Some" ? populateContext(active2, parent.value, context9) : OtelApi.trace.deleteSpan(active2));
+    }, this.parent._tag === "Some" ? populateContext(active2, this.parent.value, context9) : OtelApi.trace.deleteSpan(active2));
     const spanContext = this.span.spanContext();
     this.spanId = spanContext.spanId;
     this.traceId = spanContext.traceId;
@@ -42897,12 +42915,125 @@ var OtelSpan = class {
 };
 var traceFlagsTag = /* @__PURE__ */ GenericTag("@effect/opentelemetry/Tracer/OtelTraceFlags");
 var traceStateTag = /* @__PURE__ */ GenericTag("@effect/opentelemetry/Tracer/OtelTraceState");
-var currentOtelSpan = /* @__PURE__ */ flatMap13(currentSpan2, (span2) => {
-  if (OtelSpanTypeId in span2) {
-    return succeed10(span2.span);
+var makeExternalSpan = /* @__PURE__ */ __name((options) => {
+  let context9 = empty3();
+  if (options.traceFlags !== void 0) {
+    context9 = add2(context9, traceFlagsTag, options.traceFlags);
   }
-  return fail10(new NoSuchElementException2());
-});
+  if (typeof options.traceState === "string") {
+    context9 = match2(createTraceState2(options.traceState), {
+      onNone: /* @__PURE__ */ __name(() => context9, "onNone"),
+      onSome: /* @__PURE__ */ __name((traceState) => add2(context9, traceStateTag, traceState), "onSome")
+    });
+  } else if (options.traceState) {
+    context9 = add2(context9, traceStateTag, options.traceState);
+  }
+  return {
+    _tag: "ExternalSpan",
+    traceId: options.traceId,
+    spanId: options.spanId,
+    sampled: options.traceFlags !== void 0 ? (options.traceFlags & OtelApi.TraceFlags.SAMPLED) === OtelApi.TraceFlags.SAMPLED : true,
+    context: context9
+  };
+}, "makeExternalSpan");
+var makeOtelSpan = /* @__PURE__ */ __name((span2, clock3) => {
+  const spanContext = {
+    traceId: span2.traceId,
+    spanId: span2.spanId,
+    traceFlags: span2.sampled ? OtelApi.TraceFlags.SAMPLED : OtelApi.TraceFlags.NONE,
+    isRemote: false
+  };
+  let exit4 = void_3;
+  const self2 = {
+    spanContext: /* @__PURE__ */ __name(() => spanContext, "spanContext"),
+    setAttribute(key, value5) {
+      span2.attribute(key, value5);
+      return self2;
+    },
+    setAttributes(attributes) {
+      for (const [key, value5] of Object.entries(attributes)) {
+        span2.attribute(key, value5);
+      }
+      return self2;
+    },
+    addEvent(name) {
+      let attributes = void 0;
+      let startTime = void 0;
+      if (arguments.length === 3) {
+        attributes = arguments[1];
+        startTime = arguments[2];
+      } else if (arguments.length === 2) {
+        const arg1 = arguments[1];
+        if (isTimeInput(arg1)) {
+          startTime = arg1;
+        } else {
+          attributes = arg1;
+        }
+      }
+      span2.event(name, convertOtelTimeInput(startTime, clock3), attributes);
+      return self2;
+    },
+    addLink(link) {
+      span2.addLinks([{
+        _tag: "SpanLink",
+        span: makeExternalSpan(link.context),
+        attributes: link.attributes ?? {}
+      }]);
+      return self2;
+    },
+    addLinks(links) {
+      span2.addLinks(links.map((link) => ({
+        _tag: "SpanLink",
+        span: makeExternalSpan(link.context),
+        attributes: link.attributes ?? {}
+      })));
+      return self2;
+    },
+    setStatus(status3) {
+      exit4 = OtelApi.SpanStatusCode.ERROR ? die4(status3.message ?? "Unknown error") : void_3;
+      return self2;
+    },
+    updateName: /* @__PURE__ */ __name(() => self2, "updateName"),
+    end(endTime) {
+      const time2 = convertOtelTimeInput(endTime, clock3);
+      span2.end(time2, exit4);
+      return self2;
+    },
+    isRecording: constTrue,
+    recordException(exception, timeInput) {
+      const time2 = convertOtelTimeInput(timeInput, clock3);
+      const cause3 = fail6(exception);
+      const error3 = prettyErrors2(cause3)[0];
+      span2.event(error3.message, time2, {
+        "exception.type": error3.name,
+        "exception.message": error3.message,
+        "exception.stacktrace": error3.stack ?? ""
+      });
+    }
+  };
+  return self2;
+}, "makeOtelSpan");
+var bigint1e62 = /* @__PURE__ */ BigInt(1e6);
+var bigint1e93 = /* @__PURE__ */ BigInt(1e9);
+var isTimeInput = /* @__PURE__ */ __name((u) => typeof u === "number" || u instanceof Date || Array.isArray(u) && u.length === 2 && typeof u[0] === "number" && typeof u[1] === "number", "isTimeInput");
+var convertOtelTimeInput = /* @__PURE__ */ __name((input, clock3) => {
+  if (input === void 0) {
+    return clock3.unsafeCurrentTimeNanos();
+  } else if (typeof input === "number") {
+    return BigInt(Math.round(input * 1e6));
+  } else if (input instanceof Date) {
+    return BigInt(input.getTime()) * bigint1e62;
+  }
+  const [seconds2, nanos2] = input;
+  return BigInt(seconds2) * bigint1e93 + BigInt(nanos2);
+}, "convertOtelTimeInput");
+var currentOtelSpan = /* @__PURE__ */ clockWith4((clock3) => map18(currentSpan2, (span2) => {
+  if (OtelSpanTypeId in span2) {
+    return span2.span;
+  }
+  return makeOtelSpan(span2, clock3);
+}));
+var createTraceState2 = /* @__PURE__ */ liftThrowable(OtelApi.createTraceState);
 var populateContext = /* @__PURE__ */ __name((otelContext, span2, context9) => span2 instanceof OtelSpan ? OtelApi.trace.setSpan(otelContext, span2.span) : OtelApi.trace.setSpanContext(otelContext, makeSpanContext(span2, context9)), "populateContext");
 var makeSpanContext = /* @__PURE__ */ __name((span2, context9) => ({
   spanId: span2.spanId,
@@ -43667,13 +43798,13 @@ var isTaggedUnion = /* @__PURE__ */ __name((ast) => {
 // ../../../node_modules/@livestore/utils/dist/effect/Schema/msgpack.js
 init_modules_watch_stub();
 
-// ../../../node_modules/msgpackr/index.js
+// ../../../node_modules/@livestore/utils/node_modules/msgpackr/index.js
 init_modules_watch_stub();
 
-// ../../../node_modules/msgpackr/pack.js
+// ../../../node_modules/@livestore/utils/node_modules/msgpackr/pack.js
 init_modules_watch_stub();
 
-// ../../../node_modules/msgpackr/unpack.js
+// ../../../node_modules/@livestore/utils/node_modules/msgpackr/unpack.js
 init_modules_watch_stub();
 var decoder2;
 try {
@@ -44717,7 +44848,7 @@ var FLOAT32_OPTIONS = {
 var f32Array = new Float32Array(1);
 var u8Array = new Uint8Array(f32Array.buffer, 0, 4);
 
-// ../../../node_modules/msgpackr/pack.js
+// ../../../node_modules/@livestore/utils/node_modules/msgpackr/pack.js
 var textEncoder;
 try {
   textEncoder = new TextEncoder();
@@ -45757,7 +45888,7 @@ var REUSE_BUFFER_MODE = 512;
 var RESET_BUFFER_MODE = 1024;
 var RESERVE_START_SPACE = 2048;
 
-// ../../../node_modules/msgpackr/iterators.js
+// ../../../node_modules/@livestore/utils/node_modules/msgpackr/iterators.js
 init_modules_watch_stub();
 
 // ../../../node_modules/@livestore/utils/dist/effect/Schema/msgpack.js
@@ -45819,7 +45950,7 @@ __export(EventSequenceNumber_exports, {
   isGreaterThan: () => isGreaterThan,
   isGreaterThanOrEqual: () => isGreaterThanOrEqual,
   localEventSequenceNumber: () => localEventSequenceNumber,
-  make: () => make61,
+  make: () => make62,
   max: () => max6,
   nextPair: () => nextPair,
   toString: () => toString2
@@ -45873,7 +46004,7 @@ var diff8 = /* @__PURE__ */ __name((a, b) => {
     client: a.client - b.client
   };
 }, "diff");
-var make61 = /* @__PURE__ */ __name((seqNum) => {
+var make62 = /* @__PURE__ */ __name((seqNum) => {
   return Schema_exports2.is(EventSequenceNumber)(seqNum) ? seqNum : Schema_exports2.decodeSync(EventSequenceNumber)(seqNum);
 }, "make");
 var nextPair = /* @__PURE__ */ __name((seqNum, isLocal) => {
@@ -47645,7 +47776,7 @@ var jsonError = /* @__PURE__ */ __name(async (request2, env, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-NYjNo9/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-VP85We/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -47678,7 +47809,7 @@ function __facade_invoke__(request2, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-NYjNo9/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-VP85We/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron2, noRetry) {
     this.scheduledTime = scheduledTime;

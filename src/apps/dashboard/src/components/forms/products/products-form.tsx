@@ -1,4 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
+import { Duration, Effect } from "effect";
 import { useEffect, useMemo } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ import { useStore } from "@livestore/react";
 import { products$ } from "@/livestore/schema/products";
 import { events, shopId$ } from "@/livestore/schema";
 import type { ProductImage } from "@/livestore/schema/products/types";
+import { Images } from "@/lib/services/images-service";
+import { runtime } from "@/lib/effect-runtime";
 
 export function ProductForm({ slug }: { slug?: string }) {
   const router = useRouter();
@@ -36,7 +39,7 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const { store } = useStore();
 
-  const product = store.query(products$(slug));
+  const product = store.query(products$(slug))?.[0]
   const productId = useMemo(
     () => product?.id ?? crypto.randomUUID(),
     [product],
@@ -67,7 +70,7 @@ export function ProductForm({ slug }: { slug?: string }) {
       shop_id: product.shop_id,
       product_id: product.id,
       url: img.url,
-      localUrl: (img as any).localUrl || img.url,
+      indexedDBId: (img as any).indexedDBId || null,
       displayOrder: img.displayOrder,
       hidden: img.hidden ? 1 : 0,
       createdAt: new Date(),
@@ -92,309 +95,729 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const form = useAppForm({
     defaultValues,
-    onSubmit: async ({ value }) => {
-      console.log("submit in ", productId);
-      const { images, variants, collections, ...productValues } = value;
-      const createdAt = new Date();
-      const deletedAt = new Date();
-      const shopId = store.query(shopId$);
-
-      const productValuesToInsert = {
-        title: productValues.title,
-        desc: productValues.desc || null,
-        category_id: productValues.categoryId,
-        price: Number(productValues.price),
-        cost: Number(productValues.cost) || null,
-        status: productValues.status,
-        discount: productValues.discount ?? null,
-        oldPrice: productValues.oldPrice ?? null,
-        stockingStrategy: productValues.stockingStrategy,
-        quantity: productValues.quantity ?? null,
-        createdAt,
-        deletedAt: null,
-      };
-
-      if (isNew) {
-        store.commit(
-          events.productInserted({
-            id: productId,
-            shop_id: shopId,
-            ...productValuesToInsert,
-          } as any),
-        );
-      } else {
-        const {
-          createdAt: _,
-          deletedAt: __,
-          ...updateValues
-        } = productValuesToInsert;
-        store.commit(
-          events.productPartialUpdated({
-            id: productId,
-            ...updateValues,
-          } as any),
-        );
-      }
-
-      // handle images - create productImageInserted events for all images
-      if (images.length > 0) {
-        images.forEach((image) => {
-          const oldImage = product?.images.find(img => img.id === image.id)
-          if (oldImage) {
-            store.commit(
-              events.productImagePartialUpdated({
-                product_id: productId,
-                url: image.url,
-                localUrl: image.localUrl,
-                displayOrder: image.displayOrder,
-                hidden: image.hidden,
-                createdAt: image.createdAt,
-                deletedAt: null,
-              }),
-            );
-          }
-          store.commit(
-            events.productImageInserted({
-              id: image.id,
-              shop_id: shopId,
-              product_id: productId,
-              url: image.url,
-              localUrl: image.localUrl,
-              displayOrder: image.displayOrder,
-              hidden: image.hidden,
-              createdAt: image.createdAt,
-              deletedAt: null,
-            }),
-          );
+    onSubmit: ({ value }) => {
+      const program = Effect.gen(function*() {
+        console.log("submit in ", productId);
+        const { images, variants, collections, ...productValues } = value;
+        const createdAt = new Date();
+        const deletedAt = new Date();
+        const shopId = store.query(shopId$);
+        yield* Effect.annotateCurrentSpan({
+          "shop.id": shopId,
+          timestamp: Date.now(),
         });
-      }
+        // extract out the attributes for the products table.
+        const productValuesToInsert = {
+          title: productValues.title,
+          desc: productValues.desc || null,
+          category_id: productValues.categoryId,
+          price: Number(productValues.price),
+          cost: Number(productValues.cost) || null,
+          status: productValues.status,
+          discount: productValues.discount ?? null,
+          oldPrice: productValues.oldPrice ?? null,
+          stockingStrategy: productValues.stockingStrategy,
+          quantity: productValues.quantity ?? null,
+          createdAt,
+          deletedAt: null,
+        };
 
-      // handle variants
-      if (!form.getFieldMeta("variants")?.isDefaultValue) {
-        const newVariants = variants.filter(
-          (v) => !product?.variants.some((oldV) => oldV.id === v.id),
-        );
-        const deletedVariants = product?.variants.filter(
-          (oldV) => !variants.some((v) => v.id === oldV.id),
-        );
-
+        // handle only the product table
         if (isNew) {
-          newVariants.forEach((variant, variantIndex) => {
-            const variantId = variant.id || crypto.randomUUID();
-            const optionIds: string[] = [];
-            const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
-
-            for (let i = 0; i < variant.options.length; i++) {
-              const optionId = crypto.randomUUID();
-              optionIds.push(optionId);
-              store.commit(
-                events.variantOptionInserted({
-                  id: optionId,
-                  shop_id: shopId,
-                  variant_id: variantId,
-                  value: variant.options[i],
-                  createdAt,
-                  deletedAt: null,
-                }),
-              );
-            }
-
-            store.commit(
-              events.skuInserted({
-                id: skuId,
-                shop_id: shopId,
-                product_id: productId,
-                quantity: 0,
-                createdAt,
-                deletedAt: null,
-              }),
-            );
-
-            for (const optionId of optionIds) {
-              store.commit(
-                events.skuOptionInserted({
-                  id: `${skuId}_${optionId}`,
-                  shop_id: shopId,
-                  sku_id: skuId,
-                  option_id: optionId,
-                  createdAt,
-                  deletedAt: null,
-                }),
-              );
-            }
-
-            store.commit(
-              events.variantInserted({
-                id: variantId,
-                shop_id: shopId,
-                product_id: productId,
-                name: variant.name,
-                createdAt,
-                options: optionIds.map((id, i) => ({
-                  id,
-                  value: variant.options[i],
-                  createdAt,
-                  deletedAt: null,
-                })),
-                skus: [
-                  {
-                    id: skuId,
-                    quantity: 0,
-                    createdAt,
-                    option_ids: optionIds,
-                  },
-                ],
-              }),
-            );
-
-            store.commit(
-              (events as any).variantOrderUpdated({
-                id: variantId,
-                displayOrder: variantIndex + 1,
-              }),
-            );
-          });
+          store.commit(
+            events.productInserted({
+              id: productId,
+              shop_id: shopId,
+              ...productValuesToInsert,
+            } as any),
+          );
         } else {
-          deletedVariants?.forEach((variant) => {
-            store.commit(events.variantDeleted({ id: variant.id, deletedAt }));
-          });
-          newVariants.forEach((variant, variantIndex) => {
-            const variantId = crypto.randomUUID();
-            const optionIds: string[] = [];
-            const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+          const {
+            createdAt: _,
+            deletedAt: __,
+            ...updateValues
+          } = productValuesToInsert;
+          store.commit(
+            events.productPartialUpdated({
+              id: productId,
+              ...updateValues,
+            } as any),
+          );
+        }
 
-            for (let i = 0; i < variant.options.length; i++) {
-              const optionId = crypto.randomUUID();
-              optionIds.push(optionId);
-              store.commit(
-                events.variantOptionInserted({
-                  id: optionId,
-                  shop_id: shopId,
-                  variant_id: variantId,
-                  value: variant.options[i],
-                  createdAt,
-                  deletedAt: null,
-                }),
-              );
-            }
+        const imageService = yield* Images;
 
-            store.commit(
-              events.skuInserted({
-                id: skuId,
-                shop_id: shopId,
-                product_id: productId,
-                quantity: 0,
-                createdAt,
-                deletedAt: null,
-              }),
-            );
+        yield* Effect.annotateCurrentSpan({
+          "event.type": isNew ? "create" : "update",
+          "images.count": images.length,
+        });
+        // handle images
+        yield* Effect.forEach(
+          images,
+          (image) =>
+            Effect.gen(function*() {
+              const isNew = !product?.images.some((img) => img.id === image.id);
+              if (isNew) {
+                yield* imageService.compressImageLocally(image.url).pipe(
+                  Effect.tap(() =>
+                    Effect.annotateCurrentSpan({
+                      "images.localCompression.status": "successful",
+                    }),
+                  ),
+                  Effect.andThen(({ base64, file }) =>
+                    Effect.gen(function*() {
+                      const indexedDBId = yield* imageService
+                        .saveImageLocally(base64)
+                        .pipe(
+                          Effect.catchAll(() =>
+                            Effect.gen(function*() {
+                              yield* Effect.annotateCurrentSpan({
+                                "images.localSaving.status": "successful",
+                              });
+                              return null;
+                            }),
+                          ),
+                        );
+                      const imageCloudUrl = yield* imageService
+                        .uploadImageToCloud(file)
+                        .pipe(
+                          Effect.tap((imageCloudUrl) =>
+                            Effect.annotateCurrentSpan({
+                              "images.uploadToCloud.status": "successful",
+                              "images.cloudUrl": imageCloudUrl,
+                            }),
+                          ),
+                        );
+                      return { imageCloudUrl, indexedDBId };
+                    }),
+                  ),
+                  Effect.andThen(({ imageCloudUrl, indexedDBId }) =>
+                    Effect.sync(() =>
+                      store.commit(
+                        events.productImageInserted({
+                          id: image.id,
+                          shop_id: shopId,
+                          product_id: productId,
+                          url: imageCloudUrl,
+                          indexedDBId: indexedDBId,
+                          displayOrder: image.displayOrder,
+                          hidden: image.hidden,
+                          createdAt: image.createdAt,
+                          deletedAt: null,
+                        }),
+                      ),
+                    ).pipe(
+                      Effect.tap(() =>
+                        Effect.annotateCurrentSpan({
+                          "images.livestore.status": "success",
+                        }),
+                      ),
+                      Effect.tapError((error: any) =>
+                        Effect.annotateCurrentSpan({
+                          "images.livestore.status": "failure",
+                          "images.livestore.error": { error },
+                        }),
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                Effect.sync(() =>
+                  store.commit(
+                    events.productImagePartialUpdated({
+                      id: image.id,
+                      product_id: productId,
+                      url: image.url,
+                      indexedDBId: image.indexedDBId,
+                      displayOrder: image.displayOrder,
+                      hidden: image.hidden,
+                      createdAt: image.createdAt,
+                      deletedAt: image.deletedAt,
+                    }),
+                  ),
+                ).pipe(
+                  Effect.tap(() =>
+                    Effect.annotateCurrentSpan({
+                      "images.livestore.status": "success",
+                    }),
+                  ),
+                  Effect.tapError((error: any) =>
+                    Effect.annotateCurrentSpan({
+                      "images.livestore.status": "failure",
+                      "images.livestore.error": { error },
+                    }),
+                  ),
+                );
+                if (image.deletedAt === null && image.indexedDBId) {
+                  imageService.deleteLocalImage(image.indexedDBId);
+                  // TODO LATER:
+                  // imageService.deleteCloudImage(image.url)
+                }
+              }
+              Effect.annotateCurrentSpan({
+                "form.status": "successful"
+              })
+            }).pipe(
+              Effect.tapError(e => Effect.annotateCurrentSpan({
+                "images.status": "failed",
+                "images.error": e
+              }))
+            ),
+          { concurrency: "unbounded" },
+        ).pipe(
+          Effect.timed,
+          Effect.andThen(([duration]) =>
+            Effect.gen(function*() {
+              const msDuration = Duration.toMillis(duration);
+              yield* Effect.annotateCurrentSpan({
+                "images.success": true,
+                "images.duration": msDuration,
+                "images.averageDuration": msDuration / images.length,
+              });
+            }),
+          ),
+        );
 
-            for (const optionId of optionIds) {
-              store.commit(
-                events.skuOptionInserted({
-                  id: `${skuId}_${optionId}`,
-                  shop_id: shopId,
-                  sku_id: skuId,
-                  option_id: optionId,
-                  createdAt,
-                  deletedAt: null,
-                }),
-              );
-            }
-
-            store.commit(
-              events.variantInserted({
-                id: variantId,
-                shop_id: shopId,
-                product_id: productId,
-                name: variant.name,
-                createdAt,
-                options: optionIds.map((id, i) => ({
-                  id,
-                  value: variant.options[i],
-                  createdAt,
-                })),
-                skus: [
-                  {
-                    id: skuId,
-                    quantity: 0,
-                    createdAt,
-                    option_ids: optionIds,
-                  },
-                ],
-              }),
-            );
-
-            store.commit(
-              (events as any).variantOrderUpdated({
-                id: variantId,
-                displayOrder: variantIndex + 1,
-              }),
-            );
+        //
+        //   // handle variants
+        //   if (!form.getFieldMeta("variants")?.isDefaultValue) {
+        //     const newVariants = variants.filter(
+        //       (v) => !product?.variants.some((oldV) => oldV.id === v.id),
+        //     );
+        //     const deletedVariants = product?.variants.filter(
+        //       (oldV) => !variants.some((v) => v.id === oldV.id),
+        //     );
+        //
+        //     if (isNew) {
+        //       newVariants.forEach((variant, variantIndex) => {
+        //         const variantId = variant.id || crypto.randomUUID();
+        //         const optionIds: string[] = [];
+        //         const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+        //
+        //         for (let i = 0; i < variant.options.length; i++) {
+        //           const optionId = crypto.randomUUID();
+        //           optionIds.push(optionId);
+        //           store.commit(
+        //             events.variantOptionInserted({
+        //               id: optionId,
+        //               shop_id: shopId,
+        //               variant_id: variantId,
+        //               value: variant.options[i],
+        //               createdAt,
+        //               deletedAt: null,
+        //             }),
+        //           );
+        //         }
+        //
+        //         store.commit(
+        //           events.skuInserted({
+        //             id: skuId,
+        //             shop_id: shopId,
+        //             product_id: productId,
+        //             quantity: 0,
+        //             createdAt,
+        //             deletedAt: null,
+        //           }),
+        //         );
+        //
+        //         for (const optionId of optionIds) {
+        //           store.commit(
+        //             events.skuOptionInserted({
+        //               id: `${skuId}_${optionId}`,
+        //               shop_id: shopId,
+        //               sku_id: skuId,
+        //               option_id: optionId,
+        //               createdAt,
+        //               deletedAt: null,
+        //             }),
+        //           );
+        //         }
+        //
+        //         store.commit(
+        //           events.variantInserted({
+        //             id: variantId,
+        //             shop_id: shopId,
+        //             product_id: productId,
+        //             name: variant.name,
+        //             createdAt,
+        //             options: optionIds.map((id, i) => ({
+        //               id,
+        //               value: variant.options[i],
+        //               createdAt,
+        //               deletedAt: null,
+        //             })),
+        //             skus: [
+        //               {
+        //                 id: skuId,
+        //                 quantity: 0,
+        //                 createdAt,
+        //                 option_ids: optionIds,
+        //               },
+        //             ],
+        //           }),
+        //         );
+        //
+        //         store.commit(
+        //           (events as any).variantOrderUpdated({
+        //             id: variantId,
+        //             displayOrder: variantIndex + 1,
+        //           }),
+        //         );
+        //       });
+        //     } else {
+        //       deletedVariants?.forEach((variant) => {
+        //         store.commit(events.variantDeleted({ id: variant.id, deletedAt }));
+        //       });
+        //       newVariants.forEach((variant, variantIndex) => {
+        //         const variantId = crypto.randomUUID();
+        //         const optionIds: string[] = [];
+        //         const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+        //
+        //         for (let i = 0; i < variant.options.length; i++) {
+        //           const optionId = crypto.randomUUID();
+        //           optionIds.push(optionId);
+        //           store.commit(
+        //             events.variantOptionInserted({
+        //               id: optionId,
+        //               shop_id: shopId,
+        //               variant_id: variantId,
+        //               value: variant.options[i],
+        //               createdAt,
+        //               deletedAt: null,
+        //             }),
+        //           );
+        //         }
+        //
+        //         store.commit(
+        //           events.skuInserted({
+        //             id: skuId,
+        //             shop_id: shopId,
+        //             product_id: productId,
+        //             quantity: 0,
+        //             createdAt,
+        //             deletedAt: null,
+        //           }),
+        //         );
+        //
+        //         for (const optionId of optionIds) {
+        //           store.commit(
+        //             events.skuOptionInserted({
+        //               id: `${skuId}_${optionId}`,
+        //               shop_id: shopId,
+        //               sku_id: skuId,
+        //               option_id: optionId,
+        //               createdAt,
+        //               deletedAt: null,
+        //             }),
+        //           );
+        //         }
+        //
+        //         store.commit(
+        //           events.variantInserted({
+        //             id: variantId,
+        //             shop_id: shopId,
+        //             product_id: productId,
+        //             name: variant.name,
+        //             createdAt,
+        //             options: optionIds.map((id, i) => ({
+        //               id,
+        //               value: variant.options[i],
+        //               createdAt,
+        //             })),
+        //             skus: [
+        //               {
+        //                 id: skuId,
+        //                 quantity: 0,
+        //                 createdAt,
+        //                 option_ids: optionIds,
+        //               },
+        //             ],
+        //           }),
+        //         );
+        //
+        //         store.commit(
+        //           (events as any).variantOrderUpdated({
+        //             id: variantId,
+        //             displayOrder: variantIndex + 1,
+        //           }),
+        //         );
+        //       });
+        //     }
+        //   }
+        //
+        //   // handle collections
+        //   const currentCollectionIds = Array.from(collections);
+        //   const previousCollectionIds = (product?.collections ?? []).map(
+        //     (c) => c.id,
+        //   );
+        //   const collectionsChanged =
+        //     currentCollectionIds.length !== previousCollectionIds.length ||
+        //     !currentCollectionIds.every((id) => previousCollectionIds.includes(id));
+        //
+        //   if (collectionsChanged) {
+        //     const newCollectionIds = currentCollectionIds.filter(
+        //       (id) => !previousCollectionIds.includes(id),
+        //     );
+        //     const deletedCollections: CollectionWithProductId[] = (
+        //       product?.collections ?? []
+        //     ).filter(
+        //       (oldC) => !currentCollectionIds.includes(oldC.id),
+        //     ) as CollectionWithProductId[];
+        //
+        //     if (isNew) {
+        //       newCollectionIds.forEach((collectionId) => {
+        //         store.commit(
+        //           events.collectionProductInserted({
+        //             id: crypto.randomUUID(),
+        //             shop_id: shopId,
+        //             collection_id: collectionId,
+        //             product_id: productId,
+        //             createdAt,
+        //             deletedAt: null,
+        //           } as any),
+        //         );
+        //       });
+        //     } else {
+        //       deletedCollections.forEach((collection) => {
+        //         store.commit(
+        //           events.collectionProductDeleted({
+        //             id: collection.collection_product_id,
+        //             deletedAt: createdAt,
+        //           }),
+        //         );
+        //       });
+        //       newCollectionIds.forEach((collectionId) => {
+        //         store.commit(
+        //           events.collectionProductInserted({
+        //             id: crypto.randomUUID(),
+        //             shop_id: shopId,
+        //             collection_id: collectionId,
+        //             product_id: productId,
+        //             createdAt,
+        //             deletedAt: null,
+        //           } as any),
+        //         );
+        //       });
+        //     }
+        //   }
+        //
+        if (isNew) {
+          router.navigate({
+            to: "/produits/$slug",
+            params: { slug: productId },
           });
         }
-      }
-
-      // handle collections
-      const currentCollectionIds = Array.from(collections);
-      const previousCollectionIds = (product?.collections ?? []).map(
-        (c) => c.id,
-      );
-      const collectionsChanged =
-        currentCollectionIds.length !== previousCollectionIds.length ||
-        !currentCollectionIds.every((id) => previousCollectionIds.includes(id));
-
-      if (collectionsChanged) {
-        const newCollectionIds = currentCollectionIds.filter(
-          (id) => !previousCollectionIds.includes(id),
-        );
-        const deletedCollections: CollectionWithProductId[] = (
-          product?.collections ?? []
-        ).filter(
-          (oldC) => !currentCollectionIds.includes(oldC.id),
-        ) as CollectionWithProductId[];
-
-        if (isNew) {
-          newCollectionIds.forEach((collectionId) => {
-            store.commit(
-              events.collectionProductInserted({
-                id: crypto.randomUUID(),
-                shop_id: shopId,
-                collection_id: collectionId,
-                product_id: productId,
-                createdAt,
-                deletedAt: null,
-              } as any),
-            );
-          });
-        } else {
-          deletedCollections.forEach((collection) => {
-            store.commit(
-              events.collectionProductDeleted({
-                id: collection.collection_product_id,
-                deletedAt: createdAt,
-              }),
-            );
-          });
-          newCollectionIds.forEach((collectionId) => {
-            store.commit(
-              events.collectionProductInserted({
-                id: crypto.randomUUID(),
-                shop_id: shopId,
-                collection_id: collectionId,
-                product_id: productId,
-                createdAt,
-                deletedAt: null,
-              } as any),
-            );
-          });
-        }
-      }
-
-      if (isNew) {
-        router.navigate({ to: "/produits/$slug", params: { slug: productId } });
-      }
+      }).pipe(
+        Effect.catchAll((e) => Effect.annotateCurrentSpan({
+          "form.error": e,
+          "form.status": "failed"
+        })),
+        Effect.withSpan("ProductFormSubmit"));
+      return runtime.runPromise(program);
     },
+    // onSubmit: async ({ value }) => {
+    //   console.log("submit in ", productId);
+    //   const { images, variants, collections, ...productValues } = value;
+    //   const createdAt = new Date();
+    //   const deletedAt = new Date();
+    //   const shopId = store.query(shopId$);
+    //
+    //   const productValuesToInsert = {
+    //     title: productValues.title,
+    //     desc: productValues.desc || null,
+    //     category_id: productValues.categoryId,
+    //     price: Number(productValues.price),
+    //     cost: Number(productValues.cost) || null,
+    //     status: productValues.status,
+    //     discount: productValues.discount ?? null,
+    //     oldPrice: productValues.oldPrice ?? null,
+    //     stockingStrategy: productValues.stockingStrategy,
+    //     quantity: productValues.quantity ?? null,
+    //     createdAt,
+    //     deletedAt: null,
+    //   };
+    //
+    //   if (isNew) {
+    //     store.commit(
+    //       events.productInserted({
+    //         id: productId,
+    //         shop_id: shopId,
+    //         ...productValuesToInsert,
+    //       } as any),
+    //     );
+    //   } else {
+    //     const {
+    //       createdAt: _,
+    //       deletedAt: __,
+    //       ...updateValues
+    //     } = productValuesToInsert;
+    //     store.commit(
+    //       events.productPartialUpdated({
+    //         id: productId,
+    //         ...updateValues,
+    //       } as any),
+    //     );
+    //   }
+    //
+    //   // handle images - create productImageInserted events for all images
+    //   if (images.length > 0) {
+    //     images.forEach((image) => {
+    //       const oldImage = product?.images.find(img => img.id === image.id)
+    //       if (oldImage) {
+    //         store.commit(
+    //           events.productImagePartialUpdated({
+    //             product_id: productId,
+    //             url: image.url,
+    //             localUrl: image.localUrl,
+    //             displayOrder: image.displayOrder,
+    //             hidden: image.hidden,
+    //             createdAt: image.createdAt,
+    //             deletedAt: null,
+    //           }),
+    //         );
+    //       }
+    //       store.commit(
+    //         events.productImageInserted({
+    //           id: image.id,
+    //           shop_id: shopId,
+    //           product_id: productId,
+    //           url: image.url,
+    //           localUrl: image.localUrl,
+    //           displayOrder: image.displayOrder,
+    //           hidden: image.hidden,
+    //           createdAt: image.createdAt,
+    //           deletedAt: null,
+    //         }),
+    //       );
+    //     });
+    //   }
+    //
+    //   // handle variants
+    //   if (!form.getFieldMeta("variants")?.isDefaultValue) {
+    //     const newVariants = variants.filter(
+    //       (v) => !product?.variants.some((oldV) => oldV.id === v.id),
+    //     );
+    //     const deletedVariants = product?.variants.filter(
+    //       (oldV) => !variants.some((v) => v.id === oldV.id),
+    //     );
+    //
+    //     if (isNew) {
+    //       newVariants.forEach((variant, variantIndex) => {
+    //         const variantId = variant.id || crypto.randomUUID();
+    //         const optionIds: string[] = [];
+    //         const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+    //
+    //         for (let i = 0; i < variant.options.length; i++) {
+    //           const optionId = crypto.randomUUID();
+    //           optionIds.push(optionId);
+    //           store.commit(
+    //             events.variantOptionInserted({
+    //               id: optionId,
+    //               shop_id: shopId,
+    //               variant_id: variantId,
+    //               value: variant.options[i],
+    //               createdAt,
+    //               deletedAt: null,
+    //             }),
+    //           );
+    //         }
+    //
+    //         store.commit(
+    //           events.skuInserted({
+    //             id: skuId,
+    //             shop_id: shopId,
+    //             product_id: productId,
+    //             quantity: 0,
+    //             createdAt,
+    //             deletedAt: null,
+    //           }),
+    //         );
+    //
+    //         for (const optionId of optionIds) {
+    //           store.commit(
+    //             events.skuOptionInserted({
+    //               id: `${skuId}_${optionId}`,
+    //               shop_id: shopId,
+    //               sku_id: skuId,
+    //               option_id: optionId,
+    //               createdAt,
+    //               deletedAt: null,
+    //             }),
+    //           );
+    //         }
+    //
+    //         store.commit(
+    //           events.variantInserted({
+    //             id: variantId,
+    //             shop_id: shopId,
+    //             product_id: productId,
+    //             name: variant.name,
+    //             createdAt,
+    //             options: optionIds.map((id, i) => ({
+    //               id,
+    //               value: variant.options[i],
+    //               createdAt,
+    //               deletedAt: null,
+    //             })),
+    //             skus: [
+    //               {
+    //                 id: skuId,
+    //                 quantity: 0,
+    //                 createdAt,
+    //                 option_ids: optionIds,
+    //               },
+    //             ],
+    //           }),
+    //         );
+    //
+    //         store.commit(
+    //           (events as any).variantOrderUpdated({
+    //             id: variantId,
+    //             displayOrder: variantIndex + 1,
+    //           }),
+    //         );
+    //       });
+    //     } else {
+    //       deletedVariants?.forEach((variant) => {
+    //         store.commit(events.variantDeleted({ id: variant.id, deletedAt }));
+    //       });
+    //       newVariants.forEach((variant, variantIndex) => {
+    //         const variantId = crypto.randomUUID();
+    //         const optionIds: string[] = [];
+    //         const skuId = `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
+    //
+    //         for (let i = 0; i < variant.options.length; i++) {
+    //           const optionId = crypto.randomUUID();
+    //           optionIds.push(optionId);
+    //           store.commit(
+    //             events.variantOptionInserted({
+    //               id: optionId,
+    //               shop_id: shopId,
+    //               variant_id: variantId,
+    //               value: variant.options[i],
+    //               createdAt,
+    //               deletedAt: null,
+    //             }),
+    //           );
+    //         }
+    //
+    //         store.commit(
+    //           events.skuInserted({
+    //             id: skuId,
+    //             shop_id: shopId,
+    //             product_id: productId,
+    //             quantity: 0,
+    //             createdAt,
+    //             deletedAt: null,
+    //           }),
+    //         );
+    //
+    //         for (const optionId of optionIds) {
+    //           store.commit(
+    //             events.skuOptionInserted({
+    //               id: `${skuId}_${optionId}`,
+    //               shop_id: shopId,
+    //               sku_id: skuId,
+    //               option_id: optionId,
+    //               createdAt,
+    //               deletedAt: null,
+    //             }),
+    //           );
+    //         }
+    //
+    //         store.commit(
+    //           events.variantInserted({
+    //             id: variantId,
+    //             shop_id: shopId,
+    //             product_id: productId,
+    //             name: variant.name,
+    //             createdAt,
+    //             options: optionIds.map((id, i) => ({
+    //               id,
+    //               value: variant.options[i],
+    //               createdAt,
+    //             })),
+    //             skus: [
+    //               {
+    //                 id: skuId,
+    //                 quantity: 0,
+    //                 createdAt,
+    //                 option_ids: optionIds,
+    //               },
+    //             ],
+    //           }),
+    //         );
+    //
+    //         store.commit(
+    //           (events as any).variantOrderUpdated({
+    //             id: variantId,
+    //             displayOrder: variantIndex + 1,
+    //           }),
+    //         );
+    //       });
+    //     }
+    //   }
+    //
+    //   // handle collections
+    //   const currentCollectionIds = Array.from(collections);
+    //   const previousCollectionIds = (product?.collections ?? []).map(
+    //     (c) => c.id,
+    //   );
+    //   const collectionsChanged =
+    //     currentCollectionIds.length !== previousCollectionIds.length ||
+    //     !currentCollectionIds.every((id) => previousCollectionIds.includes(id));
+    //
+    //   if (collectionsChanged) {
+    //     const newCollectionIds = currentCollectionIds.filter(
+    //       (id) => !previousCollectionIds.includes(id),
+    //     );
+    //     const deletedCollections: CollectionWithProductId[] = (
+    //       product?.collections ?? []
+    //     ).filter(
+    //       (oldC) => !currentCollectionIds.includes(oldC.id),
+    //     ) as CollectionWithProductId[];
+    //
+    //     if (isNew) {
+    //       newCollectionIds.forEach((collectionId) => {
+    //         store.commit(
+    //           events.collectionProductInserted({
+    //             id: crypto.randomUUID(),
+    //             shop_id: shopId,
+    //             collection_id: collectionId,
+    //             product_id: productId,
+    //             createdAt,
+    //             deletedAt: null,
+    //           } as any),
+    //         );
+    //       });
+    //     } else {
+    //       deletedCollections.forEach((collection) => {
+    //         store.commit(
+    //           events.collectionProductDeleted({
+    //             id: collection.collection_product_id,
+    //             deletedAt: createdAt,
+    //           }),
+    //         );
+    //       });
+    //       newCollectionIds.forEach((collectionId) => {
+    //         store.commit(
+    //           events.collectionProductInserted({
+    //             id: crypto.randomUUID(),
+    //             shop_id: shopId,
+    //             collection_id: collectionId,
+    //             product_id: productId,
+    //             createdAt,
+    //             deletedAt: null,
+    //           } as any),
+    //         );
+    //       });
+    //     }
+    //   }
+    //
+    //   if (isNew) {
+    //     router.navigate({ to: "/produits/$slug", params: { slug: productId } });
+    //   }
+    // },
   });
 
   // Keep form in sync when product loads
@@ -451,9 +874,12 @@ export function ProductForm({ slug }: { slug?: string }) {
                   name="images"
                   children={(field) => (
                     <field.ImageField
-                      oldImages={product?.images as Array<{ id: string }> ?? null}
+                      oldImages={
+                        (product?.images as Array<{ id: string }>) ?? null
+                      }
                       productId={productId}
-                      label="Photos" />
+                      label="Photos"
+                    />
                   )}
                 />
 

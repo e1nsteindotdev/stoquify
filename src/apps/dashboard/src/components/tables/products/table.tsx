@@ -10,10 +10,10 @@ import { events } from "@/livestore/schema";
 export function ProductsTable() {
   const { store } = useStore();
   const productsResult = store.useQuery(products$());
-  const products = productsResult ?? [];
+  const products = productsResult ?? null
   const isLoading = productsResult === undefined;
 
-  const rows: ProductRow[] = products.map((p) => ({
+  const rows: ProductRow[] | undefined = products?.map((p) => ({
     _id: p.id,
     title: p.title,
     price: p.price,
@@ -50,7 +50,7 @@ export function ProductsTable() {
           <Button variant="default">Nouveau produit</Button>
         </Link>
       </div>
-      <DataTable columns={columns} data={rows} />
+      {rows && <DataTable columns={columns} data={rows} />}
     </div>
   );
 }

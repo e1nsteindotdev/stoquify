@@ -31,7 +31,7 @@ export type ProductImage = {
   shop_id: string;
   product_id: string;
   url: string;
-  localUrl: string | null;
+  indexedDBId: number | null;
   displayOrder: number;
   hidden: number;
   createdAt: Date;
@@ -108,7 +108,7 @@ export type ProductWithDetails = Omit<
   discount: number | null;
   category: Pick<Category, "id" | "name"> | null;
   images: Array<
-    Pick<ProductImage, "id" | "url" | "localUrl" | "displayOrder" | "hidden">
+    Pick<ProductImage, "id" | "url" | "indexedDBId" | "displayOrder" | "hidden">
   >;
   collections: Array<{
     id: CollectionProduct["id"];

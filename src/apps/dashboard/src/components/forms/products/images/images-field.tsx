@@ -56,7 +56,7 @@ export default function ImageField({
               shop_id: shopId,
               product_id: "",
               url: (event?.target?.result as string) ?? "",
-              localUrl: "",
+              indexedDBId: null,
               displayOrder,
               hidden: 0,
               createdAt: new Date(),

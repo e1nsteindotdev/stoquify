@@ -63,7 +63,7 @@ export const productImages$ = (productId: string) =>
   queryDb(
     () => ({
       query: `
-        SELECT id, url, localUrl, "displayOrder", hidden
+        SELECT id, url, indexedDBId, "displayOrder", hidden
         FROM product_images
         WHERE product_id = ? AND deletedAt IS NULL
         ORDER BY "displayOrder"
@@ -72,7 +72,7 @@ export const productImages$ = (productId: string) =>
         Schema.Struct({
           id: Schema.String,
           url: Schema.String,
-          localUrl: Schema.String,
+          indexedDBId: Schema.NullOr(Schema.Number),
           displayOrder: Schema.Number,
           hidden: Schema.Number,
         }),
@@ -106,7 +106,7 @@ export const products$ = (id?: string) =>
                 'shop_id', pi.shop_id,
                 'product_id', pi.product_id,
                 'url', pi.url,
-                'localUrl', pi.localUrl,
+                'indexedDBId', pi.indexedDBId,
                 'displayOrder', pi."displayOrder",
                 'hidden', pi.hidden,
                 'createdAt', pi.createdAt
@@ -210,11 +210,10 @@ export const products$ = (id?: string) =>
     {
       label: "productsWithDetailsAndVariants",
       map: (rows) => {
-        console.log("rows from teh query : ", rows.length)
         if (rows.length === 0) {
           return null
         } else {
-          return rows[0]
+          return rows
         }
       }
     },

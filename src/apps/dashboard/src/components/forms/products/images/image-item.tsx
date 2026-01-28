@@ -23,8 +23,6 @@ export function ImageItem({
 }: ImageItemProps) {
   const isDbHidden = image.hidden === 1;
 
-  console.log("image url :", image.url);
-
   return (
     <div className="flex items-center justify-between rounded-2xl bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
       <div className="flex items-center gap-2.5">
@@ -77,9 +75,8 @@ export function ImageItem({
             type="button"
             size="icon"
             variant="outline"
-            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${
-              isDbHidden ? "bg-black/20" : "bg-[#DADADA]"
-            }`}
+            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${isDbHidden ? "bg-black/20" : "bg-[#DADADA]"
+              }`}
             onClick={onHide}
           >
             <EyeOff className={`size-5 ${isDbHidden ? "opacity-70" : ""}`} />
