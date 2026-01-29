@@ -1,7 +1,8 @@
 import { generateUploadUrl, getImageUrl } from "@/actions/convex-uploads";
 import { Context, Layer, Effect } from "effect";
 import { LocalFiles } from "./files-service";
-import { encode, decode } from "@jsquash/avif";
+import avifEncode, { init as initAvifEncode } from "@jsquash/avif/encode";
+import avifDecode, { init as initAvifDecode } from "@jsquash/avif/decode";
 
 export class Images extends Context.Tag("Images")<
   Images,
@@ -15,7 +16,17 @@ export class Images extends Context.Tag("Images")<
     readonly compressImageLocally: (
       input: File | Blob | string,
       quality?: number,
-    ) => Effect.Effect<{ base64: string; file: File }, Error, never>;
+    ) => Effect.Effect<
+      {
+        base64: string;
+        file: File;
+        originalSizeKb: number;
+        compressedSizeKb: number;
+        compressionRatio: number;
+      },
+      Error,
+      never
+    >;
     readonly deleteLocalImage: (
       id: number,
     ) => Effect.Effect<void, Error, never>;
@@ -29,6 +40,23 @@ export class Images extends Context.Tag("Images")<
     Effect.gen(function*() {
       const localFiles = yield* LocalFiles;
 
+      // Initialize AVIF encoder/decoder with custom WASM file location
+      yield* Effect.promise(() =>
+        Promise.all([
+          initAvifEncode({
+            locateFile: (path: string) => `/wasm/${path}`,
+          }),
+          initAvifDecode({
+            locateFile: (path: string) => `/wasm/${path}`,
+          }),
+        ]),
+      ).pipe(
+        Effect.catchAll((error) => {
+          console.error("Failed to initialize AVIF modules:", error);
+          return Effect.fail(new Error(`AVIF initialization failed: ${error}`));
+        }),
+      );
+
       return {
         saveImageLocally: (base64: string) => localFiles.write(base64),
 
@@ -41,9 +69,16 @@ export class Images extends Context.Tag("Images")<
                 headers: { "Content-Type": file.type },
                 body: file,
               }),
-            ).pipe(Effect.andThen((value) => value.json()));
+            ).pipe(
+              Effect.andThen((value) => value.json()),
+              Effect.andThen(
+                (result: { storageId: string }) => result.storageId,
+              ),
+            );
 
-            const imageUrl = yield* Effect.promise(() => getImageUrl(storageId));
+            const imageUrl = yield* Effect.promise(() =>
+              getImageUrl(storageId),
+            );
             if (!imageUrl) {
               return yield* Effect.fail(new Error("couldn't get image url"));
             }
@@ -56,27 +91,50 @@ export class Images extends Context.Tag("Images")<
         ) =>
           Effect.gen(function*() {
             // Convert input to ImageData
-            const imageSource: ImageBitmapSource = yield* Effect.if(typeof input === "string", {
-              onTrue: () =>
-                Effect.promise(() => fetch(input as string)).pipe(
-                  Effect.andThen(res => res.blob()),
-                  Effect.catchAll(() => Effect.fail(new Error("Error while converting base64 to blobl")))
-                ),
-              onFalse: () => Effect.succeed(input as File | Blob)
-            })
-            const bitmap = yield* Effect.promise(() => createImageBitmap(imageSource));
+            const imageSource: ImageBitmapSource = yield* Effect.if(
+              typeof input === "string",
+              {
+                onTrue: () =>
+                  Effect.promise(() => fetch(input as string)).pipe(
+                    Effect.andThen((res) => res.blob()),
+                    Effect.catchAll(() =>
+                      Effect.fail(
+                        new Error("Error while converting base64 to blobl"),
+                      ),
+                    ),
+                  ),
+                onFalse: () => Effect.succeed(input as File | Blob),
+              },
+            );
+
+            // Calculate original size in KB
+            const originalSizeKb =
+              imageSource instanceof Blob
+                ? imageSource.size / 1024
+                : ((input as string).length * 0.75) / 1024; // Approximate base64 size
+
+            const bitmap = yield* Effect.promise(() =>
+              createImageBitmap(imageSource),
+            );
             const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
             const ctx = canvas.getContext("2d");
-            if (!ctx) { return yield* Effect.fail(Error("Failed to get canvas context")) }
+            if (!ctx) {
+              return yield* Effect.fail(Error("Failed to get canvas context"));
+            }
             ctx.drawImage(bitmap, 0, 0);
-            const imageData = ctx.getImageData(0, 0, bitmap.width, bitmap.height,);
+            const imageData = ctx.getImageData(
+              0,
+              0,
+              bitmap.width,
+              bitmap.height,
+            );
 
             bitmap.close();
 
-
             // Encode ImageData to AVIF format
             const avifBuffer = yield* Effect.tryPromise({
-              try: () => encode(imageData, { quality: Math.round(quality * 100) }),
+              try: () =>
+                avifEncode(imageData, { quality: Math.round(quality * 100) }),
               catch: (error) => new Error(`Failed to encode AVIF: ${error}`),
             });
 
@@ -100,9 +158,21 @@ export class Images extends Context.Tag("Images")<
               return `data:image/avif;base64,${btoa(binary)}`;
             });
 
+            // Calculate compressed size in KB
+            const compressedSizeKb = avifBuffer.byteLength / 1024;
+
+            // Calculate compression ratio (decimal format)
+            const compressionRatio =
+              originalSizeKb > 0
+                ? (originalSizeKb - compressedSizeKb) / originalSizeKb
+                : 0;
+
             return {
               base64: base64Result,
               file: avifFile,
+              originalSizeKb,
+              compressedSizeKb,
+              compressionRatio,
             };
           }),
 

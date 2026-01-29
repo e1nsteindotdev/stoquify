@@ -86,7 +86,7 @@ export const products$ = (id?: string) =>
   queryDb(
     (get) => {
       const shopId = get(shopId$);
-      const conditions = ["p.shop_id = ?"];
+      const conditions = ["p.shop_id = ?", "p.deletedAt IS NULL"];
       const bindValues: import("@livestore/livestore").Bindable = id
         ? [shopId, id]
         : [shopId];
@@ -173,9 +173,7 @@ export const products$ = (id?: string) =>
             category_id: Schema.NullOr(Schema.String),
             category_name: Schema.NullOr(Schema.String),
             category_createdAt: Schema.NullOr(Schema.DateFromNumber),
-            images: Schema.parseJson(
-              Schema.Array(Schema.Any),
-            ),
+            images: Schema.parseJson(Schema.Array(Schema.Any)),
             collections: Schema.parseJson(
               Schema.Array(
                 Schema.Struct({
@@ -211,11 +209,11 @@ export const products$ = (id?: string) =>
       label: "productsWithDetailsAndVariants",
       map: (rows) => {
         if (rows.length === 0) {
-          return null
+          return null;
         } else {
-          return rows
+          return rows;
         }
-      }
+      },
     },
   );
 

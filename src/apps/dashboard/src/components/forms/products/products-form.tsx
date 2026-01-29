@@ -27,6 +27,51 @@ import type { ProductImage } from "@/livestore/schema/products/types";
 import { Images } from "@/lib/services/images-service";
 import { runtime } from "@/lib/effect-runtime";
 
+interface ImageStepStatus {
+  status: "pending" | "success" | "failed";
+  error?: string;
+  durationMs?: number;
+  originalSizeKb?: number;
+  compressedSizeKb?: number;
+  compressionRatio?: number;
+  indexedDBId?: number | null;
+  url?: string;
+}
+
+interface ImageProcessingContext {
+  id: string;
+  metrics: {
+    originalSizeKb: number;
+    compressedSizeKb: number;
+    compressionRatio: number;
+    totalDurationMs: number;
+  };
+  steps: {
+    compression: ImageStepStatus;
+    localSave: ImageStepStatus;
+    cloudUpload: ImageStepStatus;
+    livestore: ImageStepStatus;
+  };
+  finalStatus: "pending" | "success" | "partial" | "failed";
+  startedAt: number;
+  completedAt?: number;
+  error?: string;
+}
+
+function determineFinalStatus(
+  steps: ImageProcessingContext["steps"],
+): ImageProcessingContext["finalStatus"] {
+  const stepStatuses = Object.values(steps);
+  const hasFailed = stepStatuses.some((s) => s.status === "failed");
+  const hasSuccess = stepStatuses.some((s) => s.status === "success");
+  const allSuccess = stepStatuses.every((s) => s.status === "success");
+
+  if (allSuccess) return "success";
+  if (hasFailed && hasSuccess) return "partial";
+  if (hasFailed) return "failed";
+  return "pending";
+}
+
 export function ProductForm({ slug }: { slug?: string }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
@@ -39,7 +84,7 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const { store } = useStore();
 
-  const product = store.query(products$(slug))?.[0]
+  const product = store.query(products$(slug))?.[0];
   const productId = useMemo(
     () => product?.id ?? crypto.randomUUID(),
     [product],
@@ -96,7 +141,7 @@ export function ProductForm({ slug }: { slug?: string }) {
   const form = useAppForm({
     defaultValues,
     onSubmit: ({ value }) => {
-      const program = Effect.gen(function*() {
+      const program = Effect.gen(function* () {
         console.log("submit in ", productId);
         const { images, variants, collections, ...productValues } = value;
         const createdAt = new Date();
@@ -151,78 +196,22 @@ export function ProductForm({ slug }: { slug?: string }) {
           "event.type": isNew ? "create" : "update",
           "images.count": images.length,
         });
+
+        // Track all image processing contexts for final summary
+        const imageContexts: ImageProcessingContext[] = [];
+
         // handle images
         yield* Effect.forEach(
           images,
           (image) =>
-            Effect.gen(function*() {
-              const isNew = !product?.images.some((img) => img.id === image.id);
-              if (isNew) {
-                yield* imageService.compressImageLocally(image.url).pipe(
-                  Effect.tap(() =>
-                    Effect.annotateCurrentSpan({
-                      "images.localCompression.status": "successful",
-                    }),
-                  ),
-                  Effect.andThen(({ base64, file }) =>
-                    Effect.gen(function*() {
-                      const indexedDBId = yield* imageService
-                        .saveImageLocally(base64)
-                        .pipe(
-                          Effect.catchAll(() =>
-                            Effect.gen(function*() {
-                              yield* Effect.annotateCurrentSpan({
-                                "images.localSaving.status": "successful",
-                              });
-                              return null;
-                            }),
-                          ),
-                        );
-                      const imageCloudUrl = yield* imageService
-                        .uploadImageToCloud(file)
-                        .pipe(
-                          Effect.tap((imageCloudUrl) =>
-                            Effect.annotateCurrentSpan({
-                              "images.uploadToCloud.status": "successful",
-                              "images.cloudUrl": imageCloudUrl,
-                            }),
-                          ),
-                        );
-                      return { imageCloudUrl, indexedDBId };
-                    }),
-                  ),
-                  Effect.andThen(({ imageCloudUrl, indexedDBId }) =>
-                    Effect.sync(() =>
-                      store.commit(
-                        events.productImageInserted({
-                          id: image.id,
-                          shop_id: shopId,
-                          product_id: productId,
-                          url: imageCloudUrl,
-                          indexedDBId: indexedDBId,
-                          displayOrder: image.displayOrder,
-                          hidden: image.hidden,
-                          createdAt: image.createdAt,
-                          deletedAt: null,
-                        }),
-                      ),
-                    ).pipe(
-                      Effect.tap(() =>
-                        Effect.annotateCurrentSpan({
-                          "images.livestore.status": "success",
-                        }),
-                      ),
-                      Effect.tapError((error: any) =>
-                        Effect.annotateCurrentSpan({
-                          "images.livestore.status": "failure",
-                          "images.livestore.error": { error },
-                        }),
-                      ),
-                    ),
-                  ),
-                );
-              } else {
-                Effect.sync(() =>
+            Effect.gen(function* () {
+              const isNewImage = !product?.images.some(
+                (img) => img.id === image.id,
+              );
+
+              if (!isNewImage) {
+                // Handle existing image updates
+                yield* Effect.sync(() =>
                   store.commit(
                     events.productImagePartialUpdated({
                       id: image.id,
@@ -235,44 +224,227 @@ export function ProductForm({ slug }: { slug?: string }) {
                       deletedAt: image.deletedAt,
                     }),
                   ),
-                ).pipe(
-                  Effect.tap(() =>
-                    Effect.annotateCurrentSpan({
-                      "images.livestore.status": "success",
-                    }),
-                  ),
-                  Effect.tapError((error: any) =>
-                    Effect.annotateCurrentSpan({
-                      "images.livestore.status": "failure",
-                      "images.livestore.error": { error },
-                    }),
-                  ),
                 );
+
                 if (image.deletedAt === null && image.indexedDBId) {
                   imageService.deleteLocalImage(image.indexedDBId);
-                  // TODO LATER:
-                  // imageService.deleteCloudImage(image.url)
                 }
+
+                return;
               }
-              Effect.annotateCurrentSpan({
-                "form.status": "successful"
-              })
+
+              // Initialize image processing context
+              const ctx: ImageProcessingContext = {
+                id: image.id,
+                metrics: {
+                  originalSizeKb: 0,
+                  compressedSizeKb: 0,
+                  compressionRatio: 0,
+                  totalDurationMs: 0,
+                },
+                steps: {
+                  compression: { status: "pending" },
+                  localSave: { status: "pending" },
+                  cloudUpload: { status: "pending" },
+                  livestore: { status: "pending" },
+                },
+                finalStatus: "pending",
+                startedAt: Date.now(),
+              };
+
+              imageContexts.push(ctx);
+
+              // Helper to update span with current context
+              const updateSpan = () =>
+                Effect.annotateCurrentSpan({
+                  images: imageContexts.map((ic) => ({
+                    id: ic.id,
+                    metrics: ic.metrics,
+                    steps: ic.steps,
+                    finalStatus: ic.finalStatus,
+                    totalDurationMs: ic.completedAt
+                      ? ic.completedAt - ic.startedAt
+                      : Date.now() - ic.startedAt,
+                  })),
+                });
+
+              try {
+                // Step 1: Compression (blocking - fail stops this image)
+                const compressionStart = Date.now();
+                const compressionResult = yield* imageService
+                  .compressImageLocally(image.url)
+                  .pipe(
+                    Effect.tap(
+                      ({
+                        originalSizeKb,
+                        compressedSizeKb,
+                        compressionRatio,
+                      }) => {
+                        ctx.steps.compression = {
+                          status: "success",
+                          durationMs: Date.now() - compressionStart,
+                          originalSizeKb,
+                          compressedSizeKb,
+                          compressionRatio,
+                        };
+                        ctx.metrics.originalSizeKb = originalSizeKb;
+                        ctx.metrics.compressedSizeKb = compressedSizeKb;
+                        ctx.metrics.compressionRatio = compressionRatio;
+                      },
+                    ),
+                    Effect.catchAll((error) => {
+                      ctx.steps.compression = {
+                        status: "failed",
+                        error: String(error),
+                        durationMs: Date.now() - compressionStart,
+                      };
+                      ctx.finalStatus = "failed";
+                      // Update span immediately before re-throwing
+                      return updateSpan().pipe(
+                        Effect.andThen(() => Effect.fail(error)),
+                      );
+                    }),
+                    Effect.andThen((result) =>
+                      updateSpan().pipe(Effect.map(() => result)),
+                    ),
+                  );
+
+                // Step 2: Local Save (non-blocking - continue even if fails)
+                const localSaveStart = Date.now();
+                const indexedDBId = yield* imageService
+                  .saveImageLocally(compressionResult.base64)
+                  .pipe(
+                    Effect.tap((id) => {
+                      ctx.steps.localSave = {
+                        status: "success",
+                        durationMs: Date.now() - localSaveStart,
+                        indexedDBId: id,
+                      };
+                    }),
+                    Effect.catchAll((error) => {
+                      ctx.steps.localSave = {
+                        status: "failed",
+                        error: String(error),
+                        durationMs: Date.now() - localSaveStart,
+                        indexedDBId: null,
+                      };
+                      return Effect.succeed(null as number | null);
+                    }),
+                    Effect.andThen((result) =>
+                      updateSpan().pipe(Effect.map(() => result)),
+                    ),
+                  );
+
+                // Step 3: Cloud Upload (blocking - fail stops this image)
+                const cloudUploadStart = Date.now();
+                const imageCloudUrl = yield* imageService
+                  .uploadImageToCloud(compressionResult.file)
+                  .pipe(
+                    Effect.tap((url) => {
+                      ctx.steps.cloudUpload = {
+                        status: "success",
+                        durationMs: Date.now() - cloudUploadStart,
+                        url,
+                      };
+                    }),
+                    Effect.catchAll((error) => {
+                      ctx.steps.cloudUpload = {
+                        status: "failed",
+                        error: String(error),
+                        durationMs: Date.now() - cloudUploadStart,
+                      };
+                      // Update span immediately before re-throwing
+                      return updateSpan().pipe(
+                        Effect.andThen(() => Effect.fail(error)),
+                      );
+                    }),
+                    Effect.andThen((result) =>
+                      updateSpan().pipe(Effect.map(() => result)),
+                    ),
+                  );
+
+                // Step 4: Livestore (blocking - fail stops this image)
+                const livestoreStart = Date.now();
+                yield* Effect.sync(() =>
+                  store.commit(
+                    events.productImageInserted({
+                      id: image.id,
+                      shop_id: shopId,
+                      product_id: productId,
+                      url: imageCloudUrl,
+                      indexedDBId: indexedDBId,
+                      displayOrder: image.displayOrder,
+                      hidden: image.hidden,
+                      createdAt: image.createdAt,
+                      deletedAt: null,
+                    }),
+                  ),
+                ).pipe(
+                  Effect.tap(() => {
+                    ctx.steps.livestore = {
+                      status: "success",
+                      durationMs: Date.now() - livestoreStart,
+                    };
+                  }),
+                  Effect.catchAll((error) => {
+                    ctx.steps.livestore = {
+                      status: "failed",
+                      error: String(error),
+                      durationMs: Date.now() - livestoreStart,
+                    };
+                    // Update span immediately before re-throwing
+                    return updateSpan().pipe(
+                      Effect.andThen(() => Effect.fail(error)),
+                    );
+                  }),
+                  Effect.andThen(updateSpan),
+                );
+
+                // Finalize image processing
+                ctx.completedAt = Date.now();
+                ctx.metrics.totalDurationMs = ctx.completedAt - ctx.startedAt;
+                ctx.finalStatus = determineFinalStatus(ctx.steps);
+                yield* updateSpan();
+              } catch (error) {
+                // Ensure context is updated even on unexpected errors
+                ctx.completedAt = Date.now();
+                ctx.metrics.totalDurationMs = ctx.completedAt - ctx.startedAt;
+                ctx.finalStatus = "failed";
+                ctx.error = String(error);
+                yield* updateSpan();
+              }
             }).pipe(
-              Effect.tapError(e => Effect.annotateCurrentSpan({
-                "images.status": "failed",
-                "images.error": e
-              }))
+              // Ensure individual image failures don't stop other images
+              Effect.catchAll((error) =>
+                Effect.gen(function* () {
+                  console.error(`Failed to process image:`, error);
+                }),
+              ),
             ),
           { concurrency: "unbounded" },
         ).pipe(
           Effect.timed,
           Effect.andThen(([duration]) =>
-            Effect.gen(function*() {
+            Effect.gen(function* () {
               const msDuration = Duration.toMillis(duration);
+              const successCount = imageContexts.filter(
+                (ctx) => ctx.finalStatus === "success",
+              ).length;
+              const failedCount = imageContexts.filter(
+                (ctx) => ctx.finalStatus === "failed",
+              ).length;
+              const partialCount = imageContexts.filter(
+                (ctx) => ctx.finalStatus === "partial",
+              ).length;
+
               yield* Effect.annotateCurrentSpan({
-                "images.success": true,
-                "images.duration": msDuration,
-                "images.averageDuration": msDuration / images.length,
+                "images.summary.total": images.length,
+                "images.summary.success": successCount,
+                "images.summary.failed": failedCount,
+                "images.summary.partial": partialCount,
+                "images.summary.totalDurationMs": msDuration,
+                "images.summary.averageDurationMs":
+                  images.length > 0 ? msDuration / images.length : 0,
               });
             }),
           ),
@@ -508,11 +680,14 @@ export function ProductForm({ slug }: { slug?: string }) {
           });
         }
       }).pipe(
-        Effect.catchAll((e) => Effect.annotateCurrentSpan({
-          "form.error": e,
-          "form.status": "failed"
-        })),
-        Effect.withSpan("ProductFormSubmit"));
+        Effect.catchAll((e) =>
+          Effect.annotateCurrentSpan({
+            "form.error": e,
+            "form.status": "failed",
+          }),
+        ),
+        Effect.withSpan("ProductFormSubmit"),
+      );
       return runtime.runPromise(program);
     },
     // onSubmit: async ({ value }) => {
@@ -829,9 +1004,9 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const isCompleted =
     form.getFieldValue("images") &&
-      form.getFieldValue("price") !== 0 &&
-      form.getFieldValue("title") &&
-      form.getFieldValue("categoryId")
+    form.getFieldValue("price") !== 0 &&
+    form.getFieldValue("title") &&
+    form.getFieldValue("categoryId")
       ? true
       : false;
 

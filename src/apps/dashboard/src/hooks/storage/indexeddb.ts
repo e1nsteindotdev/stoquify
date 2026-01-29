@@ -2,7 +2,7 @@ import { FileStorage, StoredFile } from "./mod";
 
 const DB_NAME = "stoquify-image-uploads";
 const STORE_NAME = "files";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented to trigger schema update
 
 export class IndexedDBStorage implements FileStorage {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -32,7 +32,12 @@ export class IndexedDBStorage implements FileStorage {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: "uuid" });
+          db.createObjectStore(STORE_NAME, { keyPath: "indexedDBId" });
+        } else {
+          // If store exists, we need to handle migration or delete and recreate
+          // For simplicity, we'll delete and recreate
+          db.deleteObjectStore(STORE_NAME);
+          db.createObjectStore(STORE_NAME, { keyPath: "indexedDBId" });
         }
       };
     });
@@ -53,12 +58,12 @@ export class IndexedDBStorage implements FileStorage {
     });
   }
 
-  async get(uuid: string): Promise<StoredFile | null> {
+  async get(indexedDBId: number): Promise<StoredFile | null> {
     const db = await this.ensureDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(uuid);
+      const request = store.get(indexedDBId);
 
       request.onsuccess = () => {
         resolve(request.result ?? null);
@@ -83,22 +88,25 @@ export class IndexedDBStorage implements FileStorage {
     });
   }
 
-  async update(uuid: string, updates: Partial<StoredFile>): Promise<void> {
-    const existing = await this.get(uuid);
+  async update(
+    indexedDBId: number,
+    updates: Partial<StoredFile>,
+  ): Promise<void> {
+    const existing = await this.get(indexedDBId);
     if (!existing) {
-      throw new Error(`File with uuid ${uuid} not found`);
+      throw new Error(`File with indexedDBId ${indexedDBId} not found`);
     }
 
     const updated: StoredFile = { ...existing, ...updates };
     await this.save(updated);
   }
 
-  async delete(uuid: string): Promise<void> {
+  async delete(indexedDBId: number): Promise<void> {
     const db = await this.ensureDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(uuid);
+      const request = store.delete(indexedDBId);
 
       request.onsuccess = () => resolve();
       request.onerror = () =>

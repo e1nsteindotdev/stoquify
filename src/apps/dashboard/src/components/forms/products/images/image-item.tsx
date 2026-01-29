@@ -3,6 +3,7 @@ import { Button } from "../../../ui/button";
 import { UpArrow } from "@/components/icons/up-arrow";
 import { DownArrow } from "@/components/icons/down-arrow";
 import type { ProductImage } from "@/livestore/schema/products/types";
+import { useGetIndexedDBImg } from "@/hooks/get-indexeddb-img";
 
 type ImageItemProps = {
   index: number;
@@ -23,6 +24,8 @@ export function ImageItem({
 }: ImageItemProps) {
   const isDbHidden = image.hidden === 1;
 
+  const url = useGetIndexedDBImg(image.indexedDBId)
+  console.log('index db id : ', image.indexedDBId, url)
   return (
     <div className="flex items-center justify-between rounded-2xl bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
       <div className="flex items-center gap-2.5">
