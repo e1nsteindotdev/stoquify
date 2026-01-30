@@ -2,7 +2,7 @@ import { FileStorage, StoredFile } from "./mod";
 
 const DB_NAME = "stoquify-image-uploads";
 const STORE_NAME = "files";
-const DB_VERSION = 2; // Incremented to trigger schema update
+const DB_VERSION = 4; // Synced with files-service.ts
 
 export class IndexedDBStorage implements FileStorage {
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -31,13 +31,14 @@ export class IndexedDBStorage implements FileStorage {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: "indexedDBId" });
-        } else {
-          // If store exists, we need to handle migration or delete and recreate
-          // For simplicity, we'll delete and recreate
+        const oldVersion = event.oldVersion;
+        // Delete and recreate the store if it exists with old schema
+        if (oldVersion < 4 && db.objectStoreNames.contains(STORE_NAME)) {
           db.deleteObjectStore(STORE_NAME);
-          db.createObjectStore(STORE_NAME, { keyPath: "indexedDBId" });
+        }
+        // Create store without keyPath (out-of-line keys)
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
         }
       };
     });
@@ -50,7 +51,8 @@ export class IndexedDBStorage implements FileStorage {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(file);
+      // Use out-of-line key: put(value, key)
+      const request = store.put(file, file.indexedDBId);
 
       request.onsuccess = () => resolve();
       request.onerror = () =>

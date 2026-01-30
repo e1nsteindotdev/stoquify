@@ -112,17 +112,15 @@ export default function ImageField({
           (prev) => prev?.filter((img) => img.id !== image.id) || [],
         );
       } else {
-        field.setValue(
-          (prev) => {
-            const result = prev.map(prevImage => {
-              if (prevImage.id === image.id) {
-                return { ...prevImage, deletedAt: new Date() }
-              }
-              return prevImage
-            })
-            return result
-          },
-        );
+        field.setValue((prev) => {
+          const result = prev.map((prevImage) => {
+            if (prevImage.id === image.id) {
+              return { ...prevImage, deletedAt: new Date() };
+            }
+            return prevImage;
+          });
+          return result;
+        });
       }
     },
     [field],
@@ -167,18 +165,21 @@ export default function ImageField({
         <div className="flex flex-col gap-3 border border-neutral-300 rounded-[15px] p-3">
           <div className="flex flex-col gap-3">
             {images.map((image, index) => {
-              const isNew = !oldImages?.some((oldImage: any) => image.id === oldImage.id)
+              const isNew = !oldImages?.some(
+                (oldImage: any) => image.id === oldImage.id,
+              );
               return (
                 <ImageItem
                   key={image.id}
                   index={index}
                   image={image}
+                  isNew={isNew}
                   onDelete={() => handleDelete(image, isNew)}
                   onHide={() => handleHide(image)}
                   onReorderUp={() => handleReorder(image, "up")}
                   onReorderDown={() => handleReorder(image, "down")}
                 />
-              )
+              );
             })}
           </div>
           <div>

@@ -206,7 +206,10 @@ export const products$ = (id?: string) =>
       };
     },
     {
-      label: "productsWithDetailsAndVariants",
+      label: id
+        ? `productsWithDetailsAndVariants-${id}`
+        : "productsWithDetailsAndVariants-all",
+      deps: [id],
       map: (rows) => {
         if (rows.length === 0) {
           return null;

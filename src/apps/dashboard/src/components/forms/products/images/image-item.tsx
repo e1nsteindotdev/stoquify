@@ -8,6 +8,7 @@ import { useGetIndexedDBImg } from "@/hooks/get-indexeddb-img";
 type ImageItemProps = {
   index: number;
   image: ProductImage;
+  isNew: boolean;
   onDelete: () => void;
   onHide: () => void;
   onReorderUp: () => void;
@@ -17,30 +18,34 @@ type ImageItemProps = {
 export function ImageItem({
   index,
   image,
+  isNew,
   onDelete,
   onHide,
   onReorderUp,
   onReorderDown,
 }: ImageItemProps) {
   const isDbHidden = image.hidden === 1;
-
-  const url = useGetIndexedDBImg(image.indexedDBId)
-  console.log('index db id : ', image.indexedDBId, url)
+  const url = useGetIndexedDBImg(image.indexedDBId);
   return (
     <div className="flex items-center justify-between rounded-2xl bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
       <div className="flex items-center gap-2.5">
         <div className="relative size-12 h-[60px] overflow-hidden rounded-lg bg-black/10">
           <img
-            src={image.url}
+            src={url ? url : image.url}
             className="size-full object-contain"
             alt={`photo-${index + 1}`}
           />
+          {isNew && (
+            <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-bl">
+              New
+            </div>
+          )}
           {/* {(isUploading || isPending || isFailed) && ( */}
           {/*   <div */}
           {/*     className={`absolute inset-0 flex items-center justify-center ${isFailed ? "bg-black/50 cursor-pointer" : "bg-black/30" */}
           {/*       }`} */}
           {/*     onClick={handleRetryClick} */}
-          {/*   > */}
+          {}
           {/*     {getStatusIcon()} */}
           {/*   </div> */}
           {/* )} */}

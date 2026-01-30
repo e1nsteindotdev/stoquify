@@ -6,7 +6,9 @@ export function useGetIndexedDBImg(id: number | null): string | null {
   const [imgUrl, setImgUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('hi')
     if (!id) {
+      console.log('no id ')
       setImgUrl(null);
       return;
     }
@@ -16,9 +18,8 @@ export function useGetIndexedDBImg(id: number | null): string | null {
     const fetchImg = async () => {
       try {
         const file: StoredFile | null = await fileStorage.get(id);
-        const all = await fileStorage.getAll()
-        console.log('all files :', all)
-        // console.log("file : ", file)
+        const all_images = await fileStorage.getAll()
+        console.log('all file : ', all_images)
         if (file?.blob) {
           objectUrl = URL.createObjectURL(file.blob);
           setImgUrl(objectUrl);
