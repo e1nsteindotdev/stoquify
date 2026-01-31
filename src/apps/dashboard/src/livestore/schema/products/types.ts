@@ -62,15 +62,7 @@ export type SKU = {
   shop_id: string;
   product_id: string;
   quantity: number;
-  createdAt: Date;
-  deletedAt: Date | null;
-};
-
-export type SKUOption = {
-  id: string;
-  shop_id: string;
-  sku_id: string;
-  option_id: string;
+  options: Record<string, { id: string; value: string }>; // JSON object: { "variantId": { "id": "optionId", "value": "Red" }, ... }
   createdAt: Date;
   deletedAt: Date | null;
 };
@@ -162,4 +154,5 @@ export type ProductRow = {
   title: string;
   price: number;
   imageUrl?: string;
+  indexedDBId?: number | null;
 };

@@ -19,7 +19,6 @@ export const tables = {
   variants: products.variantsTable,
   variantOptions: products.variantOptionsTable,
   skus: products.skusTable,
-  skuOptions: products.skuOptionsTable,
   collections: products.collectionsTable,
   collectionProducts: products.collectionProductsTable,
   notifications: notificationsTable,

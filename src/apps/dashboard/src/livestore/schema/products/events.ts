@@ -6,7 +6,6 @@ import {
   variantsTable,
   variantOptionsTable,
   skusTable,
-  skuOptionsTable,
   collectionsTable,
   collectionProductsTable,
   productPartialSchema,
@@ -36,7 +35,15 @@ const variantInsertedSchema = Schema.Struct({
       id: Schema.String,
       quantity: Schema.Number,
       createdAt: Schema.Date,
-      option_ids: Schema.Array(Schema.String),
+      options: Schema.parseJson(
+        Schema.Record({
+          key: Schema.String,
+          value: Schema.Struct({
+            id: Schema.String,
+            value: Schema.String,
+          }),
+        }),
+      ), // { "variantId": { "id": "optionId", "value": "Red" }, ... }
     }),
   ),
 });
@@ -84,14 +91,6 @@ export const productEvents = {
   }),
   variantOptionDeleted: Events.synced({
     name: "v1.VariantOptionDeleted",
-    schema: deletedSchema,
-  }),
-  skuOptionInserted: Events.synced({
-    name: "v1.SkuOptionInserted",
-    schema: skuOptionsTable.rowSchema,
-  }),
-  skuOptionDeleted: Events.synced({
-    name: "v1.SkuOptionDeleted",
     schema: deletedSchema,
   }),
   variantInserted: Events.synced({

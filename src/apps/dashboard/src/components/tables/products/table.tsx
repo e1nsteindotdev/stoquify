@@ -6,21 +6,30 @@ import { ClipLoader } from "react-spinners";
 import { useStore } from "@livestore/react";
 import { products$ } from "@/livestore/schema/products";
 import { events } from "@/livestore/schema";
+import { wrapQuery } from "@/lib/error-logger";
 
 export function ProductsTable() {
   const { store } = useStore();
-  const productsResult = store.useQuery(products$());
-  const products = productsResult ?? null
+  const productsResult = wrapQuery(
+    () => store.useQuery(products$()),
+    "productsWithDetailsAndVariants-all",
+    "ProductsTable",
+  );
+  const products = productsResult ?? null;
   const isLoading = productsResult === undefined;
 
-  const rows: ProductRow[] | undefined = products?.map((p) => ({
-    _id: p.id,
-    title: p.title,
-    price: p.price,
-    imageUrl: p.images
+  const rows: ProductRow[] | undefined = products?.map((p) => {
+    const firstImage = p.images
       ?.filter((img) => !img.hidden && img.url)
-      .sort((a, b) => a.displayOrder - b.displayOrder)[0]?.url,
-  }));
+      .sort((a, b) => a.displayOrder - b.displayOrder)[0];
+    return {
+      _id: p.id,
+      title: p.title,
+      price: p.price,
+      imageUrl: firstImage?.url,
+      indexedDBId: firstImage?.indexedDBId,
+    };
+  });
 
   const onClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -39,6 +48,14 @@ export function ProductsTable() {
     return (
       <div className="container mx-auto py-10 flex justify-center">
         <ClipLoader color="#000" size={50} />
+      </div>
+    );
+  }
+
+  if (productsResult === null) {
+    return (
+      <div className="container mx-auto py-10 text-center text-red-500">
+        Unable to load products. Please refresh the page.
       </div>
     );
   }

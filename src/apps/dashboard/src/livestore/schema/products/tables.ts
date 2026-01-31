@@ -69,6 +69,13 @@ export const variantsTable = State.SQLite.table({
       schema: Schema.DateFromNumber,
     }),
   },
+  indexes: [
+    {
+      name: "idx_variants_product_display",
+      columns: ["product_id", "displayOrder"],
+    },
+    { name: "idx_variants_shop", columns: ["shop_id"] },
+  ],
 });
 
 export const variantOptionsTable = State.SQLite.table({
@@ -84,6 +91,10 @@ export const variantOptionsTable = State.SQLite.table({
       schema: Schema.DateFromNumber,
     }),
   },
+  indexes: [
+    { name: "idx_variant_options_variant", columns: ["variant_id"] },
+    { name: "idx_variant_options_value", columns: ["value"] },
+  ],
 });
 
 export const skusTable = State.SQLite.table({
@@ -93,27 +104,17 @@ export const skusTable = State.SQLite.table({
     shop_id: State.SQLite.text(),
     product_id: State.SQLite.text(),
     quantity: State.SQLite.integer(),
+    options: State.SQLite.json(), // JSON object: { "variantId": { "id": "optionId", "value": "Red" }, ... }
     createdAt: State.SQLite.integer({ schema: Schema.DateFromNumber }),
     deletedAt: State.SQLite.integer({
       nullable: true,
       schema: Schema.DateFromNumber,
     }),
   },
-});
-
-export const skuOptionsTable = State.SQLite.table({
-  name: "sku_options",
-  columns: {
-    id: State.SQLite.text({ primaryKey: true }),
-    shop_id: State.SQLite.text(),
-    sku_id: State.SQLite.text(),
-    option_id: State.SQLite.text(),
-    createdAt: State.SQLite.integer({ schema: Schema.DateFromNumber }),
-    deletedAt: State.SQLite.integer({
-      nullable: true,
-      schema: Schema.DateFromNumber,
-    }),
-  },
+  indexes: [
+    { name: "idx_skus_product", columns: ["product_id"] },
+    { name: "idx_skus_quantity", columns: ["quantity"] },
+  ],
 });
 
 export const collectionsTable = State.SQLite.table({

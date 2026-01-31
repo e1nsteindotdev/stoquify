@@ -7,13 +7,20 @@ import {
   variantsTable,
   variantOptionsTable,
   skusTable,
-  skuOptionsTable,
   collectionsTable,
   collectionProductsTable,
 } from "./tables";
 
 export const productMaterializers = State.SQLite.materializers(productEvents, {
-  "v1.ProductInserted": (product) => productsTable.insert(product),
+  "v1.ProductInserted": (product, { query }) => {
+    const existing = query(productsTable.select().where({ id: product.id }))
+    if (existing.length > 0) {
+      const result = productsTable.update(product).where({ id: product.id });
+      return result;
+    }
+    const result = productsTable.insert(product);
+    return result;
+  },
   "v1.ProductPartialUpdated": (changes) =>
     productsTable.update(changes).where({ id: changes.id }),
   "v1.ProductDeleted": ({ id, deletedAt }) =>
@@ -23,7 +30,13 @@ export const productMaterializers = State.SQLite.materializers(productEvents, {
     categoriesTable.update(changes).where({ id: changes.id }),
   "v1.CategoryDeleted": ({ id, deletedAt }) =>
     categoriesTable.update({ deletedAt }).where({ id }),
-  "v1.ProductImageInserted": (image) => productImagesTable.insert(image),
+  "v1.ProductImageInserted": (image, { query }) => {
+    const existing = query(productImagesTable.select().where({ id: image.id }));
+    if (existing.length > 0) {
+      return productImagesTable.update(image).where({ id: image.id });
+    }
+    return productImagesTable.insert(image);
+  },
   "v1.ProductImagePartialUpdated": (changes) =>
     productImagesTable.update(changes).where({ id: changes.id }),
   "v1.ProductImageDeleted": ({ id, deletedAt }) =>
@@ -31,40 +44,36 @@ export const productMaterializers = State.SQLite.materializers(productEvents, {
   "v1.VariantOptionInserted": (option) => variantOptionsTable.insert(option),
   "v1.VariantOptionDeleted": ({ id, deletedAt }) =>
     variantOptionsTable.update({ deletedAt }).where({ id }),
-  "v1.SkuOptionInserted": (skuOption) => skuOptionsTable.insert(skuOption),
-  "v1.SkuOptionDeleted": ({ id, deletedAt }) =>
-    skuOptionsTable.update({ deletedAt }).where({ id }),
   "v1.VariantInserted": (data) => {
     const { options, skus, ...variant } = data;
-    variantsTable.insert(variant);
+    const operations: any[] = [variantsTable.insert(variant)];
+
     for (const opt of options ?? []) {
-      variantOptionsTable.insert({
-        id: opt.id,
-        shop_id: variant.shop_id,
-        variant_id: variant.id,
-        value: opt.value,
-        createdAt: opt.createdAt,
-      });
-    }
-    for (const sku of skus ?? []) {
-      skusTable.insert({
-        id: sku.id,
-        shop_id: variant.shop_id,
-        product_id: variant.product_id,
-        quantity: sku.quantity,
-        createdAt: sku.createdAt,
-      });
-      for (const optId of sku.option_ids ?? []) {
-        skuOptionsTable.insert({
-          id: `${sku.id}_${optId}`,
+      operations.push(
+        variantOptionsTable.insert({
+          id: opt.id,
           shop_id: variant.shop_id,
-          sku_id: sku.id,
-          option_id: optId,
-          createdAt: new Date(),
-        });
-      }
+          variant_id: variant.id,
+          value: opt.value,
+          createdAt: opt.createdAt,
+        }),
+      );
     }
-    return [variantsTable.insert(variant)];
+
+    for (const sku of skus ?? []) {
+      operations.push(
+        skusTable.insert({
+          id: sku.id,
+          shop_id: variant.shop_id,
+          product_id: variant.product_id,
+          quantity: sku.quantity,
+          options: sku.options, // JSON object: { "variantId": { "id": "optionId", "value": "Red" }, ... }
+          createdAt: sku.createdAt,
+        }),
+      );
+    }
+
+    return operations;
   },
   "v1.VariantPartialUpdated": (changes) =>
     variantsTable.update(changes).where({ id: changes.id }),

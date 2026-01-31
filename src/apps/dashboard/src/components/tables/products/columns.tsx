@@ -2,28 +2,36 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import type { ProductRow } from "@/livestore/schema/products/types";
+import { useGetIndexedDBImg } from "@/hooks/get-indexeddb-img";
 
 export { ProductRow };
+
+function ProductImageCell({ row }: { row: { original: ProductRow } }) {
+  const localUrl = useGetIndexedDBImg(row.original.indexedDBId ?? null);
+  const imageUrl = localUrl || row.original.imageUrl;
+
+  return (
+    <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-md border border-input">
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={row.original.title}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
+          {row.original.title?.slice(0, 2)}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const columns: ColumnDef<ProductRow>[] = [
   {
     accessorKey: "imageUrl",
     header: "Image",
-    cell: ({ row }) => (
-      <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-md border border-input">
-        {row.original.imageUrl ? (
-          <img
-            src={row.original.imageUrl}
-            alt={row.original.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
-            {row.original.title?.slice(0, 2)}
-          </div>
-        )}
-      </div>
-    ),
+    cell: ({ row }) => <ProductImageCell row={row} />,
   },
   {
     accessorKey: "title",

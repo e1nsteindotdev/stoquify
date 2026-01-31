@@ -131,12 +131,12 @@ export const products$ = (id?: string) =>
                 'shop_id', v.shop_id,
                 'product_id', v.product_id,
                 'name', v.name,
-                '"displayOrder"', v."displayOrder",
+                'displayOrder', v."displayOrder",
                 'createdAt', v.createdAt,
                 'options', (
-                  SELECT COALESCE(json_group_array(vo.value), '[]')
+                  SELECT COALESCE(json_group_array(CAST(vo.value AS TEXT)), '[]')
                   FROM variant_options vo
-                  WHERE vo.variant_id = v.id AND vo.deletedAt IS NULL
+                  WHERE vo.variant_id = v.id AND vo.shop_id = v.shop_id AND vo.deletedAt IS NULL AND vo.value IS NOT NULL
                 ),
                 'skus', (
                   SELECT COALESCE(json_group_array(json_object(
@@ -144,10 +144,11 @@ export const products$ = (id?: string) =>
                     'shop_id', s.shop_id,
                     'product_id', s.product_id,
                     'quantity', s.quantity,
+                    'options', json(s.options),
                     'createdAt', s.createdAt
                   )), '[]')
                   FROM product_skus s
-                  WHERE s.product_id = p.id
+                  WHERE s.product_id = p.id AND s.deletedAt IS NULL
                 )
               )) FROM variants v
               WHERE v.product_id = p.id AND v.deletedAt IS NULL
@@ -195,8 +196,8 @@ export const products$ = (id?: string) =>
                   name: Schema.String,
                   displayOrder: Schema.Number,
                   createdAt: Schema.DateFromNumber,
-                  options: Schema.parseJson(Schema.Array(Schema.String)),
-                  skus: Schema.parseJson(Schema.Array(skusTable.rowSchema)),
+                  options: Schema.Array(Schema.String),
+                  skus: Schema.Array(skusTable.rowSchema),
                 }),
               ),
             ),
@@ -239,13 +240,11 @@ export const variants$ = (productId: string) =>
             vo.createdAt as option_createdAt,
             s.id as sku_id,
             s.quantity,
-            s.createdAt as sku_createdAt,
-            so.id as sku_option_id,
-            so.option_id as sku_option_option_id
+            s.options as sku_options,
+            s.createdAt as sku_createdAt
           FROM variants v
           LEFT JOIN variant_options vo ON vo.variant_id = v.id
-          LEFT JOIN sku_options so ON so.option_id = vo.id
-          LEFT JOIN product_skus s ON s.id = so.sku_id
+          LEFT JOIN product_skus s ON s.product_id = v.product_id
           WHERE v.shop_id = ? AND v.product_id = ?
           ORDER BY v."displayOrder", v.id, vo.id, s.id
         `,
@@ -262,9 +261,18 @@ export const variants$ = (productId: string) =>
             option_createdAt: Schema.Date,
             sku_id: Schema.String,
             quantity: Schema.Number,
+            sku_options: Schema.NullOr(
+              Schema.parseJson(
+                Schema.Record({
+                  key: Schema.String,
+                  value: Schema.Struct({
+                    id: Schema.String,
+                    value: Schema.String,
+                  }),
+                }),
+              ),
+            ),
             sku_createdAt: Schema.Date,
-            sku_option_id: Schema.String,
-            sku_option_option_id: Schema.String,
           }),
         ),
         bindValues: [shopId, productId],
@@ -291,22 +299,22 @@ export const variants$ = (productId: string) =>
             const skus = groupRows(
               variantRows.filter((r) => r.sku_id),
               (r) => r.sku_id,
-              (skuRows) => ({
-                id: skuRows[0].sku_id!,
-                quantity: skuRows[0].quantity!,
-                createdAt: skuRows[0].sku_createdAt!,
-                hierarchy: skuRows
-                  .filter((r) => r.sku_option_option_id)
-                  .map((r) => {
-                    const option = options.find(
-                      (o) => o.id === r.sku_option_option_id,
-                    );
-                    return {
-                      option_id: r.sku_option_option_id!,
-                      option_name: option?.value ?? "",
-                    };
-                  }),
-              }),
+              (skuRows) => {
+                const firstSku = skuRows[0];
+                const skuOptions = firstSku.sku_options ?? {};
+
+                return {
+                  id: firstSku.sku_id!,
+                  quantity: firstSku.quantity!,
+                  createdAt: firstSku.sku_createdAt!,
+                  hierarchy: Object.entries(skuOptions).map(
+                    ([variantId, optionData]) => ({
+                      option_id: optionData.id,
+                      option_name: optionData.value,
+                    }),
+                  ),
+                };
+              },
             );
 
             return {

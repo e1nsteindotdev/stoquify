@@ -1,42 +1,12 @@
-# TODOS
-- [X] Add cart functionality
-- [X] Add full ordering system
-- [X] Add animations to the storefront
-- [X] Simple analytics
-- [X] Simple POS
-- [ ] Automate full onboarding with one command.
-- [ ] Make the whole app a PWA and finish its ui
-- [ ] Figure out how to deploy for 10 clients with $0 cost and how to do it fast, and with a seamless to fixes bugs
-
-## FEATURES PHASE 02
-- [ ] Add loyalty system (notify for discounts and gifts)
-- [ ] Add telegram ai texter (notify for discounts, track orders ...)
-- [ ] Add AI image generator & social media posters/stories generator
+# TODO
+- [ ] MIGRATE TO LIVESTORE DB
+- [ ] RIGL L PWA
+- [ ] HANDLE COMPLEX IMAGE UPLOADING 
+- [ ] HANDLE AUTH
+- [ ] MAYBE RIGHT TESTS
+- [ ] FIND A WAY TO FEED A NEW STOREFRONT TO AN LLM
+- [ ] FIND A WAY TO DO A FULL ONBOARD WITH ONE SIMPLE FORM
 
 
-### PORTFOLIO ONES
-- [X] Unified dashboard: products, inventory, orders
-- [X] Responsive, fast frontend (Next.js + Tailwind + charts)
-- [ ] Cache most of the data (Both in the store and in the dashboard) and add a background worker for syncing data from stores
-- [ ] Analytics & visualizations (sales, stock trends)
-- [ ] Automated alerts for low stock / sales spikes
-- [ ] Error logging and retry for API failures
-- [ ] Roles: Admin / Staff
-- [ ] Auth & granular permissions
-
-###Optional extras that scream “experienced”
-- [ ] Webhooks to keep inventory updated in real-time
-- [ ] CI/CD pipeline for staging/production
-- [ ] Feature flags to test new integrations
-
--> MIGRATE TO EFFECT & TANSTACK DB
-    - reduce the cost because now we're with cloudflare not 
-    - have wide event tracing to easily debug
-    - support offline writes & reads
-    - never have an empty state.
-
--> STAY WTIH CONVEX
-    - reactive queries out of the box
-    - less code
-    - less time migrating
-    
+### AFTER
+- [ ] add pixo like compressor into the app instead of doing network calls. 

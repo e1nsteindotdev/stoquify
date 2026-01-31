@@ -19,7 +19,6 @@ export function useGetIndexedDBImg(id: number | null): string | null {
       try {
         const file: StoredFile | null = await fileStorage.get(id);
         const all_images = await fileStorage.getAll()
-        console.log('all file : ', all_images)
         if (file?.blob) {
           objectUrl = URL.createObjectURL(file.blob);
           setImgUrl(objectUrl);
