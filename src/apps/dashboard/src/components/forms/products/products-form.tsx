@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { Duration, Effect } from "effect";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,19 +46,25 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const product = store.query(products$(slug))?.[0];
 
+  // Generate productId once and keep it stable for new products
+  const newProductIdRef = useRef<string | null>(null);
+  if (isNew && newProductIdRef.current === null) {
+    newProductIdRef.current = crypto.randomUUID();
+  }
+
   const productId = useMemo(
-    () => product?.id ?? crypto.randomUUID(),
-    [product],
+    () => product?.id ?? newProductIdRef.current ?? crypto.randomUUID(),
+    [product, isNew],
   );
 
   const defaultValues = useMemo(() => {
     if (!product) {
       return {
-        title: "Random Product Title",
-        desc: "desc",
+        title: "",
+        desc: "",
         categoryId: "",
-        price: 12000,
-        cost: 2500,
+        price: 0,
+        cost: 0,
         discount: undefined,
         status: "incomplete" as const,
         quantity: 0,
@@ -164,17 +170,13 @@ export function ProductForm({ slug }: { slug?: string }) {
         if (isNew) {
           yield* Effect.try({
             try: () => {
-              const result = store.commit(
+              store.commit(
                 events.productInserted({
                   id: productId,
                   shop_id: shopId,
                   ...productValuesToInsert,
                 } as any),
               );
-              const productRaw = store.query({
-                query: `SELECT * FROM products WHERE id = '${productId}'`,
-                bindValues: {},
-              });
             },
             catch: (e) =>
               Effect.gen(function* () {
@@ -233,8 +235,22 @@ export function ProductForm({ slug }: { slug?: string }) {
                   ),
                 );
 
-                if (image.deletedAt === null && image.indexedDBId) {
-                  imageService.deleteLocalImage(image.indexedDBId);
+                // Delete from local storage if image is marked as deleted
+                if (image.deletedAt !== null && image.indexedDBId) {
+                  yield* Effect.forkDaemon(
+                    imageService
+                      .deleteLocalImage(image.indexedDBId)
+                      .pipe(
+                        Effect.catchAll((error) =>
+                          Effect.sync(() =>
+                            console.error(
+                              "Failed to delete local image:",
+                              error,
+                            ),
+                          ),
+                        ),
+                      ),
+                  );
                 }
 
                 return;
@@ -404,43 +420,68 @@ export function ProductForm({ slug }: { slug?: string }) {
           ),
         );
 
+        // Build a mapping of old option IDs to new option IDs for new products
+        const variantOptionIdMapping = new Map<string, string>();
+
         // handle variants
         if (isNew) {
-          // For new products, simply insert all variants
-          variants.forEach((variant, variantIndex) => {
+          // For new products, insert all variants and build ID mappings
+          for (
+            let variantIndex = 0;
+            variantIndex < variants.length;
+            variantIndex++
+          ) {
+            const variant = variants[variantIndex];
             const variantId = crypto.randomUUID();
-            const optionIds: string[] = [];
+            const options: Array<{
+              id: string;
+              value: string;
+              createdAt: Date;
+            }> = [];
 
-            // Generate option IDs
-            for (let i = 0; i < variant.options.length; i++) {
-              optionIds.push(crypto.randomUUID());
+            // Generate new option IDs and map old form IDs to new ones
+            for (const option of variant.options) {
+              const newOptionId = crypto.randomUUID();
+              // Map the old option value/index to the new ID
+              // We'll use a composite key: "variantName:optionValue"
+              const oldOptionKey = `${variant.name}:${option}`;
+              variantOptionIdMapping.set(oldOptionKey, newOptionId);
+              options.push({
+                id: newOptionId,
+                value: option,
+                createdAt,
+              });
             }
 
             // Insert variant with options and empty skus array
-            store.commit(
-              events.variantInserted({
-                id: variantId,
-                shop_id: shopId,
-                product_id: productId,
-                name: variant.name,
-                createdAt,
-                options: optionIds.map((id, i) => ({
-                  id,
-                  value: variant.options[i],
-                  createdAt,
-                })),
-                skus: [],
-              }),
-            );
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.variantInserted({
+                    id: variantId,
+                    shop_id: shopId,
+                    product_id: productId,
+                    name: variant.name,
+                    createdAt,
+                    options,
+                    skus: [],
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to insert variant: ${e}`),
+            });
 
             // Set variant order
-            store.commit(
-              (events as any).variantOrderUpdated({
-                id: variantId,
-                displayOrder: variantIndex + 1,
-              }),
-            );
-          });
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  (events as any).variantOrderUpdated({
+                    id: variantId,
+                    displayOrder: variantIndex + 1,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to update variant order: ${e}`),
+            });
+          }
         } else {
           // For existing products, always compare and determine what to add/remove
           const existingVariants = extractExistingVariants(
@@ -452,66 +493,117 @@ export function ProductForm({ slug }: { slug?: string }) {
           );
 
           // Delete variants that no longer exist
-          toRemove.forEach((variantId) => {
-            store.commit(
-              events.variantDeleted({
-                id: variantId,
-                deletedAt,
-              }),
-            );
-          });
+          for (const variantId of toRemove) {
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.variantDeleted({
+                    id: variantId,
+                    deletedAt,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to delete variant: ${e}`),
+            });
+          }
 
-          // Insert new variants
-          toAdd.forEach((variant, variantIndex) => {
+          // Insert new variants and build ID mappings
+          for (
+            let variantIndex = 0;
+            variantIndex < toAdd.length;
+            variantIndex++
+          ) {
+            const variant = toAdd[variantIndex];
             const variantId = crypto.randomUUID();
-            const optionIds: string[] = [];
+            const options: Array<{
+              id: string;
+              value: string;
+              createdAt: Date;
+            }> = [];
 
-            // Generate option IDs
-            const options = variant.options.map((option) => ({
-              id: crypto.randomUUID(),
-              value: option,
-              createdAt,
-            }));
+            // Generate new option IDs and map old form values to new IDs
+            for (const option of variant.options) {
+              const newOptionId = crypto.randomUUID();
+              const oldOptionKey = `${variant.name}:${option}`;
+              variantOptionIdMapping.set(oldOptionKey, newOptionId);
+              options.push({
+                id: newOptionId,
+                value: option,
+                createdAt,
+              });
+            }
 
             // Insert variant with options and empty skus array
-            store.commit(
-              events.variantInserted({
-                id: variantId,
-                shop_id: shopId,
-                product_id: productId,
-                name: variant.name,
-                createdAt,
-                options,
-                skus: [],
-              }),
-            );
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.variantInserted({
+                    id: variantId,
+                    shop_id: shopId,
+                    product_id: productId,
+                    name: variant.name,
+                    createdAt,
+                    options,
+                    skus: [],
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to insert variant: ${e}`),
+            });
 
             // Set variant order
-            store.commit(
-              (events as any).variantOrderUpdated({
-                id: variantId,
-                displayOrder: variantIndex + 1,
-              }),
-            );
-          });
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  (events as any).variantOrderUpdated({
+                    id: variantId,
+                    displayOrder: variantIndex + 1,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to update variant order: ${e}`),
+            });
+          }
         }
 
         // handle SKUs
         if (isNew) {
-          // For new products, simply insert all SKUs
-          skus.forEach((sku) => {
-            store.commit(
-              events.skuInserted({
-                id: sku.id || crypto.randomUUID(),
-                shop_id: shopId,
-                product_id: productId,
-                quantity: sku.quantity,
-                options: sku.options,
-                createdAt,
-                deletedAt: null,
-              }),
-            );
-          });
+          // For new products, map old option IDs to new ones before inserting SKUs
+          for (const sku of skus) {
+            const mappedOptions: Record<string, { id: string; value: string }> =
+              {};
+
+            // Map each option in the SKU to use the newly generated IDs
+            for (const [variantName, optionData] of Object.entries(
+              sku.options,
+            )) {
+              const optionKey = `${variantName}:${optionData.value}`;
+              const newOptionId = variantOptionIdMapping.get(optionKey);
+
+              if (newOptionId) {
+                mappedOptions[variantName] = {
+                  id: newOptionId,
+                  value: optionData.value,
+                };
+              } else {
+                // Fallback: use original if mapping not found (shouldn't happen)
+                mappedOptions[variantName] = optionData;
+              }
+            }
+
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.skuInserted({
+                    id: crypto.randomUUID(),
+                    shop_id: shopId,
+                    product_id: productId,
+                    quantity: sku.quantity,
+                    options: mappedOptions,
+                    createdAt,
+                    deletedAt: null,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to insert SKU: ${e}`),
+            });
+          }
         } else {
           // For existing products, compare and determine what to add/remove/update
           const existingSkus = extractExistingSkus(
@@ -526,39 +618,70 @@ export function ProductForm({ slug }: { slug?: string }) {
           );
 
           // Delete SKUs that no longer exist
-          toRemove.forEach((skuId) => {
-            store.commit(
-              events.skuDeleted({
-                id: skuId,
-                deletedAt,
-              }),
-            );
-          });
+          for (const skuId of toRemove) {
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.skuDeleted({
+                    id: skuId,
+                    deletedAt,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to delete SKU: ${e}`),
+            });
+          }
 
           // Update SKUs with changed quantities
-          toUpdate.forEach(({ id, quantity }) => {
-            store.commit(
-              events.skuPartialUpdated({
-                id,
-                quantity,
-              }),
-            );
-          });
+          for (const { id, quantity } of toUpdate) {
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.skuPartialUpdated({
+                    id,
+                    quantity,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to update SKU: ${e}`),
+            });
+          }
 
-          // Insert new SKUs
-          toInsert.forEach((sku) => {
-            store.commit(
-              events.skuInserted({
-                id: crypto.randomUUID(),
-                shop_id: shopId,
-                product_id: productId,
-                quantity: sku.quantity,
-                options: sku.options,
-                createdAt,
-                deletedAt: null,
-              }),
-            );
-          });
+          // Insert new SKUs with mapped option IDs
+          for (const sku of toInsert) {
+            const mappedOptions: Record<string, { id: string; value: string }> =
+              {};
+
+            for (const [variantName, optionData] of Object.entries(
+              sku.options,
+            )) {
+              const optionKey = `${variantName}:${optionData.value}`;
+              const newOptionId = variantOptionIdMapping.get(optionKey);
+
+              if (newOptionId) {
+                mappedOptions[variantName] = {
+                  id: newOptionId,
+                  value: optionData.value,
+                };
+              } else {
+                mappedOptions[variantName] = optionData;
+              }
+            }
+
+            yield* Effect.try({
+              try: () =>
+                store.commit(
+                  events.skuInserted({
+                    id: crypto.randomUUID(),
+                    shop_id: shopId,
+                    product_id: productId,
+                    quantity: sku.quantity,
+                    options: mappedOptions,
+                    createdAt,
+                    deletedAt: null,
+                  }),
+                ),
+              catch: (e) => new Error(`Failed to insert SKU: ${e}`),
+            });
+          }
         }
 
         //   // handle collections
@@ -944,10 +1067,10 @@ export function ProductForm({ slug }: { slug?: string }) {
     if (product?.id) {
       form.reset(defaultValues);
     }
-  }, [product?.id]);
+  }, [product?.id, defaultValues]);
 
   const isCompleted =
-    form.getFieldValue("images") &&
+    form.getFieldValue("images")?.length > 0 &&
     form.getFieldValue("price") !== 0 &&
     form.getFieldValue("title") &&
     form.getFieldValue("categoryId")
@@ -1085,13 +1208,13 @@ export function ProductForm({ slug }: { slug?: string }) {
                 </CardHeader>
                 <CardContent>
                   <form.Subscribe
-                    selector={(state) => [
-                      state.values.categoryId,
-                      state.values.price,
-                      state.values.title,
-                      state.values.images,
-                    ]}
-                    children={([categoryId, title, price, images]) => {
+                    selector={(state) => ({
+                      categoryId: state.values.categoryId,
+                      price: state.values.price,
+                      title: state.values.title,
+                      images: state.values.images,
+                    })}
+                    children={({ categoryId, price, title, images }) => {
                       if (categoryId && title && price && images) {
                         form.setFieldValue("status", "active");
                       }
