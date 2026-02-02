@@ -144,8 +144,9 @@ export const products$ = (id?: string) =>
                     'shop_id', s.shop_id,
                     'product_id', s.product_id,
                     'quantity', s.quantity,
-                    'options', json(s.options),
-                    'createdAt', s.createdAt
+                    'options', s.options,
+                    'createdAt', s.createdAt,
+                    'deletedAt', s.deletedAt
                   )), '[]')
                   FROM product_skus s
                   WHERE s.product_id = p.id AND s.deletedAt IS NULL

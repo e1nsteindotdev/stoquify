@@ -14,11 +14,14 @@ const VariantsField = lazy(
   () => import("@/components/forms/products/variants/variants-field.tsx"),
 );
 const StockageStratField = lazy(
-  () => import("@/components/forms/products/product/stockage-strat-field.tsx"),
+  () => import("@/components/forms/products/variants/stockage-strat-field.tsx"),
 );
 const PricingField = lazy(
   () => import("@/components/forms/products/product/pricing-field.tsx"),
 );
+
+
+const StockageField = lazy(() => import("@/components/forms/products/variants/stockage-field.tsx"));
 
 const CollectionsField = lazy(
   () => import("@/components/forms/products/product/collections-field.tsx"),
@@ -41,6 +44,7 @@ export const { useAppForm, withForm, withFieldGroup } = createFormHook({
     VariantsField,
     StockageStratField,
     PricingField,
+    StockageField,
     CollectionsField,
   },
   formComponents: {

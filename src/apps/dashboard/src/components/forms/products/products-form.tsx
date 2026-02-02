@@ -23,14 +23,19 @@ import { useAppForm } from "@/hooks/form";
 import { useStore } from "@livestore/react";
 import { products$ } from "@/livestore/schema/products";
 import { events, shopId$ } from "@/livestore/schema";
-import type { ProductImage } from "@/livestore/schema/products/types";
+import type { ProductImage, SKU } from "@/livestore/schema/products/types";
+import type { NewVariantInput } from "@/livestore/schema/products/types";
 import { Images } from "@/lib/services/images-service";
 import { runtime } from "@/lib/effect-runtime";
 import {
   compareVariants,
+  compareSkus,
   extractExistingVariants,
+  extractExistingSkus,
   type VariantInput,
   type QueryVariant,
+  type SkuInput,
+  type ExistingSku,
 } from "@/lib/variants-helper";
 
 export function ProductForm({ slug }: { slug?: string }) {
@@ -60,7 +65,8 @@ export function ProductForm({ slug }: { slug?: string }) {
         oldPrice: undefined,
         stockingStrategy: "by_variants" as const,
         images: [] as ProductImage[],
-        variants: [],
+        variants: [] as NewVariantInput[],
+        skus: [] as SKU[],
         collections: new Set<string>(),
       };
     }
@@ -77,6 +83,34 @@ export function ProductForm({ slug }: { slug?: string }) {
       createdAt: new Date(),
       deletedAt: null,
     }));
+
+    // Extract SKUs from all variants (SKUs are stored on each variant in the query)
+    const skus: SKU[] = [];
+    product.variants?.forEach((variant) => {
+      if (variant.skus && Array.isArray(variant.skus)) {
+        variant.skus.forEach((sku) => {
+          // Only add unique SKUs
+          if (!skus.find((s) => s.id === sku.id)) {
+            skus.push({
+              id: sku.id,
+              shop_id: product.shop_id,
+              product_id: product.id,
+              quantity: sku.quantity ?? 0,
+              options: sku.options || {},
+              createdAt: sku.createdAt ? new Date(sku.createdAt) : new Date(),
+              deletedAt: null,
+            });
+          }
+        });
+      }
+    });
+
+    // Transform variants to NewVariantInput format
+    const variants: NewVariantInput[] = (product.variants ?? []).map((v) => ({
+      name: v.name,
+      options: [...(v.options || [])],
+    }));
+
     return {
       title: product.title ?? "",
       desc: product.desc ?? "",
@@ -89,16 +123,17 @@ export function ProductForm({ slug }: { slug?: string }) {
       oldPrice: product.oldPrice ?? undefined,
       stockingStrategy: product.stockingStrategy ?? "by_variants",
       images,
-      variants: product.variants ?? [],
+      variants,
+      skus,
       collections,
     };
-  }, []);
+  }, [product]);
 
   const form = useAppForm({
     defaultValues,
     onSubmit: ({ value }) => {
-      const program = Effect.gen(function*() {
-        const { images, variants, collections, ...productValues } = value;
+      const program = Effect.gen(function* () {
+        const { skus, images, variants, collections, ...productValues } = value;
 
         const createdAt = new Date();
         const deletedAt = new Date();
@@ -136,10 +171,13 @@ export function ProductForm({ slug }: { slug?: string }) {
                   ...productValuesToInsert,
                 } as any),
               );
-              const productRaw = store.query({ query: `SELECT * FROM products WHERE id = '${productId}'`, bindValues: {}, })
+              const productRaw = store.query({
+                query: `SELECT * FROM products WHERE id = '${productId}'`,
+                bindValues: {},
+              });
             },
             catch: (e) =>
-              Effect.gen(function*() {
+              Effect.gen(function* () {
                 yield* Effect.annotateCurrentSpan({
                   productInsertion: {
                     stauts: "failed",
@@ -173,7 +211,7 @@ export function ProductForm({ slug }: { slug?: string }) {
         yield* Effect.forEach(
           images,
           (image) =>
-            Effect.gen(function*() {
+            Effect.gen(function* () {
               const isNewImage = !product?.images.some(
                 (oldImage) => oldImage.id === image.id,
               );
@@ -332,7 +370,7 @@ export function ProductForm({ slug }: { slug?: string }) {
               ctx.totalDurationMs = Date.now() - imageStartTime;
             }).pipe(
               Effect.catchAll((error) =>
-                Effect.gen(function*() {
+                Effect.gen(function* () {
                   console.error(`Failed to process image:`, error);
                 }),
               ),
@@ -341,7 +379,7 @@ export function ProductForm({ slug }: { slug?: string }) {
         ).pipe(
           Effect.timed,
           Effect.andThen(([duration]) =>
-            Effect.gen(function*() {
+            Effect.gen(function* () {
               const msDuration = Duration.toMillis(duration);
               const successCount = imageContexts.filter(
                 (item) => item.ctx.status === "success",
@@ -435,9 +473,8 @@ export function ProductForm({ slug }: { slug?: string }) {
               createdAt,
             }));
 
-
             // Insert variant with options and empty skus array
-            const variantInsertResult = store.commit(
+            store.commit(
               events.variantInserted({
                 id: variantId,
                 shop_id: shopId,
@@ -458,7 +495,72 @@ export function ProductForm({ slug }: { slug?: string }) {
             );
           });
         }
-        //
+
+        // handle SKUs
+        if (isNew) {
+          // For new products, simply insert all SKUs
+          skus.forEach((sku) => {
+            store.commit(
+              events.skuInserted({
+                id: sku.id || crypto.randomUUID(),
+                shop_id: shopId,
+                product_id: productId,
+                quantity: sku.quantity,
+                options: sku.options,
+                createdAt,
+                deletedAt: null,
+              }),
+            );
+          });
+        } else {
+          // For existing products, compare and determine what to add/remove/update
+          const existingSkus = extractExistingSkus(
+            product as
+              | { variants?: Array<{ skus?: ExistingSku[] }> }
+              | undefined,
+          );
+
+          const { toRemove, toUpdate, toInsert } = compareSkus(
+            existingSkus,
+            skus as SkuInput[],
+          );
+
+          // Delete SKUs that no longer exist
+          toRemove.forEach((skuId) => {
+            store.commit(
+              events.skuDeleted({
+                id: skuId,
+                deletedAt,
+              }),
+            );
+          });
+
+          // Update SKUs with changed quantities
+          toUpdate.forEach(({ id, quantity }) => {
+            store.commit(
+              events.skuPartialUpdated({
+                id,
+                quantity,
+              }),
+            );
+          });
+
+          // Insert new SKUs
+          toInsert.forEach((sku) => {
+            store.commit(
+              events.skuInserted({
+                id: crypto.randomUUID(),
+                shop_id: shopId,
+                product_id: productId,
+                quantity: sku.quantity,
+                options: sku.options,
+                createdAt,
+                deletedAt: null,
+              }),
+            );
+          });
+        }
+
         //   // handle collections
         //   const currentCollectionIds = Array.from(collections);
         //   const previousCollectionIds = (product?.collections ?? []).map(
@@ -846,9 +948,9 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const isCompleted =
     form.getFieldValue("images") &&
-      form.getFieldValue("price") !== 0 &&
-      form.getFieldValue("title") &&
-      form.getFieldValue("categoryId")
+    form.getFieldValue("price") !== 0 &&
+    form.getFieldValue("title") &&
+    form.getFieldValue("categoryId")
       ? true
       : false;
 
@@ -933,6 +1035,38 @@ export function ProductForm({ slug }: { slug?: string }) {
                   children={(field) => (
                     <field.VariantsField productId={productId} />
                   )}
+                />
+              </InputsContainer>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <InputsTitle>Stockage</InputsTitle>
+              <InputsContainer>
+                <form.AppField
+                  name="stockingStrategy"
+                  children={(field) => <field.StockageStratField />}
+                />
+
+                <form.Subscribe
+                  selector={(state) => ({
+                    variants: state.values.variants,
+                    strat: state.values.stockingStrategy,
+                    skus: state.values.skus,
+                  })}
+                  children={({ variants, strat, skus }) => {
+                    return (
+                      <form.AppField
+                        name="skus"
+                        children={(field) => (
+                          <field.StockageField
+                            strat={strat}
+                            variants={variants}
+                            skus={skus}
+                          />
+                        )}
+                      />
+                    );
+                  }}
                 />
               </InputsContainer>
             </div>
