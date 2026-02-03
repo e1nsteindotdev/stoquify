@@ -13,7 +13,7 @@ import {
 
 export const productMaterializers = State.SQLite.materializers(productEvents, {
   "v1.ProductInserted": (product, { query }) => {
-    const existing = query(productsTable.select().where({ id: product.id }))
+    const existing = query(productsTable.select().where({ id: product.id }));
     if (existing.length > 0) {
       const result = productsTable.update(product).where({ id: product.id });
       return result;
@@ -67,7 +67,7 @@ export const productMaterializers = State.SQLite.materializers(productEvents, {
           shop_id: variant.shop_id,
           product_id: variant.product_id,
           quantity: sku.quantity,
-          options: sku.options, // JSON object: { "variantId": { "id": "optionId", "value": "Red" }, ... }
+          options: sku.options, // JSON object: { "variantKey": { "id": "optionId", "value": "Red" }, ... }
           createdAt: sku.createdAt,
         }),
       );

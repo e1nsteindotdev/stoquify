@@ -104,7 +104,7 @@ export const skusTable = State.SQLite.table({
     shop_id: State.SQLite.text(),
     product_id: State.SQLite.text(),
     quantity: State.SQLite.integer(),
-    options: State.SQLite.json(), // JSON object: { "variantId": { "id": "optionId", "value": "Red" }, ... }
+    options: State.SQLite.json(), // JSON object: { "variantKey": { "id": "optionId", "value": "Red" }, ... }
     createdAt: State.SQLite.integer({ schema: Schema.DateFromNumber }),
     deletedAt: State.SQLite.integer({
       nullable: true,

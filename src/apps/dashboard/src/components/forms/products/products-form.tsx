@@ -44,7 +44,7 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   const { store } = useStore();
 
-  const product = store.query(products$(slug))?.[0];
+  const product = isNew ? undefined : store.query(products$(slug))?.[0];
 
   // Generate productId once and keep it stable for new products
   const newProductIdRef = useRef<string | null>(null);
@@ -52,10 +52,14 @@ export function ProductForm({ slug }: { slug?: string }) {
     newProductIdRef.current = crypto.randomUUID();
   }
 
-  const productId = useMemo(
-    () => product?.id ?? newProductIdRef.current ?? crypto.randomUUID(),
-    [product, isNew],
-  );
+  const productId = useMemo(() => {
+    if (product?.id) return product.id;
+    if (!isNew && slug) return slug;
+    return newProductIdRef.current ?? crypto.randomUUID();
+  }, [product, isNew, slug]);
+
+  const variantKey = (name: string, options: string[]) =>
+    `${name}|${[...options].sort().join("|")}`;
 
   const defaultValues = useMemo(() => {
     if (!product) {
@@ -86,7 +90,7 @@ export function ProductForm({ slug }: { slug?: string }) {
       indexedDBId: (img as any).indexedDBId || null,
       displayOrder: img.displayOrder,
       hidden: img.hidden ? 1 : 0,
-      createdAt: new Date(),
+      createdAt: img.createdAt ? new Date(img.createdAt) : new Date(),
       deletedAt: null,
     }));
 
@@ -156,7 +160,12 @@ export function ProductForm({ slug }: { slug?: string }) {
           desc: productValues.desc || null,
           category_id: productValues.categoryId,
           price: Number(productValues.price),
-          cost: Number(productValues.cost) || null,
+          cost:
+            productValues.cost === null || productValues.cost === undefined
+              ? null
+              : String(productValues.cost).trim() === ""
+                ? null
+                : Number(productValues.cost),
           status: productValues.status,
           discount: productValues.discount ?? null,
           oldPrice: productValues.oldPrice ?? null,
@@ -212,8 +221,11 @@ export function ProductForm({ slug }: { slug?: string }) {
         // handle images
         yield* Effect.forEach(
           images,
-          (image) =>
-            Effect.gen(function* () {
+          (image) => {
+            let ctx: any | null = null;
+            let imageStartTime = 0;
+
+            return Effect.gen(function* () {
               const isNewImage = !product?.images.some(
                 (oldImage) => oldImage.id === image.id,
               );
@@ -256,8 +268,11 @@ export function ProductForm({ slug }: { slug?: string }) {
                 return;
               }
 
-              // Initialize image processing context
-              const ctx: any = {
+              if (image.deletedAt !== null) {
+                return;
+              }
+
+              ctx = {
                 imageType: "unknown",
                 originalSize: 0,
                 compressedSize: 0,
@@ -274,7 +289,7 @@ export function ProductForm({ slug }: { slug?: string }) {
               };
 
               imageContexts.push({ id: image.id, ctx });
-              const imageStartTime = Date.now();
+              imageStartTime = Date.now();
 
               // Step 1: Compression (blocking - fail stops this image)
               const compressionStart = Date.now();
@@ -381,17 +396,23 @@ export function ProductForm({ slug }: { slug?: string }) {
                   return Effect.fail(error);
                 }),
               );
-
-              // Finalize image processing
-              ctx.totalDurationMs = Date.now() - imageStartTime;
             }).pipe(
-              Effect.catchAll((error) =>
-                Effect.gen(function* () {
-                  console.error(`Failed to process image:`, error);
+              Effect.catchAll(() => {
+                if (ctx) {
+                  ctx.status = "failed";
+                }
+                return Effect.void;
+              }),
+              Effect.ensuring(
+                Effect.sync(() => {
+                  if (ctx) {
+                    ctx.totalDurationMs = Date.now() - imageStartTime;
+                  }
                 }),
               ),
-            ),
-          { concurrency: "unbounded" },
+            );
+          },
+          { concurrency: 3 },
         ).pipe(
           Effect.timed,
           Effect.andThen(([duration]) =>
@@ -487,6 +508,13 @@ export function ProductForm({ slug }: { slug?: string }) {
           const existingVariants = extractExistingVariants(
             product as { variants?: QueryVariant[] } | undefined,
           );
+          const variantIdByKey = new Map<string, string>();
+          for (const existing of existingVariants) {
+            variantIdByKey.set(
+              variantKey(existing.name, existing.options),
+              existing.id,
+            );
+          }
           const { toRemove, toAdd } = compareVariants(
             existingVariants,
             variants as unknown as VariantInput[],
@@ -514,6 +542,10 @@ export function ProductForm({ slug }: { slug?: string }) {
           ) {
             const variant = toAdd[variantIndex];
             const variantId = crypto.randomUUID();
+            variantIdByKey.set(
+              variantKey(variant.name, variant.options),
+              variantId,
+            );
             const options: Array<{
               id: string;
               value: string;
@@ -548,14 +580,21 @@ export function ProductForm({ slug }: { slug?: string }) {
                 ),
               catch: (e) => new Error(`Failed to insert variant: ${e}`),
             });
+          }
 
-            // Set variant order
+          // Set variant order for all current variants (existing + new)
+          for (let index = 0; index < variants.length; index++) {
+            const variant = variants[index];
+            const id = variantIdByKey.get(
+              variantKey(variant.name, variant.options),
+            );
+            if (!id) continue;
             yield* Effect.try({
               try: () =>
                 store.commit(
                   (events as any).variantOrderUpdated({
-                    id: variantId,
-                    displayOrder: variantIndex + 1,
+                    id,
+                    displayOrder: index + 1,
                   }),
                 ),
               catch: (e) => new Error(`Failed to update variant order: ${e}`),
@@ -751,7 +790,7 @@ export function ProductForm({ slug }: { slug?: string }) {
           Effect.annotateCurrentSpan({
             "form.error": e,
             "form.status": "failed",
-          }),
+          }).pipe(Effect.andThen(Effect.fail(e))),
         ),
         Effect.withSpan("ProductFormSubmit"),
       );
@@ -1064,18 +1103,10 @@ export function ProductForm({ slug }: { slug?: string }) {
 
   // Keep form in sync when product loads
   useEffect(() => {
-    if (product?.id) {
-      form.reset(defaultValues);
-    }
-  }, [product?.id, defaultValues]);
-
-  const isCompleted =
-    form.getFieldValue("images")?.length > 0 &&
-    form.getFieldValue("price") !== 0 &&
-    form.getFieldValue("title") &&
-    form.getFieldValue("categoryId")
-      ? true
-      : false;
+    if (!product?.id) return;
+    if (form.state.isDirty) return;
+    form.reset(defaultValues);
+  }, [product?.id, defaultValues, form]);
 
   return (
     <div className="w-full flex items-start justify-center p-6 pb-20">
@@ -1215,9 +1246,12 @@ export function ProductForm({ slug }: { slug?: string }) {
                       images: state.values.images,
                     })}
                     children={({ categoryId, price, title, images }) => {
-                      if (categoryId && title && price && images) {
-                        form.setFieldValue("status", "active");
-                      }
+                      const isCompleted =
+                        Boolean(categoryId) &&
+                        Boolean(title) &&
+                        Number(price) > 0 &&
+                        (images?.length ?? 0) > 0;
+
                       return (
                         <form.Field
                           name="status"

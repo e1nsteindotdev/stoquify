@@ -62,7 +62,7 @@ export type SKU = {
   shop_id: string;
   product_id: string;
   quantity: number;
-  options: Record<string, { id: string; value: string }>; // JSON object: { "variantId": { "id": "optionId", "value": "Red" }, ... }
+  options: Record<string, { id: string; value: string }>; // JSON object: { "variantKey": { "id": "optionId", "value": "Red" }, ... }
   createdAt: Date;
   deletedAt: Date | null;
 };
