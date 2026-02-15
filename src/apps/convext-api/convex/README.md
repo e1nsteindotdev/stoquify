@@ -23,9 +23,6 @@ export const myQueryFunction = query({
     // See https://docs.convex.dev/database/reading-data.
     const documents = await ctx.db.query("tablename").collect();
 
-    // Arguments passed from the client are properties of the args object.
-    console.log(args.first, args.second);
-
     // Write arbitrary JavaScript here: filter, aggregate, build derived data,
     // remove non-public properties, or create new objects.
     return documents;
@@ -79,9 +76,7 @@ function handleButtonPress() {
   mutation({ first: "Hello!", second: "me" });
   // OR
   // use the result once the mutation has completed
-  mutation({ first: "Hello!", second: "me" }).then((result) =>
-    console.log(result),
-  );
+  mutation({ first: "Hello!", second: "me" }).then((result) => console.log(result),);
 }
 ```
 

@@ -191,7 +191,7 @@ export function ProductForm({ slug }: { slug?: string }) {
               Effect.gen(function* () {
                 yield* Effect.annotateCurrentSpan({
                   productInsertion: {
-                    stauts: "failed",
+                    "form.status": "failed",
                     error: String(e),
                   },
                 });
@@ -1332,7 +1332,7 @@ export function ProductForm({ slug }: { slug?: string }) {
                 <Button
                   type="submit"
                   className="w-full text-[16px] py-5"
-                  disabled={!canSubmit || !isDirty}
+                  disabled={!canSubmit || (!!slug && !isDirty)}
                 >
                   {isSubmitting ? "..." : "Enregistrer"}
                 </Button>
