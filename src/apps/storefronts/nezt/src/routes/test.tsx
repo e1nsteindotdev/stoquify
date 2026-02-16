@@ -17,7 +17,7 @@ interface EventItem {
   eventEncoded: Event
 }
 
-const storeId = "nezt-livestore-store-1"
+const storeId = "nezt-livestore-store-6"
 const payload = { authToken: "insecure-token-change-me" }
 
 export const Route = createFileRoute('/test')({

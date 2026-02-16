@@ -16,20 +16,25 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   useEffect(() => {
-    console.log('hello world from index')
     const fetchCatalog = async () => {
       try {
         const res = await fetch(
-          "http://localhost:8780/?storeId=nezt-livestore-store-1&shopId=random-shop-id",
+          "http://localhost:8780/catalog?shopId=random-shop-id",
         );
-        console.log(res)
-        const data = await res.json();
-        console.log("Catalog:", data);
+        if (res.ok) {
+          console.log("res ok ", res.ok);
+          const data = await res.json();
+          console.log("full catalog from livestore:", data);
+        } else {
+          console.log(await res.body);
+          console.log("res is not okay : ", res.ok);
+        }
       } catch (e) {
         console.error("Failed to fetch catalog:", e);
       }
     };
     fetchCatalog();
+    console.log("finsihed fetching the catalog");
   }, []);
 
   return (
