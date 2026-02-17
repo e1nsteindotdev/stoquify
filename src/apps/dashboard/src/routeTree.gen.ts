@@ -13,6 +13,7 @@ import { Route as LivestoreRouteImport } from './routes/livestore'
 import { Route as DebugRouteImport } from './routes/debug'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
+import { Route as DashboardCommandesIndexRouteImport } from './routes/_dashboard/commandes/index'
 import { Route as DashboardProduitsCreateRouteImport } from './routes/_dashboard/produits/create'
 import { Route as DashboardProduitsSlugRouteImport } from './routes/_dashboard/produits/$slug'
 import { Route as DashboardCommandesSlugRouteImport } from './routes/_dashboard/commandes/$slug'
@@ -35,6 +36,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DashboardProduitsIndexRoute = DashboardProduitsIndexRouteImport.update({
   id: '/produits/',
   path: '/produits/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCommandesIndexRoute = DashboardCommandesIndexRouteImport.update({
+  id: '/commandes/',
+  path: '/commandes/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProduitsCreateRoute = DashboardProduitsCreateRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
   '/produits/create': typeof DashboardProduitsCreateRoute
+  '/commandes': typeof DashboardCommandesIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
   '/produits/create': typeof DashboardProduitsCreateRoute
+  '/commandes': typeof DashboardCommandesIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesById {
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
   '/_dashboard/produits/create': typeof DashboardProduitsCreateRoute
+  '/_dashboard/commandes/': typeof DashboardCommandesIndexRoute
   '/_dashboard/produits/': typeof DashboardProduitsIndexRoute
 }
 export interface FileRouteTypes {
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/commandes/$slug'
     | '/produits/$slug'
     | '/produits/create'
+    | '/commandes'
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/commandes/$slug'
     | '/produits/$slug'
     | '/produits/create'
+    | '/commandes'
     | '/produits'
   id:
     | '__root__'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
     | '/_dashboard/produits/create'
+    | '/_dashboard/commandes/'
     | '/_dashboard/produits/'
   fileRoutesById: FileRoutesById
 }
@@ -154,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardProduitsIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/commandes/': {
+      id: '/_dashboard/commandes/'
+      path: '/commandes'
+      fullPath: '/commandes'
+      preLoaderRoute: typeof DashboardCommandesIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/produits/create': {
       id: '/_dashboard/produits/create'
       path: '/produits/create'
@@ -190,6 +209,7 @@ interface DashboardRouteChildren {
   DashboardCommandesSlugRoute: typeof DashboardCommandesSlugRoute
   DashboardProduitsSlugRoute: typeof DashboardProduitsSlugRoute
   DashboardProduitsCreateRoute: typeof DashboardProduitsCreateRoute
+  DashboardCommandesIndexRoute: typeof DashboardCommandesIndexRoute
   DashboardProduitsIndexRoute: typeof DashboardProduitsIndexRoute
 }
 
@@ -198,6 +218,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCommandesSlugRoute: DashboardCommandesSlugRoute,
   DashboardProduitsSlugRoute: DashboardProduitsSlugRoute,
   DashboardProduitsCreateRoute: DashboardProduitsCreateRoute,
+  DashboardCommandesIndexRoute: DashboardCommandesIndexRoute,
   DashboardProduitsIndexRoute: DashboardProduitsIndexRoute,
 }
 

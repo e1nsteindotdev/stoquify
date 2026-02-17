@@ -1,6 +1,7 @@
 import { makeSchema, signal, State } from "@livestore/livestore";
 import { authEvents, authTables, authMaterializers } from "./auth";
 import { ordersEvents, ordersMaterializers, ordersTable } from "./orders";
+import * as orders from "./orders/index";
 import * as products from "./products";
 import {
   notificationEvents,
@@ -48,3 +49,4 @@ export const collections$ = products.collections$;
 export const productImages$ = products.productImages$;
 export const products$ = products.products$;
 export const variants$ = products.variants$;
+export const orders$ = orders.orders$;

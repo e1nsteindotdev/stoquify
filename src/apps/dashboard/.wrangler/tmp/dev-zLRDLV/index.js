@@ -62916,6 +62916,67 @@ var init_orders = __esm({
   }
 });
 
+// src/livestore/schema/orders/queries.ts
+var orders$;
+var init_queries = __esm({
+  "src/livestore/schema/orders/queries.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_mod10();
+    init_schema2();
+    orders$ = /* @__PURE__ */ __name(() => queryDb(
+      (get20) => {
+        const shopId = get20(shopId$);
+        return {
+          query: `
+          SELECT 
+            id,
+            shop_id,
+            address,
+            status,
+            createdAt,
+            deletedAt
+          FROM orders
+          WHERE shop_id = ? AND deletedAt IS NULL
+          ORDER BY createdAt DESC
+        `,
+          schema: Schema_exports2.Array(
+            Schema_exports2.Struct({
+              id: Schema_exports2.String,
+              shop_id: Schema_exports2.String,
+              address: Schema_exports2.parseJson(
+                Schema_exports2.Struct({
+                  firstName: Schema_exports2.String,
+                  lastName: Schema_exports2.String,
+                  phoneNumber: Schema_exports2.Number,
+                  wilaya: Schema_exports2.String,
+                  address: Schema_exports2.String
+                })
+              ),
+              status: Schema_exports2.String,
+              createdAt: Schema_exports2.DateFromNumber,
+              deletedAt: Schema_exports2.optional(Schema_exports2.NullOr(Schema_exports2.DateFromNumber))
+            })
+          ),
+          bindValues: [shopId]
+        };
+      },
+      {
+        label: "orders-all"
+      }
+    ), "orders$");
+  }
+});
+
+// src/livestore/schema/orders/index.ts
+var init_orders2 = __esm({
+  "src/livestore/schema/orders/index.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_queries();
+  }
+});
+
 // src/livestore/schema/products/tables.ts
 var productsTable, categoriesTable, productImagesTable, variantsTable, variantOptionsTable, skusTable, collectionsTable, collectionProductsTable, productPartialSchema, categoryPartialSchema, productImagePartialSchema, variantPartialSchema, skuPartialSchema, collectionPartialSchema, deletedSchema3;
 var init_tables = __esm({
@@ -63351,7 +63412,7 @@ var init_utils2 = __esm({
 
 // src/livestore/schema/products/queries.ts
 var categories$, collectionsWithProductIds$, collections$, productImages$, products$, variants$;
-var init_queries = __esm({
+var init_queries2 = __esm({
   "src/livestore/schema/products/queries.ts"() {
     "use strict";
     init_modules_watch_stub();
@@ -63726,7 +63787,7 @@ var init_products = __esm({
     init_tables();
     init_events2();
     init_materializers();
-    init_queries();
+    init_queries2();
     init_types();
   }
 });
@@ -63794,6 +63855,7 @@ __export(schema_exports, {
   collections$: () => collections$2,
   events: () => events,
   materializers: () => materializers2,
+  orders$: () => orders$2,
   productImages$: () => productImages$2,
   products$: () => products$2,
   schema: () => schema2,
@@ -63801,7 +63863,7 @@ __export(schema_exports, {
   tables: () => tables,
   variants$: () => variants$2
 });
-var tables, events, materializers2, shopId$, state, schema2, categories$2, collections$2, productImages$2, products$2, variants$2;
+var tables, events, materializers2, shopId$, state, schema2, categories$2, collections$2, productImages$2, products$2, variants$2, orders$2;
 var init_schema2 = __esm({
   "src/livestore/schema/index.ts"() {
     "use strict";
@@ -63809,6 +63871,7 @@ var init_schema2 = __esm({
     init_mod10();
     init_auth();
     init_orders();
+    init_orders2();
     init_products();
     init_notifications();
     tables = {
@@ -63846,17 +63909,311 @@ var init_schema2 = __esm({
     productImages$2 = productImages$;
     products$2 = products$;
     variants$2 = variants$;
+    orders$2 = orders$;
   }
 });
 
-// .wrangler/tmp/bundle-Yib2iv/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-q9AvtL/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-Yib2iv/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-q9AvtL/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cf-worker/index.ts
 init_modules_watch_stub();
+
+// src/cf-worker/actions.ts
+init_modules_watch_stub();
+
+// src/cf-worker/sql/queries.ts
+init_modules_watch_stub();
+var CHECKPOINT_TABLE = "catalog_checkpoint";
+var SCHEMA_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS products (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    desc TEXT,
+    category_id TEXT NOT NULL,
+    price REAL NOT NULL DEFAULT 0,
+    cost REAL,
+    status TEXT NOT NULL DEFAULT 'incomplete',
+    discount REAL,
+    oldPrice REAL,
+    stockingStrategy TEXT NOT NULL DEFAULT 'by_variants',
+    quantity INTEGER,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS product_images (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    indexedDBId INTEGER,
+    displayOrder INTEGER NOT NULL,
+    hidden INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS variants (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    displayOrder INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS variant_options (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    variant_id TEXT NOT NULL,
+    value TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS product_skus (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    options TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS collections (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS collection_products (
+    id TEXT PRIMARY KEY,
+    shop_id TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    deletedAt INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS ${CHECKPOINT_TABLE} (
+    storeId TEXT PRIMARY KEY,
+    lastSeqNum INTEGER NOT NULL DEFAULT 0
+  )`,
+  `CREATE TABLE IF NOT EXISTS eventlog (
+    storeId TEXT NOT NULL,
+    seqNum INTEGER NOT NULL,
+    eventName TEXT NOT NULL,
+    eventArgs TEXT,
+    clientId TEXT NOT NULL,
+    sessionId TEXT NOT NULL,
+    parentSeqNum INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_eventlog_store_seq ON eventlog (storeId, seqNum)`,
+  `CREATE INDEX IF NOT EXISTS idx_variants_product_display ON variants (product_id, displayOrder)`,
+  `CREATE INDEX IF NOT EXISTS idx_variants_shop ON variants (shop_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_variant_options_variant ON variant_options (variant_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_variant_options_value ON variant_options (value)`,
+  `CREATE INDEX IF NOT EXISTS idx_skus_product ON product_skus (product_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_skus_quantity ON product_skus (quantity)`
+];
+var CATALOG_QUERY = `
+  SELECT 
+    p.*, 
+    c.id as category_id, 
+    c.name as category_name, 
+    c.createdAt as category_createdAt, 
+    COALESCE((
+      SELECT json_group_array(json_object(
+        'id', pi.id,
+        'shop_id', pi.shop_id,
+        'product_id', pi.product_id,
+        'url', pi.url,
+        'indexedDBId', pi.indexedDBId,
+        'displayOrder', pi."displayOrder",
+        'hidden', pi.hidden,
+        'createdAt', pi.createdAt
+      )) FROM product_images pi 
+      WHERE pi.product_id = p.id AND pi.deletedAt IS NULL
+    ), '[]') as images, 
+    COALESCE((
+      SELECT json_group_array(json_object(
+        'id', col.id,
+        'shop_id', col.shop_id,
+        'name', col.name,
+        'createdAt', col.createdAt,
+        'deletedAt', col.deletedAt,
+        'collection_product_id', cp.id
+      )) FROM collections col
+      INNER JOIN collection_products cp ON cp.collection_id = col.id
+      WHERE cp.product_id = p.id AND col.deletedAt IS NULL
+    ), '[]') as collections, 
+    COALESCE((
+      SELECT json_group_array(json_object(
+        'id', v.id,
+        'shop_id', v.shop_id,
+        'product_id', v.product_id,
+        'name', v.name,
+        'displayOrder', v."displayOrder",
+        'createdAt', v.createdAt,
+        'options', (
+          SELECT COALESCE(json_group_array(CAST(vo.value AS TEXT)), '[]')
+          FROM variant_options vo
+          WHERE vo.variant_id = v.id AND vo.shop_id = v.shop_id AND vo.deletedAt IS NULL AND vo.value IS NOT NULL
+        ),
+        'skus', (
+          SELECT COALESCE(json_group_array(json_object(
+            'id', s.id,
+            'shop_id', s.shop_id,
+            'product_id', s.product_id,
+            'quantity', s.quantity,
+            'options', s.options,
+            'createdAt', s.createdAt,
+            'deletedAt', s.deletedAt
+          )), '[]')
+          FROM product_skus s
+          WHERE s.product_id = p.id AND s.deletedAt IS NULL
+        )
+      )) FROM variants v
+      WHERE v.product_id = p.id AND v.deletedAt IS NULL
+    ), '[]') as variants
+  FROM products p
+  LEFT JOIN categories c ON c.id = p.category_id
+  WHERE p.shop_id = ? AND p.deletedAt IS NULL
+`;
+var schemaReady = null;
+var ensureSchema = /* @__PURE__ */ __name(async (db) => {
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      for (const statement of SCHEMA_STATEMENTS) {
+        await execStatement(db, statement);
+      }
+    })();
+  }
+  await schemaReady;
+}, "ensureSchema");
+var queryCatalog = /* @__PURE__ */ __name(async (db, shopId) => {
+  const rows = await selectAll(db, CATALOG_QUERY, [
+    shopId
+  ]);
+  return rows.map((row) => ({
+    ...row,
+    images: parseJsonArray(row.images),
+    collections: parseJsonArray(row.collections),
+    variants: parseVariants(row.variants)
+  }));
+}, "queryCatalog");
+var queryCategories = /* @__PURE__ */ __name(async (db, shopId) => {
+  const rows = await selectAll(
+    db,
+    `SELECT id, shop_id, name, createdAt FROM categories WHERE shop_id = ? AND deletedAt IS NULL ORDER BY name ASC`,
+    [shopId]
+  );
+  return rows;
+}, "queryCategories");
+var queryCollections = /* @__PURE__ */ __name(async (db, shopId) => {
+  const rows = await selectAll(
+    db,
+    `SELECT
+      c.id,
+      c.shop_id,
+      c.name,
+      c.createdAt,
+      COALESCE((
+        SELECT json_group_array(cp.product_id)
+        FROM collection_products cp
+        WHERE cp.collection_id = c.id AND cp.deletedAt IS NULL
+      ), '[]') as productIds
+    FROM collections c
+    WHERE c.shop_id = ? AND c.deletedAt IS NULL
+    ORDER BY c.name ASC`,
+    [shopId]
+  );
+  return rows.map((row) => ({
+    ...row,
+    productIds: parseJsonArray(row.productIds)
+  }));
+}, "queryCollections");
+var parseJsonArray = /* @__PURE__ */ __name((value5) => {
+  if (value5 === null || value5 === void 0) {
+    return [];
+  }
+  if (Array.isArray(value5)) {
+    return value5;
+  }
+  if (typeof value5 === "string") {
+    try {
+      const parsed = JSON.parse(value5);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}, "parseJsonArray");
+var parseVariants = /* @__PURE__ */ __name((value5) => {
+  const variants = parseJsonArray(value5);
+  return variants.map((variant) => {
+    if (!variant || typeof variant !== "object") {
+      return variant;
+    }
+    const v = variant;
+    const skus = parseJsonArray(v.skus).map((sku) => {
+      if (!sku || typeof sku !== "object") {
+        return sku;
+      }
+      const skuRecord = sku;
+      if (typeof skuRecord.options === "string") {
+        try {
+          skuRecord.options = JSON.parse(skuRecord.options);
+        } catch {
+          skuRecord.options = {};
+        }
+      }
+      return skuRecord;
+    });
+    return { ...v, skus };
+  });
+}, "parseVariants");
+var execStatement = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
+  const prepared = db.prepare(sql2);
+  const bound = bindStatement(prepared, bindValues);
+  await bound.run();
+}, "execStatement");
+var selectAll = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
+  const prepared = db.prepare(sql2);
+  const bound = bindStatement(prepared, bindValues);
+  const result = await bound.all();
+  return result.results;
+}, "selectAll");
+var bindStatement = /* @__PURE__ */ __name((statement, bindValues) => {
+  if (!bindValues) {
+    return statement;
+  }
+  if (Array.isArray(bindValues)) {
+    return statement.bind(...bindValues);
+  }
+  if (typeof bindValues === "object" && bindValues !== null) {
+    const normalized = { ...bindValues };
+    for (const [key, value5] of Object.entries(bindValues)) {
+      const trimmed2 = key.replace(/^[$:@]/, "");
+      if (!(trimmed2 in normalized)) {
+        normalized[trimmed2] = value5;
+      }
+    }
+    return statement.bind(normalized);
+  }
+  return statement;
+}, "bindStatement");
 
 // src/cf-worker/sql-extractor.ts
 init_modules_watch_stub();
@@ -63971,16 +64328,16 @@ var CATALOG_EVENT_NAMES = /* @__PURE__ */ new Set([
   "v1.ProductImagesProductIdSet",
   "v1.ProductImagesReordered"
 ]);
-var schemaReady = null;
+var schemaReady2 = null;
 var ensureCatalogSchema = /* @__PURE__ */ __name(async (db) => {
-  if (!schemaReady) {
-    schemaReady = (async () => {
+  if (!schemaReady2) {
+    schemaReady2 = (async () => {
       for (const statement of CATALOG_SCHEMA_STATEMENTS) {
-        await execStatement(db, statement);
+        await execStatement2(db, statement);
       }
     })();
   }
-  await schemaReady;
+  await schemaReady2;
 }, "ensureCatalogSchema");
 var isCatalogEvent = /* @__PURE__ */ __name((eventName) => CATALOG_EVENT_NAMES.has(eventName), "isCatalogEvent");
 var extractBatchEventSql = /* @__PURE__ */ __name(async (events2, schema3, db, shouldIncludeEvent, queryCache) => {
@@ -64015,7 +64372,7 @@ var materializeEventsToD1 = /* @__PURE__ */ __name(async (args2) => {
       if (!stmt.sql) {
         continue;
       }
-      await execStatement(args2.db, stmt.sql, stmt.bindValues);
+      await execStatement2(args2.db, stmt.sql, stmt.bindValues);
     }
   }
 }, "materializeEventsToD1");
@@ -64138,7 +64495,7 @@ var loadExistingIds = /* @__PURE__ */ __name(async (db, tableName, ids3) => {
   for (let i = 0; i < idList.length; i += chunkSize) {
     const chunk4 = idList.slice(i, i + chunkSize);
     const placeholders = chunk4.map(() => "?").join(", ");
-    const rows = await selectAll(
+    const rows = await selectAll2(
       db,
       `SELECT id FROM ${tableName} WHERE id IN (${placeholders})`,
       chunk4
@@ -64175,7 +64532,7 @@ var extractIdFromBindValues = /* @__PURE__ */ __name((bindValues) => {
   }
   return null;
 }, "extractIdFromBindValues");
-var execStatement = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
+var execStatement2 = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
   const prepared = db.prepare(sql2);
   const { normalizedSql, values: values5 } = normalizeSql(sql2, bindValues);
   const stmt = normalizedSql === sql2 ? prepared : db.prepare(normalizedSql);
@@ -64185,7 +64542,7 @@ var execStatement = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
     await stmt.run();
   }
 }, "execStatement");
-var selectAll = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
+var selectAll2 = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
   const prepared = db.prepare(sql2);
   const { normalizedSql, values: values5 } = normalizeSql(sql2, bindValues);
   const stmt = normalizedSql === sql2 ? prepared : db.prepare(normalizedSql);
@@ -64208,7 +64565,12 @@ var normalizeSql = /* @__PURE__ */ __name((sql2, bindValues) => {
   return { normalizedSql, values: values5 };
 }, "normalizeSql");
 
-// src/cf-worker/index.ts
+// src/cf-worker/actions.ts
+var CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "*"
+};
 var schemaPromise = null;
 var getSchema = /* @__PURE__ */ __name(async () => {
   if (!schemaPromise) {
@@ -64216,222 +64578,6 @@ var getSchema = /* @__PURE__ */ __name(async () => {
   }
   return schemaPromise;
 }, "getSchema");
-var CHECKPOINT_TABLE = "catalog_checkpoint";
-var CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "*"
-};
-var CATALOG_QUERY = `
-  SELECT 
-    p.*, 
-    c.id as category_id, 
-    c.name as category_name, 
-    c.createdAt as category_createdAt, 
-    COALESCE((
-      SELECT json_group_array(json_object(
-        'id', pi.id,
-        'shop_id', pi.shop_id,
-        'product_id', pi.product_id,
-        'url', pi.url,
-        'indexedDBId', pi.indexedDBId,
-        'displayOrder', pi."displayOrder",
-        'hidden', pi.hidden,
-        'createdAt', pi.createdAt
-      )) FROM product_images pi 
-      WHERE pi.product_id = p.id AND pi.deletedAt IS NULL
-    ), '[]') as images, 
-    COALESCE((
-      SELECT json_group_array(json_object(
-        'id', col.id,
-        'shop_id', col.shop_id,
-        'name', col.name,
-        'createdAt', col.createdAt,
-        'deletedAt', col.deletedAt,
-        'collection_product_id', cp.id
-      )) FROM collections col
-      INNER JOIN collection_products cp ON cp.collection_id = col.id
-      WHERE cp.product_id = p.id AND col.deletedAt IS NULL
-    ), '[]') as collections, 
-    COALESCE((
-      SELECT json_group_array(json_object(
-        'id', v.id,
-        'shop_id', v.shop_id,
-        'product_id', v.product_id,
-        'name', v.name,
-        'displayOrder', v."displayOrder",
-        'createdAt', v.createdAt,
-        'options', (
-          SELECT COALESCE(json_group_array(CAST(vo.value AS TEXT)), '[]')
-          FROM variant_options vo
-          WHERE vo.variant_id = v.id AND vo.shop_id = v.shop_id AND vo.deletedAt IS NULL AND vo.value IS NOT NULL
-        ),
-        'skus', (
-          SELECT COALESCE(json_group_array(json_object(
-            'id', s.id,
-            'shop_id', s.shop_id,
-            'product_id', s.product_id,
-            'quantity', s.quantity,
-            'options', s.options,
-            'createdAt', s.createdAt,
-            'deletedAt', s.deletedAt
-          )), '[]')
-          FROM product_skus s
-          WHERE s.product_id = p.id AND s.deletedAt IS NULL
-        )
-      )) FROM variants v
-      WHERE v.product_id = p.id AND v.deletedAt IS NULL
-    ), '[]') as variants
-  FROM products p
-  LEFT JOIN categories c ON c.id = p.category_id
-  WHERE p.shop_id = ? AND p.deletedAt IS NULL
-`;
-var SCHEMA_STATEMENTS = [
-  `CREATE TABLE IF NOT EXISTS products (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    desc TEXT,
-    category_id TEXT NOT NULL,
-    price REAL NOT NULL DEFAULT 0,
-    cost REAL,
-    status TEXT NOT NULL DEFAULT 'incomplete',
-    discount REAL,
-    oldPrice REAL,
-    stockingStrategy TEXT NOT NULL DEFAULT 'by_variants',
-    quantity INTEGER,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS categories (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS product_images (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    url TEXT NOT NULL,
-    indexedDBId INTEGER,
-    displayOrder INTEGER NOT NULL,
-    hidden INTEGER NOT NULL DEFAULT 0,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS variants (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    displayOrder INTEGER NOT NULL DEFAULT 0,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS variant_options (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    variant_id TEXT NOT NULL,
-    value TEXT NOT NULL,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS product_skus (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    quantity INTEGER NOT NULL,
-    options TEXT NOT NULL,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS collections (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS collection_products (
-    id TEXT PRIMARY KEY,
-    shop_id TEXT NOT NULL,
-    collection_id TEXT NOT NULL,
-    product_id TEXT NOT NULL,
-    createdAt INTEGER NOT NULL,
-    deletedAt INTEGER
-  )`,
-  `CREATE TABLE IF NOT EXISTS ${CHECKPOINT_TABLE} (
-    storeId TEXT PRIMARY KEY,
-    lastSeqNum INTEGER NOT NULL DEFAULT 0
-  )`,
-  `CREATE TABLE IF NOT EXISTS eventlog (
-    storeId TEXT NOT NULL,
-    seqNum INTEGER NOT NULL,
-    eventName TEXT NOT NULL,
-    eventArgs TEXT,
-    clientId TEXT NOT NULL,
-    sessionId TEXT NOT NULL,
-    parentSeqNum INTEGER NOT NULL DEFAULT 0,
-    timestamp INTEGER NOT NULL
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_eventlog_store_seq ON eventlog (storeId, seqNum)`,
-  `CREATE INDEX IF NOT EXISTS idx_variants_product_display ON variants (product_id, displayOrder)`,
-  `CREATE INDEX IF NOT EXISTS idx_variants_shop ON variants (shop_id)`,
-  `CREATE INDEX IF NOT EXISTS idx_variant_options_variant ON variant_options (variant_id)`,
-  `CREATE INDEX IF NOT EXISTS idx_variant_options_value ON variant_options (value)`,
-  `CREATE INDEX IF NOT EXISTS idx_skus_product ON product_skus (product_id)`,
-  `CREATE INDEX IF NOT EXISTS idx_skus_quantity ON product_skus (quantity)`
-];
-var schemaReady2 = null;
-var cf_worker_default = {
-  async fetch(request2, env2) {
-    const url2 = new URL(request2.url);
-    const pathname = url2.pathname;
-    if (request2.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
-    }
-    if (pathname === "/events" && request2.method === "POST") {
-      return handleEvents(request2, env2.DB);
-    }
-    if (pathname === "/pull" && request2.method === "GET" || pathname === "/pull" && request2.method === "POST") {
-      return handlePull(request2, env2.DB);
-    }
-    if (pathname === "/ping" && request2.method === "GET") {
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" }
-      });
-    }
-    if (pathname === "/ping" && request2.method === "POST") {
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" }
-      });
-    }
-    if (pathname === "/catalog" && request2.method === "GET") {
-      return handleCatalog(request2, env2.DB);
-    }
-    if (pathname === "/categories" && request2.method === "GET") {
-      return handleCategories(request2, env2.DB);
-    }
-    if (pathname === "/collections" && request2.method === "GET") {
-      return handleCollections(request2, env2.DB);
-    }
-    return new Response("Not found", { status: 404, headers: CORS_HEADERS });
-  }
-};
-var ensureSchema = /* @__PURE__ */ __name(async (db) => {
-  if (!schemaReady2) {
-    schemaReady2 = (async () => {
-      for (const statement of SCHEMA_STATEMENTS) {
-        await execStatement2(db, statement);
-      }
-    })();
-  }
-  await schemaReady2;
-}, "ensureSchema");
 var handleEvents = /* @__PURE__ */ __name(async (request2, db) => {
   try {
     const body = await request2.json();
@@ -64464,6 +64610,7 @@ var handleEvents = /* @__PURE__ */ __name(async (request2, db) => {
         timestamp
       ).run();
     }
+    console.log("pushed events to eventlog :", events2);
     const eventInputs = events2.map((e) => ({
       name: e.name,
       args: e.args,
@@ -64480,8 +64627,7 @@ var handleEvents = /* @__PURE__ */ __name(async (request2, db) => {
       shouldIncludeEvent: isCatalogEvent
     });
     await db.prepare(
-      `
-      INSERT INTO ${CHECKPOINT_TABLE} (storeId, lastSeqNum) VALUES (?, ?)
+      `INSERT INTO ${CHECKPOINT_TABLE} (storeId, lastSeqNum) VALUES (?, ?)
       ON CONFLICT(storeId) DO UPDATE SET lastSeqNum = excluded.lastSeqNum
     `
     ).bind(storeId, maxSeqNum).run();
@@ -64494,6 +64640,62 @@ var handleEvents = /* @__PURE__ */ __name(async (request2, db) => {
     });
   }
 }, "handleEvents");
+var handleOrders = /* @__PURE__ */ __name(async (request2, db) => {
+  try {
+    const body = await request2.json();
+    const { storeId, order } = body;
+    if (!storeId || !order) {
+      return new Response("Invalid request: missing storeId or order", {
+        status: 400,
+        headers: CORS_HEADERS
+      });
+    }
+    await ensureSchema(db);
+    const orderId = crypto.randomUUID();
+    const clientId2 = "checkout-web";
+    const sessionId2 = crypto.randomUUID();
+    const seqNum = 1;
+    const timestamp = Date.now();
+    const eventArgs = {
+      id: orderId,
+      shop_id: "random-shop-id",
+      address: JSON.stringify({
+        firstName: order.firstName,
+        lastName: order.lastName,
+        phoneNumber: order.phoneNumber,
+        wilaya: order.wilaya,
+        address: order.address
+      }),
+      status: "pending",
+      createdAt: timestamp,
+      deletedAt: null
+    };
+    await db.prepare(
+      `INSERT INTO eventlog (storeId, seqNum, eventName, eventArgs, clientId, sessionId, parentSeqNum, timestamp)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      "nezt-livestore-store-7",
+      seqNum,
+      "v1.OrderCreated",
+      JSON.stringify(eventArgs),
+      clientId2,
+      sessionId2,
+      0,
+      timestamp
+    ).run();
+    console.log("pushed order event to the evnet log : ", orderId);
+    return Response.json(
+      { orderId, lastSeqNum: seqNum },
+      { headers: CORS_HEADERS }
+    );
+  } catch (error3) {
+    console.error("handleOrders error:", error3);
+    return new Response("Internal error", {
+      status: 500,
+      headers: CORS_HEADERS
+    });
+  }
+}, "handleOrders");
 var handlePull = /* @__PURE__ */ __name(async (request2, db) => {
   try {
     const url2 = new URL(request2.url);
@@ -64568,17 +64770,6 @@ var handleCatalog = /* @__PURE__ */ __name(async (request2, db) => {
     });
   }
 }, "handleCatalog");
-var queryCatalog = /* @__PURE__ */ __name(async (db, shopId) => {
-  const rows = await selectAll2(db, CATALOG_QUERY, [
-    shopId
-  ]);
-  return rows.map((row) => ({
-    ...row,
-    images: parseJsonArray(row.images),
-    collections: parseJsonArray(row.collections),
-    variants: parseVariants(row.variants)
-  }));
-}, "queryCatalog");
 var handleCategories = /* @__PURE__ */ __name(async (request2, db) => {
   try {
     const url2 = new URL(request2.url);
@@ -64600,14 +64791,6 @@ var handleCategories = /* @__PURE__ */ __name(async (request2, db) => {
     });
   }
 }, "handleCategories");
-var queryCategories = /* @__PURE__ */ __name(async (db, shopId) => {
-  const rows = await selectAll2(
-    db,
-    `SELECT id, shop_id, name, createdAt FROM categories WHERE shop_id = ? AND deletedAt IS NULL ORDER BY name ASC`,
-    [shopId]
-  );
-  return rows;
-}, "queryCategories");
 var handleCollections = /* @__PURE__ */ __name(async (request2, db) => {
   try {
     const url2 = new URL(request2.url);
@@ -64629,100 +64812,48 @@ var handleCollections = /* @__PURE__ */ __name(async (request2, db) => {
     });
   }
 }, "handleCollections");
-var queryCollections = /* @__PURE__ */ __name(async (db, shopId) => {
-  const rows = await selectAll2(
-    db,
-    `SELECT
-      c.id,
-      c.shop_id,
-      c.name,
-      c.createdAt,
-      COALESCE((
-        SELECT json_group_array(cp.product_id)
-        FROM collection_products cp
-        WHERE cp.collection_id = c.id AND cp.deletedAt IS NULL
-      ), '[]') as productIds
-    FROM collections c
-    WHERE c.shop_id = ? AND c.deletedAt IS NULL
-    ORDER BY c.name ASC`,
-    [shopId]
-  );
-  return rows.map((row) => ({
-    ...row,
-    productIds: parseJsonArray(row.productIds)
-  }));
-}, "queryCollections");
-var parseJsonArray = /* @__PURE__ */ __name((value5) => {
-  if (value5 === null || value5 === void 0) {
-    return [];
-  }
-  if (Array.isArray(value5)) {
-    return value5;
-  }
-  if (typeof value5 === "string") {
-    try {
-      const parsed = JSON.parse(value5);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
+
+// src/cf-worker/index.ts
+var cf_worker_default = {
+  async fetch(request2, env2) {
+    const url2 = new URL(request2.url);
+    const pathname = url2.pathname;
+    if (request2.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
-  }
-  return [];
-}, "parseJsonArray");
-var parseVariants = /* @__PURE__ */ __name((value5) => {
-  const variants = parseJsonArray(value5);
-  return variants.map((variant) => {
-    if (!variant || typeof variant !== "object") {
-      return variant;
+    if (pathname === "/events" && request2.method === "POST") {
+      return handleEvents(request2, env2.DB);
     }
-    const v = variant;
-    const skus = parseJsonArray(v.skus).map((sku) => {
-      if (!sku || typeof sku !== "object") {
-        return sku;
-      }
-      const skuRecord = sku;
-      if (typeof skuRecord.options === "string") {
-        try {
-          skuRecord.options = JSON.parse(skuRecord.options);
-        } catch {
-          skuRecord.options = {};
-        }
-      }
-      return skuRecord;
-    });
-    return { ...v, skus };
-  });
-}, "parseVariants");
-var execStatement2 = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
-  const prepared = db.prepare(sql2);
-  const bound = bindStatement(prepared, bindValues);
-  await bound.run();
-}, "execStatement");
-var selectAll2 = /* @__PURE__ */ __name(async (db, sql2, bindValues) => {
-  const prepared = db.prepare(sql2);
-  const bound = bindStatement(prepared, bindValues);
-  const result = await bound.all();
-  return result.results;
-}, "selectAll");
-var bindStatement = /* @__PURE__ */ __name((statement, bindValues) => {
-  if (!bindValues) {
-    return statement;
-  }
-  if (Array.isArray(bindValues)) {
-    return statement.bind(...bindValues);
-  }
-  if (typeof bindValues === "object" && bindValues !== null) {
-    const normalized = { ...bindValues };
-    for (const [key, value5] of Object.entries(bindValues)) {
-      const trimmed2 = key.replace(/^[$:@]/, "");
-      if (!(trimmed2 in normalized)) {
-        normalized[trimmed2] = value5;
-      }
+    if (pathname === "/orders" && request2.method === "POST") {
+      return handleOrders(request2, env2.DB);
     }
-    return statement.bind(normalized);
+    if (pathname === "/pull" && request2.method === "GET" || pathname === "/pull" && request2.method === "POST") {
+      return handlePull(request2, env2.DB);
+    }
+    if (pathname === "/ping" && request2.method === "GET") {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" }
+      });
+    }
+    if (pathname === "/ping" && request2.method === "POST") {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" }
+      });
+    }
+    if (pathname === "/catalog" && request2.method === "GET") {
+      return handleCatalog(request2, env2.DB);
+    }
+    if (pathname === "/categories" && request2.method === "GET") {
+      return handleCategories(request2, env2.DB);
+    }
+    if (pathname === "/collections" && request2.method === "GET") {
+      return handleCollections(request2, env2.DB);
+    }
+    return new Response("Not found", { status: 404, headers: CORS_HEADERS });
   }
-  return statement;
-}, "bindStatement");
+};
 
 // ../../../node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
 init_modules_watch_stub();
@@ -64767,7 +64898,7 @@ var jsonError = /* @__PURE__ */ __name(async (request2, env2, _ctx, middlewareCt
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-Yib2iv/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-q9AvtL/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -64800,7 +64931,7 @@ function __facade_invoke__(request2, env2, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-Yib2iv/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-q9AvtL/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron3, noRetry) {
     this.scheduledTime = scheduledTime;

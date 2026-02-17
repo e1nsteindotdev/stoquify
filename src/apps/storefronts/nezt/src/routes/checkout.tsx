@@ -140,13 +140,11 @@ function RouteComponent() {
 }
 
 function OrderForm() {
-  const sendOrder = useMutation(api.order.placeOrder);
   const cart = useCartStore((state) => state.cart);
-  const removeProductFromCart = useCartStore(
-    (state) => state.removeProductFromCart,
-  );
   const cartArray = Array.from(cart);
   const navigate = useNavigate();
+
+  const CF_WORKER_URL = import.meta.env.VITE_CF_WORKER_URL;
 
   const form = useForm({
     defaultValues: {
@@ -159,30 +157,37 @@ function OrderForm() {
     onSubmit: async ({
       value: { firstName, lastName, phoneNumber, address, wilaya },
     }) => {
-      const data = {
-        firstName,
-        lastName,
-        phoneNumber,
-        address,
-        wilaya,
-        order: cartArray.map(([productId, content]) => ({
-          quantity: content.quantity,
-          productId,
-          price: content.price,
-          selection: Object.entries(content.selection).map(([key, value]) => ({
-            variantOptionId: value.variantOptionId as Id<"variantOptions">,
-            variantId: key as Id<"variants">,
-          })),
-        })),
-      };
-      const orderId = await sendOrder(data);
-      if (orderId) {
-        // Clear cart
-        // cartArray.forEach(([productId]) => {
-        //   removeProductFromCart(productId)
-        // })
-        // Navigate to success page
-        navigate({ to: "/order-success", search: { orderId } });
+      const response = await fetch(`${CF_WORKER_URL}/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeId: "nezt-livestore-store-7",
+          order: {
+            firstName,
+            lastName,
+            phoneNumber,
+            wilaya,
+            address,
+            items: cartArray.map(([productId, content]) => ({
+              quantity: content.quantity,
+              productId,
+              price: content.price,
+              selection: Object.entries(content.selection).map(
+                ([key, value]) => ({
+                  variantOptionId:
+                    value.variantOptionId as Id<"variantOptions">,
+                  variantId: key as Id<"variants">,
+                }),
+              ),
+            })),
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const { orderId } = await response.json();
+        console.log('order pushed, the id is :', orderId)
+        // navigate({ to: "/order-success", search: { orderId } });
       }
     },
   });
