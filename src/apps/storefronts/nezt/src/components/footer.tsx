@@ -1,15 +1,13 @@
 import { UpArrow } from "./icons/up-arrow";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { settings } from "@/lib/dummyData";
 import { smoothScrollTo } from "../lib/scroll";
 
-
 export function Footer() {
-  const settings = useQuery(api.settings.getSettings);
-  const instagramLink = settings?.instagramLink || "";
-  const facebookLink = settings?.facebookLink || "";
-  const tiktokLink = settings?.tiktokLink || "";
-  const locationLink = settings?.locationLink || "";
+  const storeSettings = settings;
+  const instagramLink = storeSettings?.instagramLink || "";
+  const facebookLink = storeSettings?.facebookLink || "";
+  const tiktokLink = storeSettings?.tiktokLink || "";
+  const locationLink = storeSettings?.locationLink || "";
 
   return (
     <div className="pb-2 flex flex-1 w-full bg-primary relative">

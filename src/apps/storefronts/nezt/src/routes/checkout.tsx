@@ -12,8 +12,7 @@ import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { getTotal, useCartStore } from "@/lib/state";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "api/convex";
+import { wilayat } from "@/lib/dummyData";
 import { XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Id } from "api/data-model";
@@ -186,12 +185,12 @@ function OrderForm() {
 
       if (response.ok) {
         const { orderId } = await response.json();
-        console.log('order pushed, the id is :', orderId)
+        console.log("order pushed, the id is :", orderId);
         // navigate({ to: "/order-success", search: { orderId } });
       }
     },
   });
-  const wilayat = useQuery(api.order.getWilayat);
+  const wilayatData = wilayat;
   return (
     <div className="order-3 lg:order-1 relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white overflow-clip ">
       <div className="h-full w-[1px] bg-black absolute left-5 lg:left-14 bottom-0 lg:hidden" />
@@ -265,7 +264,7 @@ function OrderForm() {
                       </SelectTrigger>
                       <SelectContent className="">
                         <SelectGroup>
-                          {wilayat.map((wilaya) => (
+                          {wilayatData.map((wilaya) => (
                             <SelectItem value={wilaya.name} key={wilaya.name}>
                               {wilaya.htmlName}
                             </SelectItem>

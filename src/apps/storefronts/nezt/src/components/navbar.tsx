@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Image } from "./ui/image";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { settings } from "@/lib/dummyData";
 import { MenuIcon } from "./icons/menu-icon";
 import { OrderIcon } from "./icons/order-icon";
 import { Cart } from "./cart";
@@ -59,10 +58,10 @@ export function HeaderAnonc() {
 }
 
 export function Header() {
-  const settings = useQuery(api.settings.getSettings);
+  const storeSettings = settings;
   const { products } = useProducts();
   const productsCount = products?.length ?? 0;
-  const locationLink = settings?.locationLink || "";
+  const locationLink = storeSettings?.locationLink || "";
 
   return (
     <div className="w-full flex flex-col gap-1 justify-center items-start py-3 lg:py-5 px-2 lg:px-4">

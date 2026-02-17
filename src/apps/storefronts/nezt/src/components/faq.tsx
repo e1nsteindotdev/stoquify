@@ -1,10 +1,9 @@
 import { DownChevron } from "./icons/down-chevron";
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { faqs as faqData } from "@/lib/dummyData";
 
 export function FAQs() {
-  const faqs = useQuery(api.settings.getFAQs) || [];
+  const faqs = faqData;
 
   if (faqs.length === 0) {
     return null;
