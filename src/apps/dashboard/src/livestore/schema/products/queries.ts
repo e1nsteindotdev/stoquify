@@ -31,6 +31,40 @@ export const categories$ = queryDb(
   { label: "categories" },
 );
 
+export const collectionsWithProductIds$ = queryDb(
+  (get) => {
+    const shopId = get(shopId$);
+    return {
+      query: `
+        SELECT
+          c.id,
+          c.shop_id,
+          c.name,
+          c.createdAt,
+          COALESCE((
+            SELECT json_group_array(cp.product_id)
+            FROM collection_products cp
+            WHERE cp.collection_id = c.id AND cp.deletedAt IS NULL
+          ), '[]') as productIds
+        FROM collections c
+        WHERE c.shop_id = ? AND c.deletedAt IS NULL
+        ORDER BY c.name ASC
+      `,
+      schema: Schema.Array(
+        Schema.Struct({
+          id: Schema.String,
+          shop_id: Schema.String,
+          name: Schema.String,
+          createdAt: Schema.DateFromNumber,
+          productIds: Schema.parseJson(Schema.Array(Schema.String)),
+        }),
+      ),
+      bindValues: [shopId],
+    };
+  },
+  { label: "collectionsWithProductIds" },
+);
+
 export const collections$ = queryDb(
   (get) => {
     const shopId = get(shopId$);
@@ -214,7 +248,7 @@ export const products$ = (id?: string) =>
       deps: [id],
       map: (rows) => {
         if (rows.length === 0) {
-          return null;
+          return [];
         } else {
           return rows;
         }

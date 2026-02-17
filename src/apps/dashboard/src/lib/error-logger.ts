@@ -46,7 +46,7 @@ export async function logError(
 ): Promise<void> {
   const severity = context.severity || detectSeverity(error);
 
-  await axiom.ingest(AXIOM_DATASET, [
+  axiom.ingest(AXIOM_DATASET, [
     {
       error_name: error.name,
       error_message: error.message,
@@ -70,8 +70,10 @@ export function wrapQuery<T>(
   componentName: string,
 ): T | null {
   try {
-    return queryFn();
+    const result = queryFn();
+    return result
   } catch (error) {
+    console.log(`[wrapQuery] Error in ${queryName} (${componentName}):`, error);
     if (error instanceof Error) {
       logError(error, {
         severity: "schema",

@@ -1,14 +1,13 @@
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
 import { RightChevron } from "./icons/right-chevron";
 import { DownChevron } from "./icons/down-chevron";
-import type { Doc } from "api/data-model";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useProducts, useCategories } from "@/lib/useProducts";
+import type { Product } from "@/lib/types";
 
 export function OurCategories() {
-  const categories = useQuery(api.categories.listCategories);
-  const products = useQuery(api.products.listProducts);
+  const { categories } = useCategories();
+  const { products } = useProducts();
 
   return (
     <div id="categories" className="flex flex-col pt-6">
@@ -26,7 +25,7 @@ export function OurCategories() {
             categoriesLength={categories.length}
             index={i}
             category={c}
-            products={products?.filter((p) => p.categoryId === c._id)}
+            products={products?.filter((p) => p.category_id === c.id)}
           />
         ))}
       </div>
@@ -42,8 +41,8 @@ function Category({
 }: {
   categoriesLength: number;
   index: number;
-  products: Doc<"products">[] | undefined | null;
-  category: Doc<"categories">;
+  products: Product[] | undefined | null;
+  category: { id: string; name: string };
 }) {
   const navigate = useNavigate();
   const [selected, setSelected] = useState(0);
@@ -54,7 +53,7 @@ function Category({
   const visibleImages =
     selectedProduct?.images
       ?.filter((img) => !img.hidden && img.url)
-      .sort((a, b) => a.order - b.order) || [];
+      .sort((a, b) => a.displayOrder - b.displayOrder) || [];
 
   function up() {
     setSelected((prev) => {
@@ -83,7 +82,7 @@ function Category({
   // Reset image index when product changes
   useEffect(() => {
     setCurrentImageIndex(0);
-  }, [selectedProduct?._id]);
+  }, [selectedProduct?.id]);
 
   // Cycle through images on hover
   useEffect(() => {
@@ -115,7 +114,7 @@ function Category({
           className={`flex flex-col gap-1.5 lg:gap-3 min-w-[135px] lg:min-w-[300px] flex-1 ${index % 2 === 0 ? "order-1 items-end" : "order-2 item-start"}`}
         >
           <button
-            onClick={() => navigate({ to: `/categories/${category._id}` })}
+            onClick={() => navigate({ to: `/categories/${category.id}` })}
             className="flex  flex-col shrink-0 gap-0.5"
           >
             <p
@@ -136,7 +135,7 @@ function Category({
             >
               {products?.map(
                 (p, i) =>
-                  p.categoryId === category._id && (
+                  p.category_id === category.id && (
                     <Link
                       to={`/products/$slug`}
                       search={{
@@ -145,13 +144,13 @@ function Category({
                           sourceName: category.name,
                         },
                       }}
-                      params={{ slug: p._id }}
+                      params={{ slug: p.id }}
                       key={i}
-                      className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1.2] ${selectedProduct?._id === p._id ? "opacity-100" : "opacity-30"}`}
+                      className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1.2] ${selectedProduct?.id === p.id ? "opacity-100" : "opacity-30"}`}
                     >
                       {p.title}
                     </Link>
-                  )
+                  ),
               )}
             </div>
           </div>
@@ -176,7 +175,7 @@ function Category({
         {/* right side */}
         <Link
           to={`/categories/$slug`}
-          params={{ slug: category._id }}
+          params={{ slug: category.id }}
           className={`relative min-w-[185px] min-h-[230px] lg:h-[600px] lg:min- flex-2 aspect-[4/5] border-1 border-white ${index % 2 === 0 ? "order-2" : "order-1"}`}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -185,8 +184,8 @@ function Category({
             const productImages =
               p.images
                 ?.filter((img) => !img.hidden && img.url)
-                .sort((a, b) => a.order - b.order) || [];
-            const isSelected = p._id === selectedProduct?._id;
+                .sort((a, b) => a.displayOrder - b.displayOrder) || [];
+            const isSelected = p.id === selectedProduct?.id;
             const imageToShow =
               isSelected && productImages.length > 0
                 ? productImages[currentImageIndex % productImages.length]?.url
@@ -194,7 +193,7 @@ function Category({
 
             return (
               <img
-                key={p._id}
+                key={p.id}
                 className={`bg-[#F1F1F1] h-full w-full object-cover transition-all ease-in-out duration-1000 absolute 
                 ${!isSelected ? "opacity-0" : "opacity-100"}`}
                 src={imageToShow}

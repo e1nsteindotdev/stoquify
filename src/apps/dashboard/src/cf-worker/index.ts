@@ -1,23 +1,26 @@
 import type { D1Database } from "@cloudflare/workers-types";
+import type { LiveStoreSchema } from "@livestore/livestore";
 import {
-  Effect,
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-  Layer,
-  Option,
-  RpcClient,
-  RpcSerialization,
-  Stream,
-} from "@livestore/utils/effect";
-// @ts-expect-error - resolved at runtime by dependency
-import { SyncHttpRpc } from "@livestore/sync-cf/common";
+  ensureCatalogSchema,
+  isCatalogEvent,
+  materializeEventsToD1,
+  EventInput,
+} from "./sql-extractor";
+
+let schemaPromise: Promise<LiveStoreSchema> | null = null;
+
+const getSchema = async (): Promise<LiveStoreSchema> => {
+  if (!schemaPromise) {
+    schemaPromise = import("../livestore/schema").then((m) => m.schema);
+  }
+  return schemaPromise;
+};
 
 const CHECKPOINT_TABLE = "catalog_checkpoint";
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "*",
 };
 
@@ -164,9 +167,19 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS ${CHECKPOINT_TABLE} (
     storeId TEXT PRIMARY KEY,
-    lastSeqNum INTEGER,
-    backendId TEXT
+    lastSeqNum INTEGER NOT NULL DEFAULT 0
   )`,
+  `CREATE TABLE IF NOT EXISTS eventlog (
+    storeId TEXT NOT NULL,
+    seqNum INTEGER NOT NULL,
+    eventName TEXT NOT NULL,
+    eventArgs TEXT,
+    clientId TEXT NOT NULL,
+    sessionId TEXT NOT NULL,
+    parentSeqNum INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_eventlog_store_seq ON eventlog (storeId, seqNum)`,
   `CREATE INDEX IF NOT EXISTS idx_variants_product_display ON variants (product_id, displayOrder)`,
   `CREATE INDEX IF NOT EXISTS idx_variants_shop ON variants (shop_id)`,
   `CREATE INDEX IF NOT EXISTS idx_variant_options_variant ON variant_options (variant_id)`,
@@ -175,102 +188,59 @@ const SCHEMA_STATEMENTS = [
   `CREATE INDEX IF NOT EXISTS idx_skus_quantity ON product_skus (quantity)`,
 ];
 
-const PRODUCT_EVENT_NAMES = new Set([
-  "v1.ProductInserted",
-  "v1.ProductPartialUpdated",
-  "v1.ProductDeleted",
-  "v1.CategoryInserted",
-  "v1.CategoryPartialUpdated",
-  "v1.CategoryDeleted",
-  "v1.ProductImageInserted",
-  "v1.ProductImagePartialUpdated",
-  "v1.ProductImageDeleted",
-  "v1.VariantOptionInserted",
-  "v1.VariantOptionDeleted",
-  "v1.VariantInserted",
-  "v1.VariantPartialUpdated",
-  "v1.VariantOrderUpdated",
-  "v1.VariantDeleted",
-  "v1.SkuInserted",
-  "v1.SkuPartialUpdated",
-  "v1.SkuDeleted",
-  "v1.CollectionInserted",
-  "v1.CollectionPartialUpdated",
-  "v1.CollectionDeleted",
-  "v1.CollectionProductInserted",
-  "v1.CollectionProductDeleted",
-  "v1.ProductImagesProductIdSet",
-  "v1.ProductImagesReordered",
-]);
-
 type Env = {
   DB: D1Database;
-  VITE_LIVESTORE_SYNC_URL?: string;
-};
-
-type Checkpoint = {
-  lastSeqNum: number;
-  backendId: string | null;
 };
 
 let schemaReady: Promise<void> | null = null;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    if (request.method !== "GET") {
-      return new Response("Method not allowed", {
-        status: 405,
-        headers: CORS_HEADERS,
+    if (pathname === "/events" && request.method === "POST") {
+      return handleEvents(request, env.DB);
+    }
+
+    if (
+      (pathname === "/pull" && request.method === "GET") ||
+      (pathname === "/pull" && request.method === "POST")
+    ) {
+      return handlePull(request, env.DB);
+    }
+
+    if (pathname === "/ping" && request.method === "GET") {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
 
-    const url = new URL(request.url);
-    const storeId = url.searchParams.get("storeId")?.trim();
-    const shopId = url.searchParams.get("shopId")?.trim();
-
-    if (!storeId || !shopId) {
-      return new Response("Missing storeId or shopId", {
-        status: 400,
-        headers: CORS_HEADERS,
+    if (pathname === "/ping" && request.method === "POST") {
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
 
-    if (!env.VITE_LIVESTORE_SYNC_URL) {
-      return new Response("Missing VITE_LIVESTORE_SYNC_URL", {
-        status: 500,
-        headers: CORS_HEADERS,
-      });
+    if (pathname === "/catalog" && request.method === "GET") {
+      return handleCatalog(request, env.DB);
     }
 
-    await ensureSchema(env.DB);
-
-    const checkpoint = await readCheckpoint(env.DB, storeId);
-    const pullResult = await pullAndMaterialize({
-      db: env.DB,
-      storeId,
-      syncUrl: env.VITE_LIVESTORE_SYNC_URL,
-      checkpoint,
-    });
-
-    if (pullResult.updated) {
-      await writeCheckpoint(
-        env.DB,
-        storeId,
-        pullResult.lastSeqNum,
-        pullResult.backendId,
-      );
+    if (pathname === "/categories" && request.method === "GET") {
+      return handleCategories(request, env.DB);
     }
 
-    const products = await queryCatalog(env.DB, shopId);
-    const response = Response.json({ products });
-    for (const [key, value] of Object.entries(CORS_HEADERS)) {
-      response.headers.set(key, value);
+    if (pathname === "/collections" && request.method === "GET") {
+      return handleCollections(request, env.DB);
     }
-    return response;
+
+    return new Response("Not found", { status: 404, headers: CORS_HEADERS });
   },
 };
 
@@ -285,324 +255,190 @@ const ensureSchema = async (db: D1Database) => {
   await schemaReady;
 };
 
-const readCheckpoint = async (
+const handleEvents = async (
+  request: Request,
   db: D1Database,
-  storeId: string,
-): Promise<Checkpoint> => {
-  const rows = await selectAll<{
-    lastSeqNum: number | null;
-    backendId: string | null;
-  }>(
-    db,
-    `SELECT lastSeqNum, backendId FROM ${CHECKPOINT_TABLE} WHERE storeId = ?`,
-    [storeId],
-  );
+): Promise<Response> => {
+  try {
+    const body = await request.json();
+    const { storeId, events } = body;
 
-  if (rows.length === 0) {
-    return { lastSeqNum: 0, backendId: null };
-  }
-
-  return {
-    lastSeqNum: Number(rows[0]?.lastSeqNum ?? 0),
-    backendId: rows[0]?.backendId ?? null,
-  };
-};
-
-const writeCheckpoint = async (
-  db: D1Database,
-  storeId: string,
-  lastSeqNum: number,
-  backendId: string | null,
-) => {
-  await execStatement(
-    db,
-    `INSERT INTO ${CHECKPOINT_TABLE} (storeId, lastSeqNum, backendId) VALUES (?, ?, ?)
-     ON CONFLICT(storeId) DO UPDATE SET lastSeqNum = excluded.lastSeqNum, backendId = excluded.backendId`,
-    [storeId, lastSeqNum, backendId],
-  );
-};
-
-const pullAndMaterialize = async ({
-  db,
-  storeId,
-  syncUrl,
-  checkpoint,
-}: {
-  db: D1Database;
-  storeId: string;
-  syncUrl: string;
-  checkpoint: Checkpoint;
-}): Promise<{
-  lastSeqNum: number;
-  backendId: string | null;
-  updated: boolean;
-}> => {
-  const effect = Effect.gen(function*() {
-    const rpcUrl = new URL(syncUrl);
-    if (!rpcUrl.pathname.endsWith("/http-rpc")) {
-      rpcUrl.pathname = rpcUrl.pathname.replace(/\/$/, "") + "/http-rpc";
+    if (!storeId || !Array.isArray(events)) {
+      return new Response("Invalid request: missing storeId or events", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
     }
-    rpcUrl.searchParams.set("storeId", storeId);
-    rpcUrl.searchParams.set("transport", "http");
 
-    const HttpProtocolLive = RpcClient.layerProtocolHttp({
-      url: rpcUrl.toString(),
-      transformClient: HttpClient.mapRequest((request) =>
-        request.pipe(
-          HttpClientRequest.setHeaders({
-            "x-livestore-store-id": storeId,
-          }),
-        ),
-      ),
-    }).pipe(Layer.provide(RpcSerialization.layerJson));
+    await ensureSchema(db);
 
-    const rpcClient = (yield* RpcClient.make(SyncHttpRpc as any).pipe(
-      Effect.provide(HttpProtocolLive),
-    )) as any;
+    const timestamp = Date.now();
+    let maxSeqNum = 0;
 
-    let lastSeqNum = checkpoint.lastSeqNum;
-    let backendId = checkpoint.backendId;
-    let updated = false;
+    for (const event of events) {
+      const seqNum = event.seqNum ?? 0;
+      if (seqNum > maxSeqNum) maxSeqNum = seqNum;
 
-    const cursor =
-      checkpoint.lastSeqNum > 0 && checkpoint.backendId
-        ? Option.some({
-          eventSequenceNumber: checkpoint.lastSeqNum,
-          backendId: checkpoint.backendId,
-        })
-        : Option.none();
+      await db
+        .prepare(
+          `
+        INSERT INTO eventlog (storeId, seqNum, eventName, eventArgs, clientId, sessionId, parentSeqNum, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+        )
+        .bind(
+          storeId,
+          seqNum,
+          event.name,
+          JSON.stringify(event.args),
+          event.clientId,
+          event.sessionId,
+          event.parentSeqNum ?? 0,
+          timestamp,
+        )
+        .run();
+    }
 
-    const pullStream = rpcClient.SyncHttpRpc.Pull({
-      storeId,
-      payload: undefined,
-      cursor,
+    const eventInputs: EventInput[] = events.map((e) => ({
+      name: e.name,
+      args: e.args,
+      seqNum: e.seqNum,
+      parentSeqNum: e.parentSeqNum ?? 0,
+      clientId: e.clientId,
+      sessionId: e.sessionId,
+    }));
+
+    const schema = await getSchema();
+    await materializeEventsToD1({
+      db,
+      schema,
+      events: eventInputs,
+      shouldIncludeEvent: isCatalogEvent,
     });
 
-    yield* pullStream.pipe(
-      Stream.runForEach((res: any) =>
-        Effect.gen(function*() {
-          backendId = res.backendId ?? backendId;
-          const events = res.batch?.map((item: any) => item.eventEncoded) ?? [];
-          if (events.length > 0) {
-            yield* Effect.promise(() => applyEvents(db, events));
-            const lastEvent = events[events.length - 1];
-            if (lastEvent && lastEvent.seqNum > lastSeqNum) {
-              lastSeqNum = lastEvent.seqNum;
-              updated = true;
-            }
-          }
-        }),
-      ),
+    await db
+      .prepare(
+        `
+      INSERT INTO ${CHECKPOINT_TABLE} (storeId, lastSeqNum) VALUES (?, ?)
+      ON CONFLICT(storeId) DO UPDATE SET lastSeqNum = excluded.lastSeqNum
+    `,
+      )
+      .bind(storeId, maxSeqNum)
+      .run();
+
+    return Response.json({ lastSeqNum: maxSeqNum }, { headers: CORS_HEADERS });
+  } catch (error) {
+    console.error("handleEvents error:", error);
+    return new Response("Internal error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+};
+
+const handlePull = async (
+  request: Request,
+  db: D1Database,
+): Promise<Response> => {
+  try {
+    const url = new URL(request.url);
+    let storeId = url.searchParams.get("storeId");
+    let afterSeq = parseInt(url.searchParams.get("afterSeq") ?? "0", 10);
+
+    if (request.method === "POST") {
+      const body = await request.json();
+      storeId = storeId || body.storeId;
+      afterSeq = body.afterSeq ?? afterSeq;
+    }
+
+    if (!storeId) {
+      return new Response("Missing storeId", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    await ensureSchema(db);
+
+    const rows = await db
+      .prepare(
+        `
+      SELECT seqNum, eventName, eventArgs, clientId, sessionId, parentSeqNum
+      FROM eventlog
+      WHERE storeId = ? AND seqNum > ?
+      ORDER BY seqNum ASC
+    `,
+      )
+      .bind(storeId, afterSeq)
+      .all<{
+        seqNum: number;
+        eventName: string;
+        eventArgs: string;
+        clientId: string;
+        sessionId: string;
+        parentSeqNum: number;
+      }>();
+
+    const events = rows.results.map((row) => ({
+      name: row.eventName,
+      args: JSON.parse(row.eventArgs || "{}"),
+      seqNum: row.seqNum,
+      parentSeqNum: row.parentSeqNum,
+      clientId: row.clientId,
+      sessionId: row.sessionId,
+    }));
+
+    const checkpoint = await db
+      .prepare(
+        `
+      SELECT lastSeqNum FROM ${CHECKPOINT_TABLE} WHERE storeId = ?
+    `,
+      )
+      .bind(storeId)
+      .first<{ lastSeqNum: number }>();
+
+    return Response.json(
+      {
+        events,
+        checkpoint: checkpoint?.lastSeqNum ?? 0,
+      },
+      { headers: CORS_HEADERS },
     );
-
-    return { lastSeqNum, backendId, updated };
-  }).pipe(Effect.provide(FetchHttpClient.layer));
-
-  return Effect.runPromise(effect as any);
-};
-
-const applyEvents = async (db: D1Database, events: Array<any>) => {
-  for (const event of events) {
-    if (!event || !PRODUCT_EVENT_NAMES.has(event.name)) {
-      continue;
-    }
-    await applyEvent(db, event);
+  } catch (error) {
+    console.error("handlePull error:", error);
+    return new Response("Internal error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
   }
 };
 
-const applyEvent = async (db: D1Database, event: any) => {
-  const args = (event?.args ?? {}) as Record<string, unknown>;
-
-  switch (event.name) {
-    case "v1.ProductInserted":
-      return insertOrReplace(db, "products", normalizeRecord(args));
-    case "v1.ProductPartialUpdated":
-      return applyPartialUpdate(db, "products", args);
-    case "v1.ProductDeleted":
-      return applyPartialUpdate(db, "products", args);
-    case "v1.CategoryInserted":
-      return insertOrReplace(db, "categories", normalizeRecord(args));
-    case "v1.CategoryPartialUpdated":
-      return applyPartialUpdate(db, "categories", args);
-    case "v1.CategoryDeleted":
-      return applyPartialUpdate(db, "categories", args);
-    case "v1.ProductImageInserted":
-      return insertOrReplace(db, "product_images", normalizeRecord(args));
-    case "v1.ProductImagePartialUpdated":
-      return applyPartialUpdate(db, "product_images", args);
-    case "v1.ProductImageDeleted":
-      return applyPartialUpdate(db, "product_images", args);
-    case "v1.VariantOptionInserted":
-      return insertOrReplace(db, "variant_options", normalizeRecord(args));
-    case "v1.VariantOptionDeleted":
-      return applyPartialUpdate(db, "variant_options", args);
-    case "v1.VariantInserted": {
-      const { options, skus, ...variant } = args as Record<string, any>;
-      await insertOrReplace(db, "variants", normalizeRecord(variant));
-
-      for (const option of options ?? []) {
-        await insertOrReplace(
-          db,
-          "variant_options",
-          normalizeRecord({
-            id: option.id,
-            shop_id: variant.shop_id,
-            variant_id: variant.id,
-            value: option.value,
-            createdAt: option.createdAt,
-          }),
-        );
-      }
-
-      for (const sku of skus ?? []) {
-        await insertOrReplace(
-          db,
-          "product_skus",
-          normalizeRecord({
-            id: sku.id,
-            shop_id: variant.shop_id,
-            product_id: variant.product_id,
-            quantity: sku.quantity,
-            options: sku.options,
-            createdAt: sku.createdAt,
-          }),
-        );
-      }
-
-      return;
-    }
-    case "v1.VariantPartialUpdated":
-      return applyPartialUpdate(db, "variants", args);
-    case "v1.VariantOrderUpdated":
-      return applyPartialUpdate(db, "variants", args);
-    case "v1.VariantDeleted":
-      return applyPartialUpdate(db, "variants", args);
-    case "v1.SkuInserted":
-      return insertOrReplace(db, "product_skus", normalizeRecord(args));
-    case "v1.SkuPartialUpdated":
-      return applyPartialUpdate(db, "product_skus", args);
-    case "v1.SkuDeleted":
-      return applyPartialUpdate(db, "product_skus", args);
-    case "v1.CollectionInserted":
-      return insertOrReplace(db, "collections", normalizeRecord(args));
-    case "v1.CollectionPartialUpdated":
-      return applyPartialUpdate(db, "collections", args);
-    case "v1.CollectionDeleted":
-      return applyPartialUpdate(db, "collections", args);
-    case "v1.CollectionProductInserted":
-      return insertOrReplace(db, "collection_products", normalizeRecord(args));
-    case "v1.CollectionProductDeleted":
-      return applyPartialUpdate(db, "collection_products", args);
-    case "v1.ProductImagesProductIdSet": {
-      const imageIds = Array.isArray(args.imageIds) ? args.imageIds : [];
-      for (const id of imageIds) {
-        await execStatement(
-          db,
-          "UPDATE product_images SET product_id = ? WHERE id = ?",
-          [args.productId, id],
-        );
-      }
-      return;
-    }
-    case "v1.ProductImagesReordered": {
-      const updates = Array.isArray(args) ? args : [];
-      for (const update of updates) {
-        await execStatement(
-          db,
-          "UPDATE product_images SET displayOrder = ? WHERE id = ?",
-          [update.displayOrder, update.id],
-        );
-      }
-      return;
-    }
-    default:
-      return;
-  }
-};
-
-const insertOrReplace = async (
+const handleCatalog = async (
+  request: Request,
   db: D1Database,
-  tableName: string,
-  record: Record<string, unknown>,
-) => {
-  const entries = Object.entries(record).filter(
-    ([, value]) => value !== undefined,
-  );
-  const keys = entries.map(([key]) => key);
-  const values = entries.map(([key, value]) => normalizeValue(key, value));
-  const placeholders = keys.map(() => "?").join(", ");
+): Promise<Response> => {
+  try {
+    const url = new URL(request.url);
+    const shopId = url.searchParams.get("shopId");
 
-  await execStatement(
-    db,
-    `INSERT OR REPLACE INTO ${tableName} (${keys.join(", ")}) VALUES (${placeholders})`,
-    values,
-  );
-};
+    if (!shopId) {
+      return new Response("Missing shopId", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
 
-const applyPartialUpdate = async (
-  db: D1Database,
-  tableName: string,
-  changes: Record<string, unknown>,
-) => {
-  const updateEntries = Object.entries(changes).filter(
-    ([key, value]) => value !== undefined && key !== "id",
-  );
+    await ensureSchema(db);
+    const products = await queryCatalog(db, shopId);
 
-  if (updateEntries.length === 0 || changes.id === undefined) {
-    return;
+    return Response.json({ products }, { headers: CORS_HEADERS });
+  } catch (error) {
+    console.error("handleCatalog error:", error);
+    return new Response("Internal error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
   }
-
-  const setClause = updateEntries.map(([key]) => `${key} = ?`).join(", ");
-  const values = updateEntries.map(([key, value]) =>
-    normalizeValue(key, value),
-  );
-  values.push(changes.id);
-
-  await execStatement(
-    db,
-    `UPDATE ${tableName} SET ${setClause} WHERE id = ?`,
-    values,
-  );
-};
-
-const normalizeRecord = (record: Record<string, unknown>) => {
-  const entries = Object.entries(record).filter(
-    ([, value]) => value !== undefined,
-  );
-  return Object.fromEntries(
-    entries.map(([key, value]) => [key, normalizeValue(key, value)]),
-  );
-};
-
-const normalizeValue = (key: string, value: unknown) => {
-  if (value === undefined) {
-    return value;
-  }
-  if (key.endsWith("At")) {
-    return normalizeDate(value);
-  }
-  if (key === "options") {
-    return serializeJson(value);
-  }
-  return value;
-};
-
-const normalizeDate = (value: unknown) => {
-  if (value instanceof Date) {
-    return value.getTime();
-  }
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? value : parsed;
-  }
-  return value;
-};
-
-const serializeJson = (value: unknown) => {
-  if (typeof value === "string") {
-    return value;
-  }
-  return JSON.stringify(value ?? {});
 };
 
 const queryCatalog = async (db: D1Database, shopId: string) => {
@@ -614,6 +450,95 @@ const queryCatalog = async (db: D1Database, shopId: string) => {
     images: parseJsonArray(row.images),
     collections: parseJsonArray(row.collections),
     variants: parseVariants(row.variants),
+  }));
+};
+
+const handleCategories = async (
+  request: Request,
+  db: D1Database,
+): Promise<Response> => {
+  try {
+    const url = new URL(request.url);
+    const shopId = url.searchParams.get("shopId");
+
+    if (!shopId) {
+      return new Response("Missing shopId", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    await ensureSchema(db);
+    const categories = await queryCategories(db, shopId);
+
+    return Response.json({ categories }, { headers: CORS_HEADERS });
+  } catch (error) {
+    console.error("handleCategories error:", error);
+    return new Response("Internal error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+};
+
+const queryCategories = async (db: D1Database, shopId: string) => {
+  const rows = await selectAll<Record<string, unknown>>(
+    db,
+    `SELECT id, shop_id, name, createdAt FROM categories WHERE shop_id = ? AND deletedAt IS NULL ORDER BY name ASC`,
+    [shopId],
+  );
+  return rows;
+};
+
+const handleCollections = async (
+  request: Request,
+  db: D1Database,
+): Promise<Response> => {
+  try {
+    const url = new URL(request.url);
+    const shopId = url.searchParams.get("shopId");
+
+    if (!shopId) {
+      return new Response("Missing shopId", {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    await ensureSchema(db);
+    const collections = await queryCollections(db, shopId);
+
+    return Response.json({ collections }, { headers: CORS_HEADERS });
+  } catch (error) {
+    console.error("handleCollections error:", error);
+    return new Response("Internal error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
+  }
+};
+
+const queryCollections = async (db: D1Database, shopId: string) => {
+  const rows = await selectAll<Record<string, unknown>>(
+    db,
+    `SELECT
+      c.id,
+      c.shop_id,
+      c.name,
+      c.createdAt,
+      COALESCE((
+        SELECT json_group_array(cp.product_id)
+        FROM collection_products cp
+        WHERE cp.collection_id = c.id AND cp.deletedAt IS NULL
+      ), '[]') as productIds
+    FROM collections c
+    WHERE c.shop_id = ? AND c.deletedAt IS NULL
+    ORDER BY c.name ASC`,
+    [shopId],
+  );
+  return rows.map((row) => ({
+    ...row,
+    productIds: parseJsonArray(row.productIds),
   }));
 };
 

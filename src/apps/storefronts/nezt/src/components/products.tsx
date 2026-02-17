@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { Doc } from "api/data-model";
+import type { Product } from "@/lib/types";
 import { useState, useEffect } from "react";
 
 export function Product({
@@ -8,12 +8,12 @@ export function Product({
 }: {
   imgWidth?: { sm: number; large: number };
   source?: { sourceName: string; sourceType: string };
-  data: Doc<"products"> | undefined;
+  data: Product | undefined;
 }) {
   const visibleImages =
     data?.images
       ?.filter((img) => !img.hidden && img.url)
-      .sort((a, b) => a.order - b.order) || [];
+      .sort((a, b) => a.displayOrder - b.displayOrder) || [];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const picture_url =
     visibleImages[currentImageIndex]?.url ?? visibleImages[0]?.url;
@@ -35,7 +35,7 @@ export function Product({
         <button
           className="ratio-[3/4] w-full lg:min-h-[300px] xl:min-h-[500px] border-white border cursor-pointer"
           onClick={() =>
-            navigate({ to: `/products/${data?._id}`, search: { source } })
+            navigate({ to: `/products/${data?.id}`, search: { source } })
           }
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -71,12 +71,12 @@ export function CollectionProduct({
 }: {
   imgWidth?: { sm: number; large: number };
   source?: { sourceName: string; sourceType: string };
-  data: Doc<"products"> | undefined;
+  data: Product | undefined;
 }) {
   const visibleImages =
     data?.images
       ?.filter((img) => !img.hidden && img.url)
-      .sort((a, b) => a.order - b.order) || [];
+      .sort((a, b) => a.displayOrder - b.displayOrder) || [];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -110,7 +110,7 @@ export function CollectionProduct({
         <button
           className="border-white border"
           onClick={() =>
-            navigate({ to: `/products/${data?._id}`, search: { source } })
+            navigate({ to: `/products/${data?.id}`, search: { source } })
           }
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}

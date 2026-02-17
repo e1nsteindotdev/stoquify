@@ -5,9 +5,10 @@ import { api } from "api/convex";
 import { MenuIcon } from "./icons/menu-icon";
 import { OrderIcon } from "./icons/order-icon";
 import { Cart } from "./cart";
+import { useProducts, useCategories } from "@/lib/useProducts";
 
 export function Navbar() {
-  const categories = useQuery(api.categories.listCategories);
+  const { categories } = useCategories();
   return (
     <div className="flex items-center w-full py-3 lg:py-4 px-ip border-b-1 border-seperator">
       <Link to="/" className="mr-auto h-full">
@@ -18,7 +19,7 @@ export function Navbar() {
           <Link
             key={i}
             to={`/categories/$slug`}
-            params={{ slug: c._id as string }}
+            params={{ slug: c.id }}
             className="text-[16px] font-bold font-inter uppercase tracking-[0.1em]"
           >
             {c.name}
@@ -59,7 +60,7 @@ export function HeaderAnonc() {
 
 export function Header() {
   const settings = useQuery(api.settings.getSettings);
-  const products = useQuery(api.products.listProducts);
+  const { products } = useProducts();
   const productsCount = products?.length ?? 0;
   const locationLink = settings?.locationLink || "";
 
