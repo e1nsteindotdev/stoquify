@@ -17,7 +17,7 @@ const adapter = makePersistedAdapter({
   sharedWorker: LiveStoreSharedWorker,
 });
 
-const storeId = "nezt-livestore-store-7";
+const storeId = "nezt-livestore-store-8";
 
 export const Route = createRootRoute({
   component: () => {

@@ -63913,10 +63913,10 @@ var init_schema2 = __esm({
   }
 });
 
-// .wrangler/tmp/bundle-q9AvtL/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-nKR6g0/middleware-loader.entry.ts
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-q9AvtL/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-nKR6g0/middleware-insertion-facade.js
 init_modules_watch_stub();
 
 // src/cf-worker/index.ts
@@ -64674,7 +64674,7 @@ var handleOrders = /* @__PURE__ */ __name(async (request2, db) => {
       `INSERT INTO eventlog (storeId, seqNum, eventName, eventArgs, clientId, sessionId, parentSeqNum, timestamp)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      "nezt-livestore-store-7",
+      "nezt-livestore-store-8",
       seqNum,
       "v1.OrderCreated",
       JSON.stringify(eventArgs),
@@ -64751,6 +64751,7 @@ var handlePull = /* @__PURE__ */ __name(async (request2, db) => {
 }, "handlePull");
 var handleCatalog = /* @__PURE__ */ __name(async (request2, db) => {
   try {
+    console.log("querying the catalog");
     const url2 = new URL(request2.url);
     const shopId = url2.searchParams.get("shopId");
     if (!shopId) {
@@ -64898,7 +64899,7 @@ var jsonError = /* @__PURE__ */ __name(async (request2, env2, _ctx, middlewareCt
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-q9AvtL/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-nKR6g0/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -64931,7 +64932,7 @@ function __facade_invoke__(request2, env2, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-q9AvtL/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-nKR6g0/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron3, noRetry) {
     this.scheduledTime = scheduledTime;

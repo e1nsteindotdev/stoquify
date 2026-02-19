@@ -11,6 +11,9 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 60_001,
+    watch: {
+      ignored: ["**/.wrangler/**"],
+    },
     headers: {
       // "Cross-Origin-Embedder-Policy": "require-corp",
       // "Cross-Origin-Opener-Policy": "same-origin",

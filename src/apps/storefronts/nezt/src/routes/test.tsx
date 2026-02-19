@@ -17,7 +17,7 @@ interface EventItem {
   eventEncoded: Event
 }
 
-const storeId = "nezt-livestore-store-7"
+const storeId = "nezt-livestore-store-8"
 const payload = { authToken: "insecure-token-change-me" }
 
 export const Route = createFileRoute('/test')({
@@ -128,7 +128,7 @@ function RouteComponent() {
     try {
       const data = { id: crypto.randomUUID(), ...argsData, shop_id: 'random-shop-id', createdAt: new Date(), deletedAt: null }
       let parentSeqNum = 0
-      const res = await fetch('http://localhost:8780/get-head?storeId=nezt-livestore-store-1').catch(e => console.log('/get-head failed'))
+      const res = await fetch('http://localhost:8780/get-head?storeId=nezt-livestore-store-8').catch(e => console.log('/get-head failed'))
       let resData = await res?.json()
       if (res?.ok) parentSeqNum = resData?.parentSeqNum
 

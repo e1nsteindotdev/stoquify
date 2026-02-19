@@ -141,7 +141,6 @@ function RouteComponent() {
 function OrderForm() {
   const cart = useCartStore((state) => state.cart);
   const cartArray = Array.from(cart);
-  const navigate = useNavigate();
 
   const CF_WORKER_URL = import.meta.env.VITE_CF_WORKER_URL;
 
@@ -160,7 +159,7 @@ function OrderForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          storeId: "nezt-livestore-store-7",
+          storeId: "nezt-livestore-store-8",
           order: {
             firstName,
             lastName,

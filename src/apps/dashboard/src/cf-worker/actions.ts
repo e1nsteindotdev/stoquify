@@ -178,7 +178,7 @@ export const handleOrders = async (
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
-        "nezt-livestore-store-7",
+        "nezt-livestore-store-8",
         seqNum,
         "v1.OrderCreated",
         JSON.stringify(eventArgs),
@@ -286,6 +286,7 @@ export const handleCatalog = async (
   db: D1Database,
 ): Promise<Response> => {
   try {
+    console.log('querying the catalog')
     const url = new URL(request.url);
     const shopId = url.searchParams.get("shopId");
 
