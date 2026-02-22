@@ -9,6 +9,20 @@ import { useQuery } from "@tanstack/react-query"
 import type { Id } from "api/data-model"
 
 
+// Define the shape of a Todo item
+interface Todo {
+  id: string
+  text: string
+  completed: boolean
+}
+
+// Create a plain collection
+
+
+// Export types for convenience
+export type TodoItem = Todo
+
+
 const queryClient = new QueryClient()
 
 export const productsCollection = createCollection(
