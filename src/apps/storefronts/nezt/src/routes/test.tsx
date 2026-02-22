@@ -1,87 +1,97 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react";
 
 interface Event {
-  name: string
-  args: any
-  seqNum: number
-  clientId: string
-  sessionId: string
-  parentSeqNum: number
-  createdAt: string
-  [key: string]: any
+  name: string;
+  args: any;
+  seqNum: number;
+  clientId: string;
+  sessionId: string;
+  parentSeqNum: number;
+  createdAt: string;
+  [key: string]: any;
 }
 
 interface EventItem {
-  eventEncoded: Event
+  eventEncoded: Event;
 }
 
-const storeId = "nezt-livestore-store-8"
-const payload = { authToken: "insecure-token-change-me" }
+const storeId = import.meta.env.VITE_LIVESTORE_STORE_ID;
+const CF_WORKER_URL = import.meta.env.VITE_CF_WORKER_URL;
+const payload = { authToken: "insecure-token-change-me" };
 
-export const Route = createFileRoute('/test')({
+export const Route = createFileRoute("/test")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  const [events, setEvents] = useState<EventItem[]>([])
-  const [connectionStatus, setConnectionStatus] = useState<string>("Disconnected")
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [connectionStatus, setConnectionStatus] =
+    useState<string>("Disconnected");
   const [formData, setFormData] = useState({
     name: "v1.OrderCreated",
-    args: JSON.stringify({ id: crypto.randomUUID(), address: "Belfort, El Harrach", status: "pending" }, null, 2),
-  })
-  const [jsonError, setJsonError] = useState<string | null>(null)
-  const socketRef = useRef<WebSocket | null>(null)
-  const [sessionId] = useState(() => crypto.randomUUID())
+    args: JSON.stringify(
+      {
+        id: crypto.randomUUID(),
+        address: "Belfort, El Harrach",
+        status: "pending",
+      },
+      null,
+      2,
+    ),
+  });
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const [sessionId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
-    const wsUrl = new URL("http://localhost:8780/websocket")
-    wsUrl.searchParams.set("storeId", storeId)
-    wsUrl.searchParams.set("payload", JSON.stringify(payload))
+    const wsUrl = new URL("http://localhost:8780/websocket");
+    wsUrl.searchParams.set("storeId", storeId);
+    wsUrl.searchParams.set("payload", JSON.stringify(payload));
 
-    const socket = new WebSocket(wsUrl.toString())
-    socketRef.current = socket
+    const socket = new WebSocket(wsUrl.toString());
+    socketRef.current = socket;
 
     socket.onopen = () => {
-      console.log("WebSocket connected")
-      setConnectionStatus("Connected")
-      sendPull(true)
-    }
+      console.log("WebSocket connected");
+      setConnectionStatus("Connected");
+      sendPull(true);
+    };
 
     socket.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data)
-        console.log("Received:", message)
+        const message = JSON.parse(event.data);
+        console.log("Received:", message);
 
         if (message._tag === "WSMessage.PullRes") {
           if (message.batch) {
-            setEvents((prev) => [...prev, ...message.batch])
+            setEvents((prev) => [...prev, ...message.batch]);
           }
         } else if (message._tag === "WSMessage.PushAck") {
-          console.log("Push acknowledged:", message.requestId)
+          console.log("Push acknowledged:", message.requestId);
         } else if (message._tag === "WSMessage.Error") {
-          console.error("Server error:", message.message)
+          console.error("Server error:", message.message);
         }
       } catch (error) {
-        console.error("Error parsing message:", error)
+        console.error("Error parsing message:", error);
       }
-    }
+    };
 
     socket.onerror = (error) => {
-      console.error("WebSocket error:", error)
-      setConnectionStatus("Error")
-    }
+      console.error("WebSocket error:", error);
+      setConnectionStatus("Error");
+    };
 
     socket.onclose = (event) => {
-      console.log("WebSocket closed:", event.code, event.reason)
-      setConnectionStatus("Disconnected")
-    }
+      console.log("WebSocket closed:", event.code, event.reason);
+      setConnectionStatus("Disconnected");
+    };
 
     return () => {
-      socket.close()
-    }
-  }, [])
+      socket.close();
+    };
+  }, []);
 
   const sendPush = (batch: EventItem[]) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -96,43 +106,51 @@ function RouteComponent() {
           parentSeqNum: item.eventEncoded.parentSeqNum,
           createdAt: new Date().toISOString(),
         })),
-      }
-      console.log("sending request : ",)
-      console.log(request)
-      socketRef.current.send(JSON.stringify(request))
+      };
+      console.log("sending request : ");
+      console.log(request);
+      socketRef.current.send(JSON.stringify(request));
     }
-  }
+  };
 
   const sendPull = (live: boolean) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const request = {
         _tag: "WSMessage.PullReq",
         requestId: crypto.randomUUID(),
-        cursor: undefined
-      }
-      socketRef.current.send(JSON.stringify(request))
+        cursor: undefined,
+      };
+      socketRef.current.send(JSON.stringify(request));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    let argsData: any
+    let argsData: any;
     try {
-      argsData = JSON.parse(formData.args)
-      setJsonError(null)
+      argsData = JSON.parse(formData.args);
+      setJsonError(null);
     } catch (error) {
-      setJsonError("Invalid JSON in args data")
-      return
+      setJsonError("Invalid JSON in args data");
+      return;
     }
     try {
-      const data = { id: crypto.randomUUID(), ...argsData, shop_id: 'random-shop-id', createdAt: new Date(), deletedAt: null }
-      let parentSeqNum = 0
-      const res = await fetch('http://localhost:8780/get-head?storeId=nezt-livestore-store-8').catch(e => console.log('/get-head failed'))
-      let resData = await res?.json()
-      if (res?.ok) parentSeqNum = resData?.parentSeqNum
+      const data = {
+        id: crypto.randomUUID(),
+        ...argsData,
+        shop_id: "random-shop-id",
+        createdAt: new Date(),
+        deletedAt: null,
+      };
+      let parentSeqNum = 0;
+      const res = await fetch(
+        `${CF_WORKER_URL}/get-head?storeId=${storeId}`,
+      ).catch((e) => console.log("/get-head failed"));
+      let resData = await res?.json();
+      if (res?.ok) parentSeqNum = resData?.parentSeqNum;
 
-      console.log('parent seqNum :', parentSeqNum)
+      console.log("parent seqNum :", parentSeqNum);
 
       const newEvent: EventItem = {
         eventEncoded: {
@@ -144,28 +162,51 @@ function RouteComponent() {
           parentSeqNum,
           createdAt: new Date().toISOString(),
         },
-      }
+      };
 
-      sendPush([newEvent])
+      sendPush([newEvent]);
     } catch (e) {
-      console.log('error while pushing event :', e)
+      console.log("error while pushing event :", e);
     }
 
     setFormData((prev) => ({
       ...prev,
-      args: JSON.stringify({ id: crypto.randomUUID(), address: "Belfort, El harrach", status: "pending" }, null, 2),
-    }))
-  }
+      args: JSON.stringify(
+        {
+          id: crypto.randomUUID(),
+          address: "Belfort, El harrach",
+          status: "pending",
+        },
+        null,
+        2,
+      ),
+    }));
+  };
 
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
       <h1>Custom Page - Event Manager</h1>
 
-      <div style={{ marginBottom: "20px", padding: "10px", backgroundColor: "#f0f0f0", borderRadius: "4px" }}>
+      <div
+        style={{
+          marginBottom: "20px",
+          padding: "10px",
+          backgroundColor: "#f0f0f0",
+          borderRadius: "4px",
+        }}
+      >
         <strong>Connection Status:</strong> {connectionStatus}
       </div>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "30px", padding: "20px", border: "1px solid #ccc", borderRadius: "4px" }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          marginBottom: "30px",
+          padding: "20px",
+          border: "1px solid #ccc",
+          borderRadius: "4px",
+        }}
+      >
         <h2 style={{ marginTop: 0 }}>Push Event</h2>
 
         <div style={{ marginBottom: "15px" }}>
@@ -175,7 +216,9 @@ function RouteComponent() {
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
             style={{ width: "100%", padding: "8px", boxSizing: "border-box" }}
             required
             list="event-names"
@@ -191,16 +234,33 @@ function RouteComponent() {
           </label>
           <textarea
             value={formData.args}
-            onChange={(e) => setFormData((prev) => ({ ...prev, args: e.target.value }))}
-            style={{ width: "100%", height: "100px", padding: "8px", boxSizing: "border-box", fontFamily: "monospace" }}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, args: e.target.value }))
+            }
+            style={{
+              width: "100%",
+              height: "100px",
+              padding: "8px",
+              boxSizing: "border-box",
+              fontFamily: "monospace",
+            }}
             required
           />
-          {jsonError && <div style={{ color: "red", marginTop: "5px" }}>{jsonError}</div>}
+          {jsonError && (
+            <div style={{ color: "red", marginTop: "5px" }}>{jsonError}</div>
+          )}
         </div>
 
         <button
           type="submit"
-          style={{ padding: "10px 20px", backgroundColor: "#0070f3", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#0070f3",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
         >
           Push Event
         </button>
@@ -211,7 +271,9 @@ function RouteComponent() {
         {events.length === 0 ? (
           <p>No events received yet.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          >
             {events.map((event, index) => (
               <div
                 key={index}
@@ -226,10 +288,20 @@ function RouteComponent() {
                   <strong>Name:</strong> {event.eventEncoded.name} |{" "}
                   <strong>Seq:</strong> {event.eventEncoded.seqNum}
                 </div>
-                <pre style={{ margin: 0, backgroundColor: "#f5f5f5", padding: "10px", borderRadius: "4px", overflow: "auto" }}>
+                <pre
+                  style={{
+                    margin: 0,
+                    backgroundColor: "#f5f5f5",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    overflow: "auto",
+                  }}
+                >
                   {JSON.stringify(event.eventEncoded.args, null, 2)}
                 </pre>
-                <div style={{ marginTop: "10px", fontSize: "12px", color: "#666" }}>
+                <div
+                  style={{ marginTop: "10px", fontSize: "12px", color: "#666" }}
+                >
                   Created: {event.eventEncoded.createdAt}
                 </div>
               </div>
@@ -238,5 +310,5 @@ function RouteComponent() {
         )}
       </div>
     </div>
-  )
+  );
 }

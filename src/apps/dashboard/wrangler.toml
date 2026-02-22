@@ -6,3 +6,15 @@ compatibility_date = "2025-05-08"
 binding = "DB"
 database_name = "livestore-sync-cf-demo"
 database_id = "1c9b5dae-f1fa-49d8-83fa-7bd5b39c4121"
+
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[[durable_objects.bindings]]
+name = "SYNC_STORE_DO"
+class_name = "SyncStoreDO"
+
+[[migrations]]
+tag = "v1"
+new_durable_object_classes = ["SyncStoreDO"]

@@ -9,6 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LogoutRouteImport } from './routes/logout'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LivestoreRouteImport } from './routes/livestore'
 import { Route as DebugRouteImport } from './routes/debug'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
@@ -19,6 +22,21 @@ import { Route as DashboardProduitsSlugRouteImport } from './routes/_dashboard/p
 import { Route as DashboardCommandesSlugRouteImport } from './routes/_dashboard/commandes/$slug'
 import { Route as DashboardClientsSlugRouteImport } from './routes/_dashboard/clients/$slug'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogoutRoute = LogoutRouteImport.update({
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LivestoreRoute = LivestoreRouteImport.update({
   id: '/livestore',
   path: '/livestore',
@@ -67,6 +85,9 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/debug': typeof DebugRoute
   '/livestore': typeof LivestoreRoute
+  '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/signup': typeof SignupRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -77,6 +98,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/debug': typeof DebugRoute
   '/livestore': typeof LivestoreRoute
+  '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/signup': typeof SignupRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -89,6 +113,9 @@ export interface FileRoutesById {
   '/_dashboard': typeof DashboardRouteWithChildren
   '/debug': typeof DebugRoute
   '/livestore': typeof LivestoreRoute
+  '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/signup': typeof SignupRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -101,6 +128,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/debug'
     | '/livestore'
+    | '/login'
+    | '/logout'
+    | '/signup'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -111,6 +141,9 @@ export interface FileRouteTypes {
   to:
     | '/debug'
     | '/livestore'
+    | '/login'
+    | '/logout'
+    | '/signup'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -122,6 +155,9 @@ export interface FileRouteTypes {
     | '/_dashboard'
     | '/debug'
     | '/livestore'
+    | '/login'
+    | '/logout'
+    | '/signup'
     | '/_dashboard/clients/$slug'
     | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
@@ -134,10 +170,34 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   DebugRoute: typeof DebugRoute
   LivestoreRoute: typeof LivestoreRoute
+  LoginRoute: typeof LoginRoute
+  LogoutRoute: typeof LogoutRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logout': {
+      id: '/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/livestore': {
       id: '/livestore'
       path: '/livestore'
@@ -230,6 +290,9 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   DebugRoute: DebugRoute,
   LivestoreRoute: LivestoreRoute,
+  LoginRoute: LoginRoute,
+  LogoutRoute: LogoutRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

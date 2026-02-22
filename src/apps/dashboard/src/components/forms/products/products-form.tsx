@@ -214,6 +214,8 @@ export function ProductForm({ slug }: { slug?: string }) {
           );
         }
 
+        yield* Effect.sleep(10);
+
         // Track all image processing contexts for final summary
         const imageContexts: { id: string; ctx: any }[] = [];
 
@@ -249,20 +251,15 @@ export function ProductForm({ slug }: { slug?: string }) {
 
                 // Delete from local storage if image is marked as deleted
                 if (image.deletedAt !== null && image.indexedDBId) {
-                  yield* Effect.forkDaemon(
-                    imageService
-                      .deleteLocalImage(image.indexedDBId)
-                      .pipe(
-                        Effect.catchAll((error) =>
-                          Effect.sync(() =>
-                            console.error(
-                              "Failed to delete local image:",
-                              error,
-                            ),
-                          ),
+                  yield* imageService
+                    .deleteLocalImage(image.indexedDBId)
+                    .pipe(
+                      Effect.catchAll((error) =>
+                        Effect.sync(() =>
+                          console.error("Failed to delete local image:", error),
                         ),
                       ),
-                  );
+                    );
                 }
 
                 return;
@@ -396,6 +393,8 @@ export function ProductForm({ slug }: { slug?: string }) {
                   return Effect.fail(error);
                 }),
               );
+
+              yield* Effect.sleep(5);
             }).pipe(
               Effect.catchAll(() => {
                 if (ctx) {
@@ -412,7 +411,7 @@ export function ProductForm({ slug }: { slug?: string }) {
               ),
             );
           },
-          { concurrency: 3 },
+          { concurrency: 1 },
         ).pipe(
           Effect.timed,
           Effect.andThen(([duration]) =>
@@ -440,6 +439,8 @@ export function ProductForm({ slug }: { slug?: string }) {
             }),
           ),
         );
+
+        yield* Effect.sleep(10);
 
         // Build a mapping of old option IDs to new option IDs for new products
         const variantOptionIdMapping = new Map<string, string>();
@@ -794,7 +795,9 @@ export function ProductForm({ slug }: { slug?: string }) {
         ),
         Effect.withSpan("ProductFormSubmit"),
       );
-      return runtime.runPromise(program);
+      return runtime.runPromise(program).catch((e) => {
+        console.error("Form submission error:", e);
+      });
     },
     // onSubmit: async ({ value }) => {
     //   console.log("submit in ", productId);

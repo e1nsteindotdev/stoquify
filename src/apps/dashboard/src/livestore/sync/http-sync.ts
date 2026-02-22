@@ -17,6 +17,30 @@ const defaultOptions = {
   livePull: { pollInterval: 5000 },
 };
 
+class HttpError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "HttpError";
+    this.status = status;
+  }
+}
+
+const AUTH_CHANNEL_NAME = "stoquify-auth";
+let unauthorizedPublished = false;
+
+const publishUnauthorized = () => {
+  if (unauthorizedPublished) return;
+  unauthorizedPublished = true;
+
+  if (typeof BroadcastChannel === "undefined") return;
+
+  const channel = new BroadcastChannel(AUTH_CHANNEL_NAME);
+  channel.postMessage({ type: "unauthorized" });
+  channel.close();
+};
+
 export const makeHttpSync = (options: HttpSyncOptions) => {
   const opts = { ...defaultOptions, ...options };
 
@@ -30,6 +54,22 @@ export const makeHttpSync = (options: HttpSyncOptions) => {
       const isConnected = yield* SubscriptionRef.make(false);
       const livePullInterval = opts.livePull?.pollInterval ?? 5000;
 
+      const CHECKPOINT_KEY = `stoquify_checkpoint_${storeId}`;
+
+      const getStoredCheckpoint = (): number => {
+        if (typeof window === "undefined") return 0;
+        const stored = localStorage.getItem(CHECKPOINT_KEY);
+        return stored ? parseInt(stored, 10) : 0;
+      };
+
+      const setStoredCheckpoint = (seqNum: number) => {
+        if (typeof window === "undefined") return;
+        localStorage.setItem(CHECKPOINT_KEY, String(seqNum));
+      };
+
+      let currentCheckpoint = getStoredCheckpoint();
+      console.log("[http-sync] Initial checkpoint:", currentCheckpoint);
+
       const doRequest = (
         path: string,
         body?: unknown,
@@ -42,11 +82,19 @@ export const makeHttpSync = (options: HttpSyncOptions) => {
               headers: {
                 "Content-Type": "application/json",
               },
+              credentials: "include",
               body: body ? JSON.stringify({ storeId, ...body }) : undefined,
             }).then((res) => {
               if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                if (res.status === 401) {
+                  publishUnauthorized();
+                }
+                throw new HttpError(
+                  res.status,
+                  `HTTP ${res.status}: ${res.statusText}`,
+                );
               }
+              unauthorizedPublished = false;
               return res.json();
             }),
           );
@@ -79,61 +127,121 @@ export const makeHttpSync = (options: HttpSyncOptions) => {
         };
       });
 
-      const pull = (cursor: any, pullOptions?: { live?: boolean }) => {
-        const stream = Stream.fromEffect(
+      const pull = (
+        cursor: Option.Option<{
+          eventSequenceNumber: number;
+          metadata?: Option.Option<unknown>;
+        }>,
+        pullOptions?: { live?: boolean },
+      ) => {
+        const cursorSeq = Option.match(cursor, {
+          onNone: () => 0,
+          onSome: (c) => c.eventSequenceNumber ?? 0,
+        });
+
+        const afterSeq = cursorSeq > 0 ? cursorSeq : currentCheckpoint;
+        console.log(
+          "[http-sync] Pulling with afterSeq:",
+          afterSeq,
+          "cursorSeq:",
+          cursorSeq,
+          "stored checkpoint:",
+          currentCheckpoint,
+        );
+
+        const fetchBatch = (fromSeq: number) =>
           Effect.gen(function* () {
-            const afterSeq = cursor?.eventSequenceNumber ?? 0;
-            const response = yield* doRequest("/pull", { afterSeq });
+            const response = yield* doRequest("/pull", { afterSeq: fromSeq });
+            const events = response.events || [];
+
+            const newCheckpoint = response.checkpoint ?? fromSeq;
+            if (newCheckpoint > currentCheckpoint) {
+              currentCheckpoint = newCheckpoint;
+              setStoredCheckpoint(currentCheckpoint);
+              console.log(
+                "[http-sync] Updated checkpoint to:",
+                currentCheckpoint,
+              );
+            }
 
             return {
-              batch: (response.events || []).map((event: any) => ({
+              batch: events.map((event: any) => ({
                 eventEncoded: event,
                 metadata: Option.none(),
               })),
-              pageInfo:
-                response.checkpoint === -1
-                  ? { _tag: "NoMore" }
-                  : { _tag: "MoreKnown", remaining: 0 },
+              checkpoint: response.checkpoint,
+              lastSeqNum:
+                events.length > 0 ? events[events.length - 1].seqNum : fromSeq,
             };
-          }),
-        );
+          });
+
+        const stream = Stream.fromEffect(fetchBatch(afterSeq));
 
         if (pullOptions?.live) {
-          const unfoldEffect = (lastCursor: number) =>
-            Effect.gen(function* () {
-              yield* Effect.sleep(livePullInterval);
-              const response = yield* doRequest("/pull", {
-                afterSeq: lastCursor,
-              });
-
-              return {
-                batch: (response.events || []).map((event: any) => ({
-                  eventEncoded: event,
-                  metadata: Option.none(),
-                })),
-                pageInfo:
-                  response.checkpoint === -1
-                    ? { _tag: "NoMore" }
-                    : { _tag: "MoreKnown", remaining: 0 },
-              };
-            });
-
           return Stream.flatMap(stream, (firstResult) => {
-            const lastSeq =
-              firstResult.batch.at(-1)?.eventEncoded?.seqNum ??
-              cursor?.eventSequenceNumber ??
-              0;
+            let currentSeq = firstResult.lastSeqNum;
+
+            const liveStream = Stream.flatMap(
+              Stream.repeatEffect(Effect.sleep(livePullInterval)),
+              () =>
+                Stream.fromEffect(
+                  Effect.gen(function* () {
+                    const response = yield* doRequest("/pull", {
+                      afterSeq: currentSeq,
+                    });
+                    const events = response.events || [];
+
+                    const newCheckpoint = response.checkpoint ?? currentSeq;
+                    if (newCheckpoint > currentCheckpoint) {
+                      currentCheckpoint = newCheckpoint;
+                      setStoredCheckpoint(currentCheckpoint);
+                    }
+
+                    if (events.length === 0) {
+                      return {
+                        batch: [],
+                        checkpoint: response.checkpoint,
+                        lastSeqNum: currentSeq,
+                      };
+                    }
+
+                    currentSeq = events[events.length - 1].seqNum;
+
+                    return {
+                      batch: events.map((event: any) => ({
+                        eventEncoded: event,
+                        metadata: Option.none(),
+                      })),
+                      checkpoint: response.checkpoint,
+                      lastSeqNum: currentSeq,
+                    };
+                  }),
+                ),
+            );
+
             return Stream.concat(
-              Stream.succeed(firstResult),
-              Stream.flatMap(
-                Stream.repeatEffect(Effect.sleep(livePullInterval)),
-                () => Stream.fromEffect(unfoldEffect(lastSeq)),
-              ),
+              Stream.succeed({
+                batch: firstResult.batch,
+                pageInfo: { _tag: "MoreKnown" as const, remaining: 0 },
+              }),
+              Stream.map(liveStream, (r) => ({
+                batch: r.batch,
+                pageInfo:
+                  r.batch.length > 0
+                    ? { _tag: "MoreKnown" as const, remaining: 0 }
+                    : { _tag: "NoMore" as const },
+              })),
             );
           });
         }
 
-        return stream;
+        return Stream.map(stream, (result) => ({
+          batch: result.batch,
+          pageInfo:
+            result.batch.length > 0
+              ? { _tag: "MoreKnown" as const, remaining: 0 }
+              : { _tag: "NoMore" as const },
+        }));
       };
 
       const push = (batch: ReadonlyArray<any>) =>

@@ -143,6 +143,7 @@ function OrderForm() {
   const cartArray = Array.from(cart);
 
   const CF_WORKER_URL = import.meta.env.VITE_CF_WORKER_URL;
+  const SHOP_ID = import.meta.env.VITE_SHOP_ID;
 
   const form = useForm({
     defaultValues: {
@@ -159,7 +160,7 @@ function OrderForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          storeId: "nezt-livestore-store-8",
+          shopId: SHOP_ID,
           order: {
             firstName,
             lastName,

@@ -39,7 +39,8 @@ export const materializers = {
   ...notificationMaterializers,
 };
 
-export const shopId$ = signal("random-shop-id", { label: "shopId" });
+export const orgId$ = signal("", { label: "orgId" });
+export const shopId$ = signal("", { label: "shopId" });
 
 const state = State.SQLite.makeState({ tables, materializers });
 export const schema = makeSchema({ events, state });

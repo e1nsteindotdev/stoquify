@@ -53,15 +53,35 @@ export const authTables = {
 const orgPartialSchema = organizationsTable.rowSchema.pipe(Schema.partial);
 const userPartialSchema = usersTable.rowSchema.pipe(Schema.partial);
 const shopPartialSchema = shopsTable.rowSchema.pipe(Schema.partial);
+const orgCreatedSchema = Schema.Struct({
+  id: Schema.String,
+  organization_name: Schema.String,
+  createdAt: Schema.Union(Schema.DateFromNumber, Schema.Date),
+});
+const userCreatedSchema = Schema.Struct({
+  id: Schema.String,
+  first_name: Schema.String,
+  last_name: Schema.String,
+  phone_number: Schema.String,
+  email: Schema.NullOr(Schema.String),
+  role: Schema.String,
+  createdAt: Schema.Union(Schema.DateFromNumber, Schema.Date),
+});
+const shopCreatedSchema = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  organization_id: Schema.String,
+  createdAt: Schema.Union(Schema.DateFromNumber, Schema.Date),
+});
 const deletedSchema = Schema.Struct({
   id: Schema.String,
-  deletedAt: Schema.Date,
+  deletedAt: Schema.Union(Schema.DateFromNumber, Schema.Date),
 });
 
 export const authEvents = {
   orgCreated: Events.synced({
     name: "v1.OrgCreated",
-    schema: organizationsTable.rowSchema,
+    schema: orgCreatedSchema,
   }),
   orgUpdated: Events.synced({
     name: "v1.OrgUpdated",
@@ -73,7 +93,7 @@ export const authEvents = {
   }),
   userCreated: Events.synced({
     name: "v1.UserCreated",
-    schema: usersTable.rowSchema,
+    schema: userCreatedSchema,
   }),
   userUpdated: Events.synced({
     name: "v1.UserUpdated",
@@ -85,7 +105,7 @@ export const authEvents = {
   }),
   shopCreated: Events.synced({
     name: "v1.ShopCreated",
-    schema: shopsTable.rowSchema,
+    schema: shopCreatedSchema,
   }),
   shopUpdated: Events.synced({
     name: "v1.ShopUpdated",
@@ -99,7 +119,12 @@ export const authEvents = {
 
 export const authMaterializers = State.SQLite.materializers(authEvents, {
   "v1.OrgCreated": ({ id, organization_name, createdAt }) =>
-    authTables.organizationsTable.insert({ id, organization_name, createdAt }),
+    authTables.organizationsTable.insert({
+      id,
+      organization_name,
+      createdAt,
+      deletedAt: null,
+    }),
   "v1.OrgUpdated": ({ id, organization_name }) =>
     authTables.organizationsTable.update({ organization_name }).where({ id }),
   "v1.OrgDeleted": ({ id, deletedAt }) =>
@@ -121,6 +146,7 @@ export const authMaterializers = State.SQLite.materializers(authEvents, {
       email,
       role,
       createdAt,
+      deletedAt: null,
     }),
   "v1.UserUpdated": ({
     id,
@@ -136,7 +162,13 @@ export const authMaterializers = State.SQLite.materializers(authEvents, {
   "v1.UserDeleted": ({ id, deletedAt }) =>
     authTables.usersTable.update({ deletedAt }).where({ id }),
   "v1.ShopCreated": ({ id, name, organization_id, createdAt }) =>
-    authTables.shopsTable.insert({ id, name, organization_id, createdAt }),
+    authTables.shopsTable.insert({
+      id,
+      name,
+      organization_id,
+      createdAt,
+      deletedAt: null,
+    }),
   "v1.ShopUpdated": ({ id, name, organization_id }) =>
     authTables.shopsTable.update({ name, organization_id }).where({ id }),
   "v1.ShopDeleted": ({ id, deletedAt }) =>

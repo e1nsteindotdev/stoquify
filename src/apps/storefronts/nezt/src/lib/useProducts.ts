@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import type { Product, ProductsResponse } from "../lib/types";
 
-const CATALOG_URL = "http://localhost:8780/catalog";
-const CATEGORIES_URL = "http://localhost:8780/categories";
-const COLLECTIONS_URL = "http://localhost:8780/collections";
-const SHOP_ID = "random-shop-id";
+const CF_WORKER_URL = import.meta.env.VITE_CF_WORKER_URL;
+const SHOP_ID = import.meta.env.VITE_SHOP_ID;
+const CATALOG_URL = `${CF_WORKER_URL}/catalog`;
+const CATEGORIES_URL = `${CF_WORKER_URL}/categories`;
+const COLLECTIONS_URL = `${CF_WORKER_URL}/collections`;
 
 export interface Category {
   id: string;

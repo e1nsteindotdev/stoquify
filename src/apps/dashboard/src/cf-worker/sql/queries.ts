@@ -90,7 +90,8 @@ export const SCHEMA_STATEMENTS = [
     clientId TEXT NOT NULL,
     sessionId TEXT NOT NULL,
     parentSeqNum INTEGER NOT NULL DEFAULT 0,
-    timestamp INTEGER NOT NULL
+    timestamp INTEGER NOT NULL,
+    UNIQUE(storeId, seqNum)
   )`,
   `CREATE INDEX IF NOT EXISTS idx_eventlog_store_seq ON eventlog (storeId, seqNum)`,
   `CREATE INDEX IF NOT EXISTS idx_variants_product_display ON variants (product_id, displayOrder)`,
@@ -314,4 +315,43 @@ const bindStatement = (
   }
 
   return statement;
+};
+
+export const migrateEventlogUniqueConstraint = async (db: D1Database) => {
+  const CHECKPOINT_TABLE = "catalog_checkpoint";
+
+  const tableInfo = await db
+    .prepare(`PRAGMA table_info(eventlog)`)
+    .all<{ name: string; pk: number }>();
+
+  const hasUniqueColumn = tableInfo.results.some(
+    (col) => col.name === "storeId" || col.name === "seqNum",
+  );
+
+  if (!hasUniqueColumn) {
+    return;
+  }
+
+  const duplicates = await db
+    .prepare(
+      `SELECT storeId, seqNum, COUNT(*) as cnt FROM eventlog GROUP BY storeId, seqNum HAVING cnt > 1`,
+    )
+    .all<{ storeId: string; seqNum: number; cnt: number }>();
+
+  if (duplicates.results.length > 0) {
+    console.warn(
+      `Found ${duplicates.results.length} duplicate (storeId, seqNum) pairs, cleaning up...`,
+    );
+
+    for (const dup of duplicates.results) {
+      await db
+        .prepare(
+          `DELETE FROM eventlog WHERE storeId = ? AND seqNum = ? AND rowid NOT IN (
+            SELECT MIN(rowid) FROM eventlog WHERE storeId = ? AND seqNum = ? GROUP BY storeId, seqNum
+          )`,
+        )
+        .bind(dup.storeId, dup.seqNum, dup.storeId, dup.seqNum)
+        .run();
+    }
+  }
 };

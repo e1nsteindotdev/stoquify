@@ -13,6 +13,7 @@
       "DOM.Iterable"
     ],
     "types": [
+      "@cloudflare/workers-types",
       "vite/client",
       "vite-plugin-pwa/client"
     ],
