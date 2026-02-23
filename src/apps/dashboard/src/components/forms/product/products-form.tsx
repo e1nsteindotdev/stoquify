@@ -14,21 +14,17 @@ import {
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import { type Id } from "api/data-model";
-import { formatVariantsInventory } from "@/hooks/useVariantActions";
-import { useInitiateProduct, useUpdateProduct } from "@/hooks/use-convex-queries";
 import { useGetProductById } from "@/database/products";
-import { useGetSelectedCollectionIds } from "@/database/collections";
+import { useGetSelectedCollections } from "@/database/collections";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
-  const initiateProduct = useInitiateProduct();
-  const updateProduct = useUpdateProduct();
 
-  const { data: product } = useGetProductById(isNew ? undefined : slug as Id<"products">);
-  const { data: selectedCollectionIds } = useGetSelectedCollectionIds(product?._id);
-  const productCollections = new Set(selectedCollectionIds ?? []);
+  const product = productId != null ? useGetProductById(productId) : undefined
+  const collections = productId != null ? useGetSelectedCollections(productId) : undefined
+  const productCollections = new Set(collections?.map(c => c._id) ?? []);
 
   const defaultValues = useMemo(
     () => ({
@@ -43,7 +39,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       status: product?.status ?? "incomplete",
       images: product?.images ?? [],
       variants: product?.variants ?? [],
-      variantsInventory: product?.variantsInventory ? formatVariantsInventory(product.variantsInventory) : new Map(),
+      skus: product?.skus ?? [],
       collections: productCollections ?? []
     }),
     [product, productCollections]
@@ -54,9 +50,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
     onSubmit: async ({ value }: { value: any }) => {
       // because somehow value.images is an object
       if (value.images) value.images = Object.values(value.images)
-      if (value.variantsInventory) {
-        value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any
-      }
+      if (value.variantsInventory) { value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any }
       value.price = Number(value.price) ?? 0
       value.cost = Number(value.cost) ?? 0
       const dirtyValues = Object.fromEntries(
@@ -70,13 +64,13 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       }
 
       if (isNew) {
-        const id = await initiateProduct.mutateAsync({});
-        await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
-        router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
+        // const id = await initiateProduct.mutateAsync({});
+        // await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
+        // router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
       } else {
         if (productId) {
           dirtyValues["productId"] = productId;
-          await updateProduct.mutateAsync(dirtyValues as any);
+          // await updateProduct.mutateAsync(dirtyValues as any);
         }
       }
     },
@@ -188,7 +182,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   children={({ variants, strat, }) => {
                     return (
                       <form.AppField
-                        name="variantsInventory"
+                        name="skus"
                         children={(field) => (
                           <field.StockageField
                             strat={strat}

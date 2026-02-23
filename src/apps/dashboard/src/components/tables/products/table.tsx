@@ -1,16 +1,15 @@
 import { columns, type ProductRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useRemoveProduct } from "@/hooks/use-convex-queries";
-import { useGetAllProducts } from "@/database/products";
+import { useGetProducts } from "@/database/products";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { ClipLoader } from "react-spinners";
 
 export function ProductsTable() {
-  const productsResult = useGetAllProducts();
+  const productsResult = useGetProducts();
   const products = productsResult?.data ?? [];
   const isLoading = !productsResult?.isEnabled;
-  const removeProduct = useRemoveProduct();
+  // const removeProduct = useRemoveProduct();
 
   const rows: ProductRow[] = products.map((p: any) => ({
     _id: p._id,
@@ -22,12 +21,10 @@ export function ProductsTable() {
 
   const onClick = async (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    const button = target.closest(
-      "button[data-product-id]"
-    ) as HTMLButtonElement | null;
+    const button = target.closest("button[data-product-id]") as HTMLButtonElement | null;
     if (button) {
       const id = button.getAttribute("data-product-id") as any;
-      await removeProduct.mutate({ id });
+      // removeProduct.mutate({ id });
     }
   };
 

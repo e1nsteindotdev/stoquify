@@ -18,7 +18,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { useCreateCategory } from "@/hooks/use-convex-queries";
 import { useGetAllCategories } from "@/database/categories";
 
 type Props = {
@@ -29,7 +28,6 @@ export default function CategoriesField({ label }: Props) {
   const field = useFieldContext<string>();
   const categoriesResult = useGetAllCategories();
   const categories = categoriesResult?.data ?? [];
-  const createCategory = useCreateCategory();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -39,9 +37,9 @@ export default function CategoriesField({ label }: Props) {
     if (!name.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      const id = await createCategory.mutateAsync({ name });
+      // const id = await createCategory.mutateAsync({ name });
       // Select the newly created category
-      field.handleChange(String(id) as any);
+      // field.handleChange(String(id) as any);
       setCreateOpen(false);
       setName("");
     } finally {

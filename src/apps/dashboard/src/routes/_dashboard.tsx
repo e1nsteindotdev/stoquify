@@ -15,8 +15,20 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import React from "react";
+import { idbGet } from "@/lib/idb";
+import { queryClient } from "@/lib/ts-query-client"
 
 export const Route = createFileRoute("/_dashboard")({
+  loader: async () => {
+    try {
+      const products = await idbGet('products');
+      const collections = await idbGet('collections');
+      queryClient.setQueryData(["products"], products);
+      queryClient.setQueryData(["collections"], collections);
+    } catch (e) {
+      console.log('faild to preload products :', String(e))
+    }
+  },
   component: PathlessLayoutComponent,
 });
 
@@ -55,7 +67,7 @@ function PathlessLayoutComponent() {
       <AppSidebar />
       <SidebarInset>
         <header className="flex py-4 px-6 shrink-0 items-center gap-2">
-          <SidebarTrigger 
+          <SidebarTrigger
             className="h-9 w-auto px-3 gap-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 shadow-sm"
           >
             <PanelLeft className="size-4" />

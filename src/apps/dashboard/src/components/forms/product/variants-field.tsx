@@ -18,7 +18,7 @@ export default function VariantsField() {
       const newVariant: TVariant = {
         name,
         order,
-        options: options.filter(o => o !== "").map((o) => ({ name: o })),
+        options: options.filter((o) => o !== ""),
       };
       return [...prev, newVariant];
     });
@@ -28,7 +28,10 @@ export default function VariantsField() {
     <div className={cn("grid gap-3")}>
       <div className="">
         <p className="text-[20px] font-semibold">Variantes existantes</p>
-        <p className="text-[16px] text-neutral-500">L'ordre des variantes est important car c'est ainsi que vous pouvez gérer votre inventaire</p>
+        <p className="text-[16px] text-neutral-500">
+          L'ordre des variantes est important car c'est ainsi que vous pouvez
+          gérer votre inventaire
+        </p>
       </div>
       {variants?.length ? (
         <div className="grid gap-2">
@@ -50,7 +53,10 @@ export default function VariantsField() {
         </div>
       )}
       <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-1" />
-      <NewVariantForm addNewVariant={addNewVariant} isEmpty={variants.length === 0} />
+      <NewVariantForm
+        addNewVariant={addNewVariant}
+        isEmpty={variants.length === 0}
+      />
     </div>
   );
 }

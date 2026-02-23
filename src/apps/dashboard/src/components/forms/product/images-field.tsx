@@ -1,238 +1,197 @@
-import { useStore } from "@tanstack/react-form";
-import { useFieldContext } from "@/hooks/form-context.tsx";
+import { useRef, useCallback } from "react";
 import { Label } from "@radix-ui/react-label";
-import { useRef, useState } from "react";
-
-import { type Id } from "@repo/backend/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { useMutation as useTanstackMutation } from "@tanstack/react-query";
+import { useFieldContext } from "@/hooks/form-context.tsx";
+import { Doc } from "api/data-model";
 import ImageItem from "./image-item";
-import { useImageActions } from "@/hooks/useImageActions";
-import { useGetImageUrl, useInitiateProduct, useNavigateToProduct } from "@/hooks/products";
-import { useGenerateUploadUrl, useSendImage } from "@/hooks/use-convex-queries";
+import { Effect } from "effect";
+import { effectRuntime } from "@/lib/effect-runtime";
+import { Images } from "@/lib/services/image-service";
 
 type PropsType = {
-  productId: Id<"products"> | null;
+  productId: string | null;
   label?: string;
 } & React.ComponentProps<"input">;
 
-export type Image = {
-  order: number;
-  url?: string;
-  hidden?: boolean;
-  status: "uploaded" | "uploading" | "error";
-  storageId?: Id<"_storage">;
+type ProductImage = Omit<Doc<"images">, "_id" | "_creationTime"> & {
+  tempId?: string;
+  originalFile?: File;
 };
 
-type ImagesMap = Map<string, Image>;
+export default function ImageField({
+  productId,
+  label,
+  className,
+  type,
+  ...props
+}: PropsType) {
+  const field = useFieldContext<ProductImage[]>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const images = field.state.value;
 
-export default function ImageField({ productId, label, className, type, ...props }: PropsType) {
+  const calculateNextOrder = (): number => {
+    const maxOrder = Math.max(0, ...images.map((img) => img.order));
+    return maxOrder + 1;
+  };
 
-  const imagesInputRef = useRef<HTMLInputElement>(null);
-  const field = useFieldContext<ImagesMap>();
-  const [currentProductId, setCurrentProductId] = useState<Id<"products"> | null>(productId);
+  const handleFileSelect = useCallback(
+    async (files: FileList | null) => {
+      if (!files?.length) return;
+      const imagesFiles = Array.from(files).filter(
+        (file) => file.type.startsWith("image/") === true,
+      );
+      const nextOrder = calculateNextOrder();
 
-  const errors = useStore(field.store, (state) => state.meta.errors);
-  const [images, setImages] = useState<Record<string, {
-    order: number;
-    status: "uploading" | "uploaded" | "error";
-    url?: string;
-  }>>({});
+      const program = Effect.gen(function* () {
+        const imgService = yield* Images;
+        const fileBase64Pairs = yield* Effect.forEach(
+          imagesFiles,
+          (file) =>
+            Effect.gen(function* () {
+              const base64 = yield* imgService.fileToBase64(file);
+              return { file, base64 };
+            }),
+          { concurrency: "unbounded" },
+        );
 
-  const initiateProduct = useInitiateProduct();
-  const navigateToProduct = useNavigateToProduct();
-  const getImageUrl = useGetImageUrl()
-  const generateUploadUrlMutation = useGenerateUploadUrl();
-  const sendImageMutation = useSendImage();
+        const newImages: ProductImage[] = fileBase64Pairs.map(
+          ({ file, base64 }, i) => ({
+            tempId: crypto.randomUUID(),
+            productId: undefined,
+            indexedDBId: undefined,
+            url: base64,
+            order: nextOrder + i,
+            hidden: false,
+            originalFile: file,
+          }),
+        );
 
-  function handleClick() { imagesInputRef?.current?.click(); }
+        field.setValue((prev) => [...prev, ...newImages]);
 
-  const uploadMutation = useTanstackMutation({
-    mutationKey: ["upload-image"],
-    mutationFn: async (args: {
-      file: File;
-      postUrl: string;
-      fp: string;
-      order: number;
-    }) => {
-      const { file, order, fp, postUrl } = args;
-      const res = await fetch(postUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
+        yield* Effect.all(
+          newImages.map((image) =>
+            Effect.forkDaemon(
+              Effect.gen(function* () {
+                const { base64 } = yield* imgService.compressImageWithWorker(
+                  image.originalFile!,
+                  image.tempId!,
+                );
+                field.setValue((prev) =>
+                  prev.map((img) =>
+                    img.tempId === image.tempId
+                      ? { ...img, url: base64, originalFile: undefined }
+                      : img,
+                  ),
+                );
+              }).pipe(Effect.catchAll(() => Effect.succeed(undefined))),
+            ),
+          ),
+          { concurrency: "unbounded" },
+        );
       });
-      if (!res.ok) throw new Error("Upload failed");
-      const { storageId } = await res.json();
-      return { storageId, fp, order };
+      await effectRuntime.runPromise(program);
     },
-  });
 
-  async function handleInputChange(files: FileList | null) {
-    if (!files || files.length === 0) return;
+    [calculateNextOrder, field],
+  );
 
-    // Ensure we have a product id before uploading anything
-    let ensuredProductId = currentProductId;
-    let createdNew = false;
-    if (!ensuredProductId || ensuredProductId.trim() === "") {
-      const newProductId = await initiateProduct();
-      if (!newProductId) {
-        return
-      }
-      ensuredProductId = newProductId
-      setCurrentProductId(ensuredProductId);
-      createdNew = true;
-    }
+  const handleClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
-    const list = Array.from(files);
-
-    //get exisitng images 
-    const existingValues = Object.values(field.state.value ?? {}) as Image[];
-
-    // get the base order
-    const baseOrder = existingValues.length ? Math.max(...existingValues.map((i) => i.order ?? 0)) : 0;
-
-    const uploadTasks: Promise<{ storageId: Id<"_storage">; fp: string; order: number; }>[] = [];
-
-    // loop through all the uploaded images
-    list.forEach((file, idx) => {
-      const fp = fingerprint(file);
-      if (!file.type || images[fp]) return;
-
-      const order = baseOrder + 1 + idx;
-
-      // add the image to form field
-      field.setValue((prev) => ({ ...prev, [fp]: { status: "uploading", url: "", order } }));
-
-      // prepare the task to upload the image to convex's generated postUrl and add it to the other tasks
-      const task = (async () => {
-        const postUrl = await generateUploadUrlMutation.mutateAsync({});
-        const res = await uploadMutation.mutateAsync({
-          fp,
-          order,
-          postUrl,
-          file,
-        });
-        return res;
-      })();
-      uploadTasks.push(task);
-    });
-
-    // fire all the tasks concurrently
-    const results = await Promise.all(uploadTasks);
-
-    // prepare the task to attach the image to it's respective product
-    const sendTasks: Promise<string | null>[] = results.map(async (r) =>
-      sendImageMutation.mutateAsync({
-        storageId: r.storageId,
-        productId: ensuredProductId as unknown as Id<"products">,
-        order: r.order,
-      })
-    );
-
-    // fire all the tasks concurrently and store the served images urls to show them to the user
-    const urlResults = await Promise.all(sendTasks);
-
-    for (let i = 0; i < urlResults.length; i++) {
-      const url = urlResults[i] ?? "";
-      const fp = results[i].fp;
-      if (url) {
-        // update the state in the form field (status becomes uploaded and we give the newly generated image url)
-        field.setValue((prev) => ({
-          ...prev,
-          [fp]: {
-            order: prev[fp]?.order ?? results[i].order,
-            url,
-            status: "uploaded",
-            storageId: results[i].storageId,
-          },
+  const handleReorder = useCallback(
+    (image: ProductImage, direction: "up" | "down") => {
+      field.setValue((prev) => {
+        const sorted = [...(prev || [])].sort((a, b) => a.order - b.order);
+        const idx = sorted.findIndex((img) => img.order === image.order);
+        if (idx === -1) return prev;
+        if (direction === "up" && idx > 0) {
+          [sorted[idx - 1], sorted[idx]] = [sorted[idx], sorted[idx - 1]];
+        } else if (direction === "down" && idx < sorted.length - 1) {
+          [sorted[idx], sorted[idx + 1]] = [sorted[idx + 1], sorted[idx]];
+        }
+        return sorted.map((img, i) => ({
+          ...img,
+          order: i + 1,
         }));
-      }
-    }
+      });
+    },
+    [field],
+  );
 
-    // Ensure all images have a consistent sequential order to prevent accidental drops
-    field.setValue((prev) => {
-      const entries = Object.entries(prev)
-        .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0))
-        .map(([k, v], i) => [k, { ...v, order: i + 1 }] as const);
-      return Object.fromEntries(entries) as any;
-    });
+  const handleDelete = useCallback(
+    (image: ProductImage) => {
+      field.setValue(
+        (prev) => prev?.filter((img) => img.order !== image.order) || [],
+      );
+    },
+    [field],
+  );
 
-    // if a new product was initiated during this form event, we navigate to it
-    if (createdNew && ensuredProductId) {
-      navigateToProduct(ensuredProductId);
-    }
-  }
-
-  // order images and get their url if it doesn't exists
-  const imagesEntries = Object
-    .entries(field.state.value as unknown as Record<string, Image>)
-    .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
-
-  const imagesList: Promise<Image & { fp: string }>[] = imagesEntries.map(async ([fp, image]) => {
-    if (!image.url && image.storageId) {
-      const url = await getImageUrl(image.storageId) ?? ""
-      return { ...image, url, fp }
-    }
-    return { ...image, fp }
-  });
-
-  const actions = useImageActions(currentProductId, field as any);
+  const handleHide = useCallback(
+    (image: ProductImage) => {
+      field.setValue(
+        (prev) =>
+          prev?.map((img) =>
+            img.order === image.order ? { ...img, hidden: !img.hidden } : img,
+          ) || [],
+      );
+    },
+    [field],
+  );
 
   return (
     <div className="grid gap-2">
       {label && <Label className="font-semibold">{label}</Label>}
       <input
         className="hidden"
-        ref={imagesInputRef}
+        ref={fileInputRef}
         accept="image/*"
         type="file"
         multiple
-        onChange={(event) => handleInputChange(event.target.files)}
+        onChange={(event) => handleFileSelect(event.target.files)}
         {...props}
       />
 
-      {(imagesList.length === 0) ? (
-        <div className="border-1 border-black/30 rounded-[12px] border-dashed flex items-center justify-center h-[120px]">
+      {images.length === 0 ? (
+        <div className="border border-black/30 rounded-[12px] border-dashed flex items-center justify-center h-30">
           <Button
             type="button"
-            className="bg-transparent text-[14px] text-[#6A4FFF] border-[#6A4FFF]/30 border-1 hover:bg-transparent"
-            onClick={handleClick}>
+            className="bg-transparent text-[14px] text-primary border-primary/30 border hover:bg-transparent"
+            onClick={handleClick}
+          >
             Ajouter des photos
           </Button>
         </div>
-      ) : actions !== null && (
+      ) : (
         <div className="flex flex-col gap-3 border border-neutral-300 rounded-[15px] p-3">
           <div className="flex flex-col gap-3">
-            {imagesList.map((image, index) => (
-              <ImageItem
-                key={index}
-                index={index}
-                value={image}
-                actions={actions}
-              />
-            ))}
+            {images.map((image, index) => {
+              const isNew = !("_id" in image);
+              return (
+                <ImageItem
+                  key={image.order}
+                  image={image}
+                  index={index}
+                  onDelete={() => handleDelete(image)}
+                  onHide={() => handleHide(image)}
+                  onReorderUp={() => handleReorder(image, "up")}
+                  onReorderDown={() => handleReorder(image, "down")}
+                />
+              );
+            })}
           </div>
           <div>
             <Button
               type="button"
               onClick={handleClick}
-              className="w-[200px] border-[#6A4FFF]/15 py-4 text-[14px] rounded-xl border-1  bg-[#6A4FFF]/10 text-[#6A4FFF] hover:bg-[#6A4FFF]/10 shadow-none"
+              className="w-[200px] border-priamry/15 py-4 text-[14px] rounded-xl border-1  bg-primary/10 text-primary hover:bg-primary/10 shadow-none"
             >
               Ajouter plus de photos
             </Button>
           </div>
         </div>
       )}
-
-      {errors.map((error: string) => (
-        <div key={error} style={{ color: "red" }}>
-          {error}
-        </div>
-      ))}
     </div>
   );
-}
-
-function fingerprint(file: File): string {
-  return `${file.name}-${file.size}-${file.lastModified}`;
 }

@@ -1,20 +1,16 @@
 import type { Doc } from "api/data-model";
 import { useCallback } from "react";
 
-export type VariantOption = {
-  id?: string;
-  name: string;
-};
-
 export type VariantElement = {
-  id?: string;
   name: string;
   order: number;
-  parentVariantId?: string;
-  options: VariantOption[];
+  options: string[];
 };
 
-export type TVariantsInventory = Map<string, { _id?: string, _creationTime?: number, path: string[], quantity: number }>
+export type TVariantsInventory = Map<
+  string,
+  { _id?: string; _creationTime?: number; path: string[]; quantity: number }
+>;
 
 type FieldLike = {
   state: { value: VariantElement[] };
@@ -35,7 +31,7 @@ export function useVariantActions(field: FieldLike) {
         return reindexSequential(newVariants);
       });
     },
-    [field]
+    [field],
   );
 
   const moveVariantUp = useCallback(
@@ -60,7 +56,7 @@ export function useVariantActions(field: FieldLike) {
         return reindexSequential(newVariants);
       });
     },
-    [field]
+    [field],
   );
 
   const moveVariantDown = useCallback(
@@ -82,75 +78,70 @@ export function useVariantActions(field: FieldLike) {
         return reindexSequential(newVariants);
       });
     },
-    [field]
+    [field],
   );
 
   return { deleteVariant, moveVariantUp, moveVariantDown } as const;
 }
 
 export function generateVIFingerPrint(path: string[]) {
-  let fp = ""
-  path.forEach(n => {
+  let fp = "";
+  path.forEach((n) => {
     if (n) {
-      if (fp != "") fp = fp.concat("-")
-      fp = fp.concat(n)
+      if (fp != "") fp = fp.concat("-");
+      fp = fp.concat(n);
     }
-  })
-  return fp
+  });
+  return fp;
 }
-export function formatVariantsInventory(vis: Doc<'variantsInventory'>[]) {
-  const result: TVariantsInventory = new Map()
-  vis.forEach(vi => result.set(
-    generateVIFingerPrint(vi.path),
-    vi
-  ))
-  return result
-
+export function formatVariantsInventory(vis: Doc<"variantsInventory">[]) {
+  const result: TVariantsInventory = new Map();
+  vis.forEach((vi) => result.set(generateVIFingerPrint(vi.path), vi));
+  return result;
 }
-
 
 function deepEqual(a: any, b: any): boolean {
-  if (a === b) return true
+  if (a === b) return true;
 
   // handle null and undefined
-  if (a == null || b == null) return a === b
+  if (a == null || b == null) return a === b;
 
   // handle Map
   if (a instanceof Map && b instanceof Map) {
-    if (a.size !== b.size) return false
+    if (a.size !== b.size) return false;
     for (const [key, valA] of a) {
-      if (!b.has(key)) return false
-      const valB = b.get(key)
-      if (!deepEqual(valA, valB)) return false
+      if (!b.has(key)) return false;
+      const valB = b.get(key);
+      if (!deepEqual(valA, valB)) return false;
     }
-    return true
+    return true;
   }
 
   // handle Array
   if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false
+    if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false
+      if (!deepEqual(a[i], b[i])) return false;
     }
-    return true
+    return true;
   }
 
   // handle Object
   if (typeof a === "object" && typeof b === "object") {
-    const keysA = Object.keys(a)
-    const keysB = Object.keys(b)
-    if (keysA.length !== keysB.length) return false
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
     for (const key of keysA) {
-      if (!Object.prototype.hasOwnProperty.call(b, key)) return false
-      if (!deepEqual(a[key], b[key])) return false
+      if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+      if (!deepEqual(a[key], b[key])) return false;
     }
-    return true
+    return true;
   }
 
   // fallback for primitives, functions, symbols, etc.
-  return false
+  return false;
 }
 
 export function mapsDeepEqual<K, V>(a: Map<K, V>, b: Map<K, V>): boolean {
-  return deepEqual(a, b)
+  return deepEqual(a, b);
 }

@@ -26,7 +26,10 @@ export default function VariantItem({
     <div className="bg-neutral-200 rounded-2xl border border-input-border  p-4">
       <div className="flex  items-center gap-4">
         {/* <DragIcon /> */}
-        <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600"> {index + 1} </span>
+        <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600">
+          {" "}
+          {index + 1}{" "}
+        </span>
         <div className="h-[24px] rounded-md py-0.5 bg-primary/10 w-[2px]" />
 
         <div className="flex-1 flex flex-col gap-2">
@@ -34,10 +37,10 @@ export default function VariantItem({
           <div className="flex flex-wrap gap-2">
             {variant.options.map((opt, i) => (
               <span
-                key={`${opt.name}-${i}`}
+                key={`${opt}-${i}`}
                 className="rounded-[6px] bg-primary/10 px-3 py-1 text-primary text-sm"
               >
-                {opt.name}
+                {opt}
               </span>
             ))}
           </div>
@@ -78,4 +81,3 @@ export default function VariantItem({
     </div>
   );
 }
-

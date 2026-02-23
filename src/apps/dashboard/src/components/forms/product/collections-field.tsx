@@ -19,14 +19,11 @@ import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Id } from "api/data-model";
-import { useCreateCollection } from "@/hooks/use-convex-queries";
-import { useGetAllCollections } from "@/database/collections";
+import { useGetCollections } from "@/database/collections";
 
 export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
   const field = useFieldContext<Set<string>>();
-  console.log("selected collections :", selectedCollections)
-  const createCollection = useCreateCollection();
-  const collectionsResult = useGetAllCollections();
+  const collectionsResult = useGetCollections();
   const collections = collectionsResult?.data;
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -37,12 +34,12 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
     if (!name.trim() || isAdding) return;
     setIsAdding(true);
     try {
-      const res = await createCollection.mutateAsync({ title: name });
-      if (res.ok) {
-        toast.success('Collection ajoutée avec succès')
-      } else {
-        toast.error(res.msg,)
-      }
+      // const res = await createCollection.mutateAsync({ title: name });
+      // if (res.ok) {
+      //   toast.success('Collection ajoutée avec succès')
+      // } else {
+      //   toast.error(res.msg,)
+      // }
       // Select the newly created category
       //field.handleChange(String(id) as any);
       setCreateOpen(false);
