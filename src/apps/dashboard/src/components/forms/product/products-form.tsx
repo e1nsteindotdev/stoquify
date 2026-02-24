@@ -28,8 +28,8 @@ import { decodeVariants, decodeSKUs, decodeImages } from "../types";
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
-
   const product = productId != null ? useGetProductById(productId) : undefined;
+
   const collections = productId != null ? useGetSelectedCollections(productId) : undefined;
   const productCollections = new Set(collections?.map((c) => c._id) ?? []);
 
@@ -54,36 +54,37 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
 
   const form = useAppForm({
     defaultValues,
-    onSubmit: async ({ value }: { value: any }) => {
+    onSubmit: async ({ value }) => {
+      const { collections, images, skus, variants, ...product } = value
       // because somehow value.images is an object
-      if (value.images) value.images = Object.values(value.images);
-      if (value.variantsInventory) {
-        value["variantsInventory"] = [...value.variantsInventory.values()].map(
-          (v) => v,
-        ) as any;
-      }
-      value.price = Number(value.price) ?? 0;
-      value.cost = Number(value.cost) ?? 0;
-      const dirtyValues = Object.fromEntries(
-        Object.entries(value).filter(([k]) => {
-          const decision = form.getFieldMeta(k as any)?.isDefaultValue;
-          return !decision;
-        }),
-      );
-      if (value.collections) {
-        dirtyValues["collections"] = Array.from(value.collections);
-      }
-
-      if (isNew) {
-        // const id = await initiateProduct.mutateAsync({});
-        // await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
-        // router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
-      } else {
-        if (productId) {
-          dirtyValues["productId"] = productId;
-          // await updateProduct.mutateAsync(dirtyValues as any);
-        }
-      }
+      // if (value.images) value.images = Object.values(value.images);
+      // if (value.variantsInventory) {
+      //   value["variantsInventory"] = [...value.variantsInventory.values()].map(
+      //     (v) => v,
+      //   ) as any;
+      // }
+      // value.price = Number(value.price) ?? 0;
+      // value.cost = Number(value.cost) ?? 0;
+      // const dirtyValues = Object.fromEntries(
+      //   Object.entries(value).filter(([k]) => {
+      //     const decision = form.getFieldMeta(k as any)?.isDefaultValue;
+      //     return !decision;
+      //   }),
+      // );
+      // if (value.collections) {
+      //   dirtyValues["collections"] = Array.from(value.collections);
+      // }
+      //
+      // if (isNew) {
+      //   // const id = await initiateProduct.mutateAsync({});
+      //   // await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
+      //   // router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
+      // } else {
+      //   if (productId) {
+      //     dirtyValues["productId"] = productId;
+      //     // await updateProduct.mutateAsync(dirtyValues as any);
+      //   }
+      // }
     },
   });
 

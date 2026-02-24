@@ -11,7 +11,7 @@ import { idbRefresh } from "@/lib/idb"
 export const collectionsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ['collections'],
-    queryFn: async (ctx) => {
+    queryFn: async () => {
       const collections = await convex.query(api.collections.listAllCollections)
       idbRefresh('collections', collections)
       return collections

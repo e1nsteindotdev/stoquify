@@ -20,13 +20,15 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Id } from "api/data-model";
 import { useGetCollections } from "@/database/collections";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { queryClient } from "@/lib/ts-query-client";
 
 export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
   const field = useFieldContext<Set<string>>();
   const collectionsResult = useGetCollections();
   const collections = collectionsResult?.data;
 
-  const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
@@ -34,15 +36,13 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
     if (!name.trim() || isAdding) return;
     setIsAdding(true);
     try {
-      // const res = await createCollection.mutateAsync({ title: name });
-      // if (res.ok) {
-      //   toast.success('Collection ajoutée avec succès')
-      // } else {
-      //   toast.error(res.msg,)
-      // }
-      // Select the newly created category
-      //field.handleChange(String(id) as any);
-      setCreateOpen(false);
+      const res = await convex.mutation(api.collections.createCollection, { title: name });
+      if (res.ok) {
+        toast.success('Collection ajoutée avec succès')
+        queryClient.refetchQueries({ queryKey: ['collections'] })
+      } else {
+        toast.error(res.msg,)
+      }
       setName("");
     } finally {
       setIsAdding(false);
@@ -68,7 +68,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
               {
                 collections?.length !== 0 ?
                   collections?.map(c =>
-                    <div className="flex gap-2 items-center uppercase">
+                    <div key={c._id} className="flex gap-2 items-center uppercase">
                       <Checkbox
                         checked={selectedCollections.has(c._id)}
                         onCheckedChange={(checked) => {
@@ -98,7 +98,7 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
             :
             <div className="flex flex-col gap-2 pt-3">
               {Array.from(selectedCollections).map(c => (
-                <div className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]">
+                <div key={c} className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]">
                   <p className="text-[12px]">{collections?.filter(i => i._id === c)?.[0].title}</p>
                   <CircleX color="red" size={20} onClick={() => {
                     field.setValue(prev => { prev.delete(c); return prev })
