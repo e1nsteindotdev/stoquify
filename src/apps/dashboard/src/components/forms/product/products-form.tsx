@@ -22,69 +22,226 @@ import { useAppForm } from "@/hooks/form";
 import StockageField from "./stockage-field";
 import { type Id } from "api/data-model";
 import { useGetProductById } from "@/database/products";
-import { useGetSelectedCollections } from "@/database/collections";
 import { decodeVariants, decodeSKUs, decodeImages } from "../types";
+import {
+  getImageChanges,
+  getProductChanges,
+  getVariantChanges,
+} from "../actions";
+
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { Effect } from "effect";
+import { Images } from "@/lib/services/image-service";
+import { effectRuntime } from "@/lib/effect-runtime";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
   const product = productId != null ? useGetProductById(productId) : undefined;
+  const router = useRouter();
 
-  const collections = productId != null ? useGetSelectedCollections(productId) : undefined;
-  const productCollections = new Set(collections?.map((c) => c._id) ?? []);
+  const defaultImages = decodeImages(product?.images);
+  const defaultVariants = decodeVariants(product?.variants);
+  const defaultSKUs = decodeSKUs(product?.skus);
 
   const defaultValues = useMemo(
     () => ({
-      categoryId: product?.categoryId ?? "",
+      categoryId: product?.categoryId ?? undefined,
       title: product?.title ?? "",
       desc: product?.desc ?? "",
       price: product?.price ?? 0,
       cost: product?.cost ?? 0,
-      discount: product?.discount ?? undefined,
-      oldPrice: product?.oldPrice ?? undefined,
+      discount: product?.discount ?? 0,
+      oldPrice: product?.oldPrice ?? 0,
       stockingStrategy: product?.stockingStrategy ?? "by_variants",
       status: product?.status ?? "incomplete",
-      images: decodeImages(product?.images),
-      variants: decodeVariants(product?.variants),
-      skus: decodeSKUs(product?.skus),
-      collections: productCollections ?? [],
+      images: defaultImages,
+      variants: defaultVariants,
+      skus: defaultSKUs,
+      collections: new Set(product?.collections ?? []),
     }),
-    [product, productCollections],
+    [product],
   );
 
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const { collections, images, skus, variants, ...product } = value
-      // because somehow value.images is an object
-      // if (value.images) value.images = Object.values(value.images);
-      // if (value.variantsInventory) {
-      //   value["variantsInventory"] = [...value.variantsInventory.values()].map(
-      //     (v) => v,
-      //   ) as any;
-      // }
-      // value.price = Number(value.price) ?? 0;
-      // value.cost = Number(value.cost) ?? 0;
-      // const dirtyValues = Object.fromEntries(
-      //   Object.entries(value).filter(([k]) => {
-      //     const decision = form.getFieldMeta(k as any)?.isDefaultValue;
-      //     return !decision;
-      //   }),
-      // );
-      // if (value.collections) {
-      //   dirtyValues["collections"] = Array.from(value.collections);
-      // }
-      //
-      // if (isNew) {
-      //   // const id = await initiateProduct.mutateAsync({});
-      //   // await updateProduct.mutateAsync({ ...dirtyValues, productId: id } as any);
-      //   // router.navigate({ to: "/produits/$slug", params: { slug: id as any } });
-      // } else {
-      //   if (productId) {
-      //     dirtyValues["productId"] = productId;
-      //     // await updateProduct.mutateAsync(dirtyValues as any);
-      //   }
-      // }
+      const { images, skus, variants, ...newProduct } = value;
+
+      const imageChanges = getImageChanges(defaultImages, images);
+      const variantChanges = getVariantChanges(defaultVariants, variants);
+
+      const program = Effect.gen(function*() {
+        // upload new images to the cloud
+        const imageService = yield* Images;
+        let ensuredProductId = productId;
+
+        if (!ensuredProductId) {
+          const { productId: newProductId } = yield* Effect.promise(() =>
+            convex.mutation(api.products.createProduct, {
+              ...newProduct,
+              collections: [...newProduct.collections],
+            }),
+          );
+          if (newProductId) {
+            ensuredProductId = newProductId;
+          }
+        }
+        if (!ensuredProductId) return;
+
+        const updateProductMetaData = Effect.gen(function*() {
+          if (!isNew) {
+            const productChanges = getProductChanges(product, {
+              categoryId: newProduct.categoryId,
+              title: newProduct.title,
+              desc: newProduct.desc,
+              price: newProduct.price,
+              cost: newProduct.cost,
+              discount: newProduct.discount,
+              oldPrice: newProduct.oldPrice,
+              stockingStrategy: newProduct.stockingStrategy,
+              status: newProduct.status,
+            });
+            if (productChanges) {
+              return yield* Effect.promise(() =>
+                convex.mutation(api.products.updateProductMetaData, {
+                  productId: ensuredProductId,
+                  ...productChanges,
+                }),
+              );
+            }
+          } else return yield* Effect.succeed(null);
+        });
+
+        const uploadImages = Effect.gen(function*() {
+          const imageChanges = getImageChanges(defaultImages, images);
+          const result = { ok: false };
+          imageChanges.toCreate = yield* Effect.forEach(
+            imageChanges.toCreate,
+            (image) =>
+              Effect.gen(function*() {
+                let compressedfile = image.compressedFile;
+                if (!compressedfile) {
+                  const { file } = yield* imageService.compressImageWithWorker(
+                    image.originalFile!,
+                    image.tempId,
+                  );
+                  compressedfile = file;
+                }
+                const url =
+                  yield* imageService.uploadImageToCloud(compressedfile);
+                result.ok = true;
+                return { ...image, url };
+              }),
+            { concurrency: "unbounded" },
+          );
+          return result;
+        });
+
+        const writeImages = yield* Effect.promise(() =>
+          convex.mutation(api.images.handleImageChanges, {
+            productId: ensuredProductId as Id<"products">,
+            toCreate: imageChanges.toCreate.map((img) => ({
+              url: img.url,
+              order: img.order,
+              hidden: img.hidden,
+              indexedDBId: img.indexedDBId,
+            })),
+            toUpdate: imageChanges.toCreate.map((img) => ({
+              imageId: img.tempId as Id<"images">,
+              url: img.url,
+              order: img.order,
+              hidden: img.hidden,
+              indexedDBId: img.indexedDBId,
+            })),
+            toDelete: imageChanges.toDelete.map(
+              (img) => img.tempId as Id<"images">,
+            ),
+          }),
+        );
+
+        const writeVariants = Effect.gen(function*() {
+          if (!variantChanges) return yield* Effect.succeed({ ok: false });
+          return yield* Effect.promise(() =>
+            convex.mutation(api.variants.handleVariantChanges, {
+              productId: ensuredProductId as Id<"products">,
+              toDelete: variantChanges.toDelete.map(
+                (v) => v.tempId as Id<"variants">,
+              ),
+              toUpdate: variantChanges.toUpdate.map((v) => ({
+                variantId: v.tempId as Id<"variants">,
+                name: v.name,
+                order: v.order,
+                options: v.options.map((o) => ({
+                  order: o.order,
+                  name: o.name,
+                })),
+              })),
+              toCreate: variantChanges.toCreate.map((v) => ({
+                name: v.name,
+                order: v.order,
+                options: v.options.map((o) => ({
+                  order: o.order,
+                  name: o.name,
+                })),
+              })),
+            }),
+          );
+        });
+
+        const writeSKUs = Effect.gen(function*() {
+          const optionToVariantMap = new Map<string, string>();
+          for (const v of variants) {
+            for (const opt of v.options) {
+              optionToVariantMap.set(opt.tempId, v.name);
+            }
+          }
+
+          Effect.promise(() =>
+            convex.mutation(api.skus.replaceSKUs, {
+              productId: ensuredProductId as Id<"products">,
+              skus: skus.map((sku) => ({
+                quantity: sku.quantity,
+                options: sku.options.map((opt) => {
+                  const variantName = optionToVariantMap.get(opt.tempId) || "";
+                  return {
+                    variantName,
+                    optionName: opt.optionName,
+                  };
+                }),
+              })),
+            }),
+          );
+        });
+
+        yield* Effect.all(
+          [
+            updateProductMetaData,
+            uploadImages.pipe(
+              Effect.andThen(({ ok }) => {
+                if (ok) return writeImages;
+              }),
+            ),
+            writeVariants.pipe(
+              Effect.andThen(({ ok }) => {
+                if (ok) return writeSKUs;
+              }),
+            ),
+          ],
+          { concurrency: "unbounded" },
+        );
+        return { productId: ensuredProductId };
+      });
+
+      const submitResult = await effectRuntime.runPromise(program);
+      if (submitResult?.productId && isNew) {
+        router.navigate({
+          to: "/produits/$slug",
+          params: { slug: submitResult.productId },
+        });
+      }
+
     },
   });
 

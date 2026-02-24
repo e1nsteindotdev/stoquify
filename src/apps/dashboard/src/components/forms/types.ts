@@ -50,12 +50,14 @@ export type TypeDecodedImage = {
   hidden: boolean;
   url: string;
   originalFile: File | undefined | null,
+  compressedFile: File | undefined | null,
 }
 export const decodeImages = (images: TypeImage[] | undefined | null): TypeDecodedImage[] => {
   if (!images) return [];
   return images.map((image) => ({
     tempId: image._id,
     originalFile: null,
+    compressedFile: null,
     indexedDBId: image.indexedDBId,
     order: image.order,
     hidden: image.hidden,

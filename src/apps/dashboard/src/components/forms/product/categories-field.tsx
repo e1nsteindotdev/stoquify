@@ -19,17 +19,17 @@ import {
 } from "@/components/ui/popover";
 
 import { useGetAllCategories } from "@/database/categories";
+import { Id } from "api/data-model";
 
 type Props = {
   label?: string;
 };
 
 export default function CategoriesField({ label }: Props) {
-  const field = useFieldContext<string>();
+  const field = useFieldContext<Id<'categories'>>();
   const categoriesResult = useGetAllCategories();
   const categories = categoriesResult?.data ?? [];
 
-  const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -40,7 +40,6 @@ export default function CategoriesField({ label }: Props) {
       // const id = await createCategory.mutateAsync({ name });
       // Select the newly created category
       // field.handleChange(String(id) as any);
-      setCreateOpen(false);
       setName("");
     } finally {
       setIsCreating(false);
@@ -52,7 +51,7 @@ export default function CategoriesField({ label }: Props) {
       {label && <Label className="font-semibold pb-[12px]">{label}</Label>}
       <div className="space-y-1 border border-neutral-300 rounded-[15px] p-3">
         <Select
-          value={(field.state.value as string) ?? ""}
+          value={(field.state.value as Id<'categories'>) ?? ""}
           onValueChange={(v) => field.handleChange(v as any)}
         >
           <SelectTrigger className="w-full">

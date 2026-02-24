@@ -37,12 +37,12 @@ export default function ImageField({
       );
       const nextOrder = calculateNextOrder();
 
-      const program = Effect.gen(function* () {
+      const program = Effect.gen(function*() {
         const imgService = yield* Images;
         const fileBase64Pairs = yield* Effect.forEach(
           imagesFiles,
           (file) =>
-            Effect.gen(function* () {
+            Effect.gen(function*() {
               const base64 = yield* imgService.fileToBase64(file);
               return { file, base64 };
             }),
@@ -58,6 +58,7 @@ export default function ImageField({
             order: nextOrder + i,
             hidden: false,
             originalFile: file,
+            compressedFile: null,
           }),
         );
 
@@ -66,15 +67,16 @@ export default function ImageField({
         yield* Effect.all(
           newImages.map((image) =>
             Effect.forkDaemon(
-              Effect.gen(function* () {
-                const { base64 } = yield* imgService.compressImageWithWorker(
+              Effect.gen(function*() {
+                const { base64, file, compressionRatio } = yield* imgService.compressImageWithWorker(
                   image.originalFile!,
                   image.tempId!,
                 );
+                console.log("compressionRatio : ", compressionRatio)
                 field.setValue((prev) =>
                   prev.map((img) =>
                     img.tempId === image.tempId
-                      ? { ...img, url: base64, originalFile: undefined }
+                      ? { ...img, url: base64, compressedFile: file, originalFile: undefined }
                       : img,
                   ),
                 );
