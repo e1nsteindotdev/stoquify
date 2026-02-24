@@ -1,17 +1,6 @@
 import type { Doc } from "api/data-model";
 import { useCallback } from "react";
 
-export type VariantElement = {
-  name: string;
-  order: number;
-  options: string[];
-};
-
-export type TVariantsInventory = Map<
-  string,
-  { _id?: string; _creationTime?: number; path: string[]; quantity: number }
->;
-
 type FieldLike = {
   state: { value: VariantElement[] };
   setValue: (updater: (prev: VariantElement[]) => VariantElement[]) => void;

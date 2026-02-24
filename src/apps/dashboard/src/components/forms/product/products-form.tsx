@@ -3,7 +3,13 @@ import { useEffect, useMemo } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -13,18 +19,19 @@ import {
 } from "@/components/ui/select";
 import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
+import StockageField from "./stockage-field";
 import { type Id } from "api/data-model";
 import { useGetProductById } from "@/database/products";
 import { useGetSelectedCollections } from "@/database/collections";
+import { decodeVariants } from "../types";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
-  const router = useRouter();
   const isNew = !slug || slug === "new";
   const productId: Id<"products"> | null = isNew ? null : slug;
 
-  const product = productId != null ? useGetProductById(productId) : undefined
-  const collections = productId != null ? useGetSelectedCollections(productId) : undefined
-  const productCollections = new Set(collections?.map(c => c._id) ?? []);
+  const product = productId != null ? useGetProductById(productId) : undefined;
+  const collections = productId != null ? useGetSelectedCollections(productId) : undefined;
+  const productCollections = new Set(collections?.map((c) => c._id) ?? []);
 
   const defaultValues = useMemo(
     () => ({
@@ -38,29 +45,33 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       stockingStrategy: product?.stockingStrategy ?? "by_variants",
       status: product?.status ?? "incomplete",
       images: product?.images ?? [],
-      variants: product?.variants ?? [],
+      variants: decodeVariants(product?.variants),
       skus: product?.skus ?? [],
-      collections: productCollections ?? []
+      collections: productCollections ?? [],
     }),
-    [product, productCollections]
+    [product, productCollections],
   );
 
   const form = useAppForm({
     defaultValues,
     onSubmit: async ({ value }: { value: any }) => {
       // because somehow value.images is an object
-      if (value.images) value.images = Object.values(value.images)
-      if (value.variantsInventory) { value['variantsInventory'] = [...value.variantsInventory.values()].map(v => v) as any }
-      value.price = Number(value.price) ?? 0
-      value.cost = Number(value.cost) ?? 0
+      if (value.images) value.images = Object.values(value.images);
+      if (value.variantsInventory) {
+        value["variantsInventory"] = [...value.variantsInventory.values()].map(
+          (v) => v,
+        ) as any;
+      }
+      value.price = Number(value.price) ?? 0;
+      value.cost = Number(value.cost) ?? 0;
       const dirtyValues = Object.fromEntries(
         Object.entries(value).filter(([k]) => {
-          const decision = form.getFieldMeta(k as any)?.isDefaultValue
-          return !decision
-        })
+          const decision = form.getFieldMeta(k as any)?.isDefaultValue;
+          return !decision;
+        }),
       );
       if (value.collections) {
-        dirtyValues['collections'] = Array.from(value.collections)
+        dirtyValues["collections"] = Array.from(value.collections);
       }
 
       if (isNew) {
@@ -81,8 +92,13 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
     form.reset(defaultValues);
   }, [defaultValues]);
 
-  const isCompleted = (form.getFieldValue('images') && form.getFieldValue('price') !== 0 && form.getFieldValue('title') && form.getFieldValue('categoryId')) ? true : false
-
+  const isCompleted =
+    form.getFieldValue("images") &&
+      form.getFieldValue("price") !== 0 &&
+      form.getFieldValue("title") &&
+      form.getFieldValue("categoryId")
+      ? true
+      : false;
 
   return (
     <div className="w-full flex items-start justify-center p-6 pb-20">
@@ -136,26 +152,20 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 <div className="grid grid-cols-2 gap-4">
                   <form.AppField
                     name="price"
-                    children={(field) => (
-                      <field.PricingField />
-                    )}
+                    children={(field) => <field.PricingField />}
                   />
                   <form.AppField
                     name="cost"
                     children={(field) => (
                       <div className="grid">
                         <Label className="font-semibold pb-[12px]">Coût</Label>
-                        <field.TextField
-                          type="number"
-                          placeholder="2500"
-                        />
+                        <field.TextField type="number" placeholder="2500" />
                       </div>
                     )}
                   />
                 </div>
               </InputsContainer>
             </div>
-
 
             <div className="flex flex-col gap-3">
               <InputsTitle>Variants</InputsTitle>
@@ -170,28 +180,31 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
             <div className="flex flex-col gap-3">
               <InputsTitle>Stockage</InputsTitle>
               <InputsContainer>
-
                 <form.AppField
                   name="stockingStrategy"
-                  children={(field) => (
-                    <field.StockageStratField />
-                  )} />
+                  children={(field) => <field.StockageStratField />}
+                />
 
                 <form.Subscribe
-                  selector={(state) => ({ variants: state.values.variants, strat: state.values.stockingStrategy })}
-                  children={({ variants, strat, }) => {
+                  selector={(state) => ({
+                    variants: state.values.variants,
+                    strat: state.values.stockingStrategy,
+                  })}
+                  children={({ variants, strat }) => {
                     return (
                       <form.AppField
                         name="skus"
                         children={(field) => (
-                          <field.StockageField
+                          <StockageField
+                            field={field}
                             strat={strat}
                             variants={variants}
                           />
                         )}
                       />
-                    )
-                  }} />
+                    );
+                  }}
+                />
               </InputsContainer>
             </div>
           </div>
@@ -202,7 +215,10 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               <Card className="gap-2 border-white">
                 <CardHeader>
                   <CardTitle>Statut</CardTitle>
-                  <CardDescription>Vous devez remplir les champs importants pour pouvoir rendre le produit actif dans la boutique</CardDescription>
+                  <CardDescription>
+                    Vous devez remplir les champs importants pour pouvoir rendre
+                    le produit actif dans la boutique
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form.Subscribe
@@ -214,7 +230,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                     ]}
                     children={([categoryId, title, price, images]) => {
                       if (categoryId && title && price && images) {
-                        form.setFieldValue("status", "active")
+                        form.setFieldValue("status", "active");
                       }
                       return (
                         <form.Field
@@ -222,36 +238,51 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                           children={(field) => (
                             <Select
                               value={field.state.value}
-                              onValueChange={(v) => field.handleChange(v as any)}
+                              onValueChange={(v) =>
+                                field.handleChange(v as any)
+                              }
                             >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Sélectionner le statut" />
                               </SelectTrigger>
                               <SelectContent className="bg-card">
-                                <SelectItem value="incomplete">incomplet</SelectItem>
-                                <SelectItem value="hidden" disabled={!isCompleted}>caché</SelectItem>
-                                <SelectItem value="active" disabled={!isCompleted}>actif</SelectItem>
+                                <SelectItem value="incomplete">
+                                  incomplet
+                                </SelectItem>
+                                <SelectItem
+                                  value="hidden"
+                                  disabled={!isCompleted}
+                                >
+                                  caché
+                                </SelectItem>
+                                <SelectItem
+                                  value="active"
+                                  disabled={!isCompleted}
+                                >
+                                  actif
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           )}
-                        />)
+                        />
+                      );
                     }}
                   />
                 </CardContent>
               </Card>
 
-
-
               <form.Subscribe
-                selector={(state) => [
-                  state.values.collections,
-                ]}
-                children={([collections]) => <form.AppField
-                  name="collections"
-                  children={(field) => (
-                    <field.CollectionsField selectedCollections={collections} />
-                  )}
-                />}
+                selector={(state) => [state.values.collections]}
+                children={([collections]) => (
+                  <form.AppField
+                    name="collections"
+                    children={(field) => (
+                      <field.CollectionsField
+                        selectedCollections={collections}
+                      />
+                    )}
+                  />
+                )}
               />
               <Card className="gap-2 border-white">
                 <CardHeader>
