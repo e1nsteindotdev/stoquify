@@ -23,7 +23,7 @@ import StockageField from "./stockage-field";
 import { type Id } from "api/data-model";
 import { useGetProductById } from "@/database/products";
 import { useGetSelectedCollections } from "@/database/collections";
-import { decodeVariants } from "../types";
+import { decodeVariants, decodeSKUs, decodeImages } from "../types";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const isNew = !slug || slug === "new";
@@ -44,9 +44,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       oldPrice: product?.oldPrice ?? undefined,
       stockingStrategy: product?.stockingStrategy ?? "by_variants",
       status: product?.status ?? "incomplete",
-      images: product?.images ?? [],
+      images: decodeImages(product?.images),
       variants: decodeVariants(product?.variants),
-      skus: product?.skus ?? [],
+      skus: decodeSKUs(product?.skus),
       collections: productCollections ?? [],
     }),
     [product, productCollections],

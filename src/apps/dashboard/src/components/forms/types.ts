@@ -1,4 +1,4 @@
-import type { TypeVariant, TypeSKU } from "api/types";
+import type { TypeVariant, TypeSKU, TypeImage } from "api/types";
 
 export type TypeDecodedVariant = {
   tempId: string,
@@ -40,5 +40,25 @@ export const decodeSKUs = (skus: TypeSKU[] | undefined | null): TypeDecodedSKU[]
       order: option.order,
       optionName: option.name,
     })),
+  }));
+};
+
+export type TypeDecodedImage = {
+  tempId: string;
+  indexedDBId?: number | undefined;
+  order: number;
+  hidden: boolean;
+  url: string;
+  originalFile: File | undefined | null,
+}
+export const decodeImages = (images: TypeImage[] | undefined | null): TypeDecodedImage[] => {
+  if (!images) return [];
+  return images.map((image) => ({
+    tempId: image._id,
+    originalFile: null,
+    indexedDBId: image.indexedDBId,
+    order: image.order,
+    hidden: image.hidden,
+    url: image.url,
   }));
 };

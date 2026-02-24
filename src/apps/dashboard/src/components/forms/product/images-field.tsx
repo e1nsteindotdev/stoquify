@@ -2,21 +2,16 @@ import { useRef, useCallback } from "react";
 import { Label } from "@radix-ui/react-label";
 import { Button } from "@/components/ui/button";
 import { useFieldContext } from "@/hooks/form-context.tsx";
-import { Doc } from "api/data-model";
 import ImageItem from "./image-item";
 import { Effect } from "effect";
 import { effectRuntime } from "@/lib/effect-runtime";
 import { Images } from "@/lib/services/image-service";
+import { TypeDecodedImage } from "../types";
 
 type PropsType = {
   productId: string | null;
   label?: string;
 } & React.ComponentProps<"input">;
-
-type ProductImage = Omit<Doc<"images">, "_id" | "_creationTime"> & {
-  tempId?: string;
-  originalFile?: File;
-};
 
 export default function ImageField({
   productId,
@@ -25,7 +20,7 @@ export default function ImageField({
   type,
   ...props
 }: PropsType) {
-  const field = useFieldContext<ProductImage[]>();
+  const field = useFieldContext<TypeDecodedImage[]>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const images = field.state.value;
 
@@ -54,7 +49,7 @@ export default function ImageField({
           { concurrency: "unbounded" },
         );
 
-        const newImages: ProductImage[] = fileBase64Pairs.map(
+        const newImages: TypeDecodedImage[] = fileBase64Pairs.map(
           ({ file, base64 }, i) => ({
             tempId: crypto.randomUUID(),
             productId: undefined,
@@ -100,10 +95,10 @@ export default function ImageField({
   }, []);
 
   const handleReorder = useCallback(
-    (image: ProductImage, direction: "up" | "down") => {
+    (image: TypeDecodedImage, direction: "up" | "down") => {
       field.setValue((prev) => {
         const sorted = [...(prev || [])].sort((a, b) => a.order - b.order);
-        const idx = sorted.findIndex((img) => img.order === image.order);
+        const idx = sorted.findIndex((img) => img.tempId === image.tempId);
         if (idx === -1) return prev;
         if (direction === "up" && idx > 0) {
           [sorted[idx - 1], sorted[idx]] = [sorted[idx], sorted[idx - 1]];
@@ -120,20 +115,20 @@ export default function ImageField({
   );
 
   const handleDelete = useCallback(
-    (image: ProductImage) => {
+    (image: TypeDecodedImage) => {
       field.setValue(
-        (prev) => prev?.filter((img) => img.order !== image.order) || [],
+        (prev) => prev?.filter((img) => img.tempId !== image.tempId) || [],
       );
     },
     [field],
   );
 
   const handleHide = useCallback(
-    (image: ProductImage) => {
+    (image: TypeDecodedImage) => {
       field.setValue(
         (prev) =>
           prev?.map((img) =>
-            img.order === image.order ? { ...img, hidden: !img.hidden } : img,
+            img.tempId === image.tempId ? { ...img, hidden: !img.hidden } : img,
           ) || [],
       );
     },
@@ -170,7 +165,7 @@ export default function ImageField({
               const isNew = !("_id" in image);
               return (
                 <ImageItem
-                  key={image.order}
+                  key={image.tempId}
                   image={image}
                   index={index}
                   onDelete={() => handleDelete(image)}
