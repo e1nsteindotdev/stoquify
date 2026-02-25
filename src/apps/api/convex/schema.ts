@@ -34,45 +34,44 @@ const schema = defineSchema({
     status: v.union(
       v.literal("active"),
       v.literal("hidden"),
-      v.literal("incomplete")
+      v.literal("incomplete"),
     ),
     discount: v.optional(v.number()),
     oldPrice: v.optional(v.number()),
     stockingStrategy: v.union(
       v.literal("by_demand"),
       v.literal("by_variants"),
-      v.literal("by_number")
+      v.literal("by_number"),
     ),
     quantity: v.optional(v.number()),
-    images: v.optional(
-      v.array(
-        v.object({
-          storageId: v.id("_storage"),
-          url: v.optional(v.string()),
-          order: v.number(),
-          hidden: v.boolean(),
-        })
-      )
-    ),
+    collections: v.array(v.id("collections")),
   }).index("by_store", ["storeId"]),
+
+  images: defineTable({
+    indexedDBId: v.optional(v.number()),
+    productId: v.optional(v.id("products")),
+    url: v.string(),
+    order: v.number(),
+    hidden: v.boolean(),
+  }),
 
   variants: defineTable({
     productId: v.id("products"),
-    parentVariantId: v.optional(v.id("variants")),
     name: v.string(),
     order: v.number(),
-  }).index("by_productId", ["productId"]),
+  }).index("productId", ["productId", "order"]),
 
   variantOptions: defineTable({
-    name: v.string(),
     variantId: v.id("variants"),
-  }).index("by_variantId", ["variantId"]),
+    order: v.number(),
+    name: v.string(),
+  }),
 
-  variantsInventory: defineTable({
+  skus: defineTable({
     productId: v.id("products"),
-    path: v.array(v.string()),
     quantity: v.number(),
-  }).index("by_productId", ["productId"]),
+    options: v.array(v.id("variantOptions")),
+  }).index("productId", ["productId"]),
 
   collections: defineTable({
     title: v.string(),
@@ -109,9 +108,9 @@ const schema = defineSchema({
           v.object({
             variantId: v.id("variants"),
             variantOptionId: v.id("variantOptions"),
-          })
+          }),
         ),
-      })
+      }),
     ),
     addressId: v.id("addresses"),
     deliveryCost: v.number(),
@@ -119,10 +118,11 @@ const schema = defineSchema({
     status: v.union(
       v.literal("pending"),
       v.literal("confirmed"),
-      v.literal("denied")
+      v.literal("denied"),
     ),
     createdAt: v.number(),
-  }).index("by_customer", ["customerId"])
+  })
+    .index("by_customer", ["customerId"])
     .index("by_createdAt", ["createdAt"]),
 
   sales: defineTable({
@@ -136,9 +136,9 @@ const schema = defineSchema({
           v.object({
             variantId: v.id("variants"),
             variantOptionId: v.id("variantOptions"),
-          })
+          }),
         ),
-      })
+      }),
     ),
     subTotalCost: v.number(),
     createdAt: v.number(),

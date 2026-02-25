@@ -12,6 +12,10 @@
       "types": "./convex/schema.ts",
       "default": "./convex/schema.ts"
     },
+    "./types": {
+      "types": "./convex/types/types.ts",
+      "default": "./convex/types/types.ts"
+    },
     "./convex": {
       "types": "./convex/_generated/api.js",
       "default": "./convex/_generated/api.js"

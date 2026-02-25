@@ -22,7 +22,10 @@ import type * as products from "../products.js";
 import type * as sales from "../sales.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
+import type * as skus from "../skus.js";
+import type * as types_types from "../types/types.js";
 import type * as users from "../users.js";
+import type * as variants from "../variants.js";
 
 import type {
   ApiFromModules,
@@ -45,7 +48,10 @@ declare const fullApi: ApiFromModules<{
   sales: typeof sales;
   seed: typeof seed;
   settings: typeof settings;
+  skus: typeof skus;
+  "types/types": typeof types_types;
   users: typeof users;
+  variants: typeof variants;
 }>;
 
 /**

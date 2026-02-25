@@ -1,86 +1,294 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { deleteVariants, deleteVariantsInventory, getVariants, getVariantsInventory, insertVariants, insertVariantsInventory } from "./actions/product_actions";
-import { type Id } from "./_generated/dataModel";
+import {
+  insertVariants,
+  insertVariantsInventory,
+} from "./actions/product_actions";
+import { internal } from "./_generated/api";
 
 export const listProducts = query({
   handler: async (ctx) => {
-    const storeId = (await ctx.db.query("stores").first())?._id
+    const storeId = (await ctx.db.query("stores").first())?._id;
+    let products = await ctx.db
+      .query("products")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
 
-    // get active all products
-    let products = await ctx.db.query("products").filter(e => e.eq(e.field('storeId'), storeId)).collect();
-    products = products.filter(p => p.status === "active")
+    const images = await ctx.db.query("images").collect();
+    const variants = await ctx.db.query("variants").collect();
+    const variantOptions = await ctx.db.query("variantOptions").collect();
+    const skus = await ctx.db.query("skus").collect();
+    const collections = await ctx.db.query("collections").collect();
 
-
-    // attach images urls to products' images 
-    const urls = new Map<Id<'_storage'>, string | undefined>()
-    await Promise.all(products.map(
-      async product => {
-        await Promise.all(
-          product?.images?.map(async image => {
-            const url = await ctx.storage.getUrl(image.storageId) ?? undefined
-            urls.set(image.storageId, url)
-          }) ?? [])
-      }
-    ))
-
-    return products.map(product => {
+    return products.map((product) => {
       return {
         ...product,
-        images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) }))
-      }
-    })
+        images: images
+          .filter((img) => img.productId === product._id)
+          .sort((a, b) => a.order - b.order),
+        skus: skus
+          .filter((sku) => sku.productId === product._id)
+          .map((sku) => ({
+            ...sku,
+            options: variantOptions.filter((option) =>
+              sku.options.includes(option._id),
+            ),
+          })),
+        variants: variants
+          .filter((v) => v.productId === product._id)
+          .map((variant) => {
+            const options = variantOptions.filter(
+              (option) => option.variantId === variant._id,
+            );
+            return {
+              ...variant,
+              options,
+            };
+          }),
+      };
+    });
   },
 });
 
-export const listAllProduts = query({
-  handler: async (ctx) => {
-    const storeId = (await ctx.db.query("stores").first())?._id
-    let products = await ctx.db.query("products").filter(e => e.eq(e.field('storeId'), storeId)).collect();
+export const getProductById = query({
+  args: { id: v.id("products") },
+  handler: async (ctx, { id }) => {
+    const product = await ctx.db.get(id);
+    if (!product) return null;
 
-    const urls = new Map<Id<'_storage'>, string | undefined>()
-    products.forEach(product => product?.images?.forEach(image => urls.set(image.storageId, undefined)))
-    //const list = await Promise.all(Array.from(urls.keys()).map(async id => await ctx.storage.getUrl(id)))
-    const list = await Promise.all(Array.from(urls.keys()).map(async id => urls.set(id, await ctx.storage.getUrl(id) ?? undefined)))
-    await Promise.all(products.forEach(async product => {
-      if (product.images) {
-        await Promise.all(product.images.map(async img => {
-          const url = await ctx.storage.getUrl(img.storageId)
-          urls.set(img.storageId, url ?? undefined)
-        }))
-      }
-    }) ?? [])
+    const images = await ctx.db
+      .query("images")
+      .filter((e) => e.eq(e.field("productId"), id))
+      .collect();
+    const variants = await ctx.db
+      .query("variants")
+      .filter((e) => e.eq(e.field("productId"), id))
+      .collect();
 
-    return products.map(product => {
-      return { ...product, images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) })) }
-    })
+    const variantOptions = await ctx.db.query("variantOptions")
+      .collect();
+
+    const skus = await ctx.db
+      .query("skus")
+      .filter((e) => e.eq(e.field("productId"), id))
+      .collect();
+
+    return {
+      ...product,
+      variants: variants.map((variant) => ({
+        ...variants,
+        options: variantOptions.filter((option) => option.variantId === variant._id),
+      })),
+      skus,
+      images: images.sort((a, b) => a.order - b.order),
+    };
   },
 });
 
-export const removeProduct = mutation({
+export const deleteProduct = mutation({
   args: {
     id: v.id("products"),
   },
-  handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
-  },
-});
+  handler: async (ctx, { id }) => {
+    await ctx.db.delete(id);
 
-export const initiateProduct = mutation({
-  handler: async (ctx) => {
-    const store = await ctx.db.query("stores").first();
-    if (store?._id) {
-      return await ctx.db.insert("products", {
-        storeId: store?._id,
-        stockingStrategy: "by_variants",
-        status: "incomplete",
-      });
+    // loop through variants, variantOptions, skus, images that are attached to this product and remove them too.
+    const images = await ctx.db
+      .query("images")
+      .filter((e) => e.eq(e.field("productId"), id))
+      .collect();
+
+    const variants = await ctx.db
+      .query("variants")
+      .filter((e) => e.eq(e.field("productId"), id))
+      .collect();
+
+    const variantOptions = await ctx.db.query("variantOptions").collect();
+
+    const skus = await ctx.db
+      .query("skus")
+      .filter((e) => e.eq(e.field("productId"), id))
+      .collect();
+
+    for (const image of images) {
+      await ctx.db.delete(image._id);
     }
-    return null;
+
+    for (const sku of skus) {
+      await ctx.db.delete(sku._id);
+    }
+
+    for (const variant of variants) {
+      const relatedOptions = variantOptions.filter(
+        (option) => option.variantId === variant._id,
+      );
+      for (const option of relatedOptions) {
+        await ctx.db.delete(option._id);
+      }
+      await ctx.db.delete(variant._id);
+    }
   },
 });
 
-export const updateProduct = mutation({
+export const sendImage = mutation({
+  args: {
+    storageId: v.id("_storage"),
+    productId: v.id("products"),
+    order: v.number(),
+    indexedDBId: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const product = await ctx.db.get(args.productId);
+    if (!product) {
+      console.log("product doeesn't exist: ", args.productId, product);
+      return null;
+    }
+    const url = await ctx.storage.getUrl(args.storageId);
+    if (!url) {
+      console.log("failed to get url for storageId: ", args.storageId);
+      return null;
+    }
+    await ctx.db.insert("images", {
+      productId: args.productId,
+      url: args.storageId,
+      order: args.order,
+      hidden: false,
+      indexedDBId: args.indexedDBId,
+    });
+    console.log("images attached succesffuly gonna return the url ", url);
+    return url;
+  },
+});
+
+export const getProductByCategory = query({
+  args: {
+    categoryId: v.id("categories"),
+  },
+  handler: async (ctx, { categoryId }) => {
+    return await ctx.db
+      .query("products")
+      .filter((q) => q.eq(q.field("categoryId"), categoryId))
+      .collect();
+  },
+});
+
+export const createProduct = mutation({
+  args: {
+    title: v.optional(v.string()),
+    desc: v.optional(v.string()),
+    price: v.optional(v.number()),
+    cost: v.optional(v.number()),
+    discount: v.optional(v.number()),
+    oldPrice: v.optional(v.number()),
+    categoryId: v.optional(v.id("categories")),
+    status: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("hidden"),
+        v.literal("incomplete"),
+      ),
+    ),
+    stockingStrategy: v.optional(
+      v.union(
+        v.literal("by_demand"),
+        v.literal("by_variants"),
+        v.literal("by_number"),
+      ),
+    ),
+    images: v.optional(
+      v.array(
+        v.object({
+          storageId: v.id("_storage"),
+          url: v.optional(v.string()),
+          order: v.number(),
+          hidden: v.boolean(),
+        }),
+      ),
+    ),
+    quantity: v.optional(v.number()),
+    variants: v.optional(
+      v.array(
+        v.object({
+          _id: v.optional(v.id("variants")),
+          _creationTime: v.optional(v.number()),
+          productId: v.optional(v.id("products")),
+          name: v.string(),
+          order: v.number(),
+          options: v.array(
+            v.object({
+              _id: v.optional(v.id("variantOptions")),
+              _creationTime: v.optional(v.number()),
+              variantId: v.optional(v.id("variants")),
+              optionName: v.string(),
+            }),
+          ),
+        }),
+      ),
+    ),
+    collections: v.optional(v.array(v.id("collections"))),
+    variantsInventory: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const store = await ctx.db.query("stores").first();
+      if (!store?._id) {
+        throw new Error("No store found");
+      }
+
+      const {
+        variants,
+        variantsInventory,
+        collections,
+        images,
+        status,
+        stockingStrategy,
+        ...productData
+      } = args;
+
+      const productId = await ctx.db.insert("products", {
+        storeId: store._id,
+        status: status ?? "incomplete",
+        stockingStrategy: stockingStrategy ?? "by_variants",
+        collections: [],
+        ...productData,
+      });
+
+      if (images && images.length > 0) {
+        for (const img of images) {
+          await ctx.db.insert("images", {
+            productId,
+            url: img.storageId,
+            order: img.order,
+            hidden: img.hidden,
+          });
+        }
+      }
+
+      if (variants && variants.length > 0) {
+        insertVariants(ctx, variants, productId);
+      }
+      if (variantsInventory && variantsInventory.length > 0) {
+        insertVariantsInventory(ctx, variantsInventory, productId);
+      }
+
+      if (collections && collections.length > 0) {
+        for (const collectionId of collections) {
+          const collection = await ctx.db.get(collectionId);
+          if (collection) {
+            await ctx.db.patch(collectionId, {
+              productIds: [...(collection.productIds ?? []), productId],
+            });
+          }
+        }
+      }
+      return { ok: true, productId };
+    } catch (e) {
+      return { ok: false };
+    }
+  },
+});
+
+export const updateProductMetaData = mutation({
   args: {
     productId: v.id("products"),
     title: v.optional(v.string()),
@@ -91,187 +299,80 @@ export const updateProduct = mutation({
     oldPrice: v.optional(v.number()),
     categoryId: v.optional(v.id("categories")),
     status: v.optional(
-      v.union(v.literal("active"), v.literal("hidden"), v.literal("incomplete"))
+      v.union(
+        v.literal("active"),
+        v.literal("hidden"),
+        v.literal("incomplete"),
+      ),
     ),
     stockingStrategy: v.optional(
       v.union(
         v.literal("by_demand"),
         v.literal("by_variants"),
-        v.literal("by_number")
-      )
-    ),
-    images: v.optional(
-      v.array(
-        v.object({
-          storageId: v.id("_storage"),
-          url: v.optional(v.string()),
-          order: v.number(),
-          hidden: v.boolean(),
-        })
-      )
+        v.literal("by_number"),
+      ),
     ),
     quantity: v.optional(v.number()),
-    variants: v.optional(
-      v.array(
-        v.object({
-          _id: v.optional(v.id("variants")),
-          _creationTime: v.optional(v.number()),
-          productId: v.optional(v.id("products")),
-          parentVariantId: v.optional(v.id("variants")),
-          name: v.string(),
-          order: v.number(),
-          options: v.array(v.object({
-            _id: v.optional(v.id("variantOptions")),
-            _creationTime: v.optional(v.number()),
-            variantId: v.optional(v.id("variants")),
-            name: v.string(),
-          })),
-        })
-      )
-    ),
-    collections: v.optional(v.array(v.id('collections'))),
-    variantsInventory: v.optional(v.any())
+    collections: v.optional(v.array(v.id("collections"))),
   },
   handler: async (ctx, args) => {
-    console.log("update product args :", args)
-    const { productId, variants, variantsInventory, collections, ...updateData } = args;
-    const cleanUpdateData = updateData
-    await ctx.db.patch(productId, cleanUpdateData);
+    try {
+      const {
+        productId,
+        status,
+        stockingStrategy,
+        collections,
+        ...updateData
+      } = args;
 
-    if (variants && variants.length > 0) {
-      deleteVariants(ctx, productId)
-      insertVariants(ctx, variants, productId)
-    }
-    if (variantsInventory && variantsInventory.length > 0) {
-      deleteVariantsInventory(ctx, productId)
-      insertVariantsInventory(ctx, variantsInventory, productId)
-    }
+      const cleanData: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries({
+        ...updateData,
+        status,
+        stockingStrategy,
+      })) {
+        if (value !== undefined && value !== null) {
+          cleanData[key] = value;
+        }
+      }
 
-    let past_collections = (await ctx.db.query('collections').collect())
-      .filter(c => {
-        const ids = c?.productIds?.filter(id => id === args.productId)?.length
-        if (ids && ids > 0)
-          return true
-        else
-          return false
-      })
-    const past_collection_ids = past_collections.map(c => c._id)
-    const new_collection_ids = collections ?? []
+      await ctx.db.patch(productId, cleanData);
 
-    // add new collections
-    new_collection_ids
-      .filter(newId => {
-        return past_collection_ids.find(oldId => newId === oldId) ? false : true
-      })
-      .forEach(async id => {
-        const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
-        await ctx.db.patch(id, { productIds: [...past_product_ids, productId] })
-      })
+      if (collections !== undefined) {
+        const product = await ctx.db.get(productId);
+        if (product) {
+          const currentCollections = new Set(product.collections ?? []);
+          const newCollections = new Set(collections);
 
-    // remove removed collections
-    past_collection_ids
-      .filter(oldId => {
-        return new_collection_ids.find(newId => newId === oldId) ? false : true
-      })
-      .forEach(async id => {
-        const past_product_ids = (await ctx.db.get(id))?.productIds ?? []
-        await ctx.db.patch(id, { productIds: past_product_ids?.filter(id => id !== productId) })
-      })
-    return productId;
-  },
-});
+          for (const collectionId of collections) {
+            if (!currentCollections.has(collectionId)) {
+              const collection = await ctx.db.get(collectionId);
+              if (collection) {
+                await ctx.db.patch(collectionId, {
+                  productIds: [...(collection.productIds ?? []), productId],
+                });
+              }
+            }
+          }
 
-export const getProductById = query({
-  args: {
-    id: v.id("products"),
-  },
-  handler: async (ctx, { id }) => {
-    const product = await ctx.db.get(id);
-    if (!product) return null
+          for (const collectionId of product.collections ?? []) {
+            if (!newCollections.has(collectionId)) {
+              const collection = await ctx.db.get(collectionId);
+              if (collection) {
+                await ctx.db.patch(collectionId, {
+                  productIds: (collection.productIds ?? []).filter(
+                    (id) => id !== productId,
+                  ),
+                });
+              }
+            }
+          }
+        }
+      }
 
-    const variants = await getVariants(ctx, product._id)
-    const variantsInventory = await getVariantsInventory(ctx, product._id)
-
-    // attach images urls to products' images 
-    const urls = new Map<Id<'_storage'>, string | undefined>()
-    product?.images?.forEach(image => urls.set(image.storageId, undefined))
-    if (product.images) {
-      await Promise.all(product.images.map(async img => {
-        const url = await ctx.storage.getUrl(img.storageId)
-        urls.set(img.storageId, url ?? undefined)
-      }))
-    }
-
-    return {
-      ...product,
-      variants,
-      variantsInventory,
-      images: product?.images?.map(img => ({ ...img, url: urls.get(img.storageId) }))
+      return { ok: true };
+    } catch (e) {
+      return { ok: false };
     }
   },
 });
-
-
-
-export const addNewVariant = mutation({
-  args: {
-    productId: v.id('products'),
-    name: v.string(),
-    options: v.array(v.string())
-  },
-  handler: async (ctx, args) => {
-    const prevVariants = await ctx.db.query("variants").filter(q => q.eq(q.field("productId"), args.productId)).collect()
-    let lastVariant = prevVariants[0]
-    for (let i = 1; i < prevVariants.length; i++) {
-      if (prevVariants[i].order > lastVariant.order) lastVariant = prevVariants[i]
-    }
-    const newVariantId = await ctx.db.insert("variants", {
-      parentVariantId: lastVariant._id ?? null,
-      order: lastVariant.order ?? 1,
-      name: args.name,
-      productId: args.productId,
-    })
-    await Promise.all(args.options.map(async option => {
-      await ctx.db.insert("variantOptions", {
-        variantId: newVariantId,
-        name: option,
-      })
-    }))
-    return newVariantId
-  }
-})
-
-export const sendImage = mutation({
-  args: {
-    storageId: v.id("_storage"),
-    productId: v.id("products"),
-    order: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const product = await ctx.db.get(args.productId);
-    if (!product) {
-      console.log("product doeesn't exist: ", args.productId, product);
-      return null;
-    }
-    const images = product.images ?? [];
-    images.push({
-      storageId: args.storageId,
-      hidden: false,
-      order: args.order,
-    });
-    await ctx.db.patch(args.productId, { images: images });
-    const url = await ctx.storage.getUrl(args.storageId);
-    console.log("images attached succesffuly gonna return the url ", url);
-    return url;
-  },
-});
-
-
-export const getProductByCategory = query({
-  args: {
-    categoryId: v.id("categories")
-  },
-  handler: async (ctx, { categoryId }) => {
-    return await ctx.db.query('products').filter(q => q.eq(q.field('categoryId'), categoryId)).collect()
-  }
-})
