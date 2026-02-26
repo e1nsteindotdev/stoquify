@@ -10,24 +10,51 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { useAppStore } from "@/lib/store";
+
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
 
-export function SignUpForm({ step, setStep, className, ...props }: { step: string, setStep: Dispatch<SetStateAction<string>> } & React.ComponentProps<"div">) {
+export function SignUpForm({
+  step,
+  setStep,
+  className,
+  ...props
+}: {
+  step: string;
+  setStep: Dispatch<SetStateAction<string>>;
+} & React.ComponentProps<"div">) {
   const { signIn } = useAuthActions();
+
+  const setStores = useAppStore(state => state.setStores)
+  const setUser = useAppStore(state => state.setUser)
 
   const form = useForm({
     defaultValues: {
       organizationName: "nezt",
       email: "einstein@gmail.com",
+      phone: "0550000000",
+      name: "Founder",
       password: "&c_jJC}<Tw!&_)4g",
     },
     onSubmit: async ({ value }) => {
+      console.log("Submitting with flow:", step);
       try {
-        await signIn("password", { ...value, flow: step });
+        await signIn("phone", {
+          ...value,
+          role: "founder",
+          flow: step,
+        });
+
+        const stores = await convex.query(api.stores.list);
+        const user = await convex.query(api.users.getUserData);
+        setStores(stores)
+        setUser(user)
       } catch (error) {
-        console.error("error while trying to sign up :", error)
+        console.error("error while trying to sign up :", error);
       }
     },
   });
@@ -38,7 +65,9 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
         <div className={cn("flex flex-col gap-6", className)} {...props}>
           <Card>
             <CardHeader>
-              <CardTitle className="text-[20px]">Créer un nouveau compte</CardTitle>
+              <CardTitle className="text-[20px]">
+                Créer un nouveau compte
+              </CardTitle>
               <CardDescription>
                 Remplissez le formulaire ci-dessous pour créer un nouveau compte
               </CardDescription>
@@ -53,6 +82,55 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
               >
                 <div className="flex flex-col gap-6">
                   <form.Field
+                    name="name"
+                    validators={{
+                      onChange: ({ value }) =>
+                        !value ? "Votre nom complet est requis" : undefined,
+                    }}
+                    children={(field) => {
+                      return (
+                        <div className="grid gap-3">
+                          <Label htmlFor={field.name}>Nom complet</Label>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                          />
+                          <FieldInfo field={field} />
+                        </div>
+                      );
+                    }}
+                  />
+                  <form.Field
+                    name="phone"
+                    validators={{
+                      onChange: ({ value }) =>
+                        !value
+                          ? "Un numéro de téléphone est requis"
+                          : undefined,
+                    }}
+                    children={(field) => {
+                      return (
+                        <div className="grid gap-3">
+                          <Label htmlFor={field.name}>
+                            Numéro de téléphone
+                          </Label>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            type="tel"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                          />
+                          <FieldInfo field={field} />
+                        </div>
+                      );
+                    }}
+                  />
+                  <form.Field
                     name="email"
                     validators={{
                       onChange: ({ value }) =>
@@ -63,13 +141,13 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                             : undefined,
                     }}
                     children={(field) => {
-                      // Avoid hasty abstractions. Render props are great!
                       return (
                         <div className="grid gap-3">
                           <Label htmlFor={field.name}>Email</Label>
                           <Input
                             id={field.name}
                             name={field.name}
+                            type="email"
                             value={field.state.value}
                             onBlur={field.handleBlur}
                             onChange={(e) => field.handleChange(e.target.value)}
@@ -93,7 +171,9 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                       // Avoid hasty abstractions. Render props are great!
                       return (
                         <div className="grid gap-3">
-                          <Label htmlFor={field.name}>Nom de votre entreprise</Label>
+                          <Label htmlFor={field.name}>
+                            Nom de votre entreprise
+                          </Label>
                           <Input
                             id={field.name}
                             name={field.name}
@@ -149,7 +229,10 @@ export function SignUpForm({ step, setStep, className, ...props }: { step: strin
                 </div>
                 <div className="mt-4 text-center text-sm">
                   Vous avez déjà un compte ?{" "}
-                  <button onClick={() => setStep("signIn")} className="underline underline-offset-4">
+                  <button
+                    onClick={() => setStep("signIn")}
+                    className="underline underline-offset-4"
+                  >
                     Se connecter
                   </button>
                 </div>

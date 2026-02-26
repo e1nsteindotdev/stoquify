@@ -1,33 +1,43 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import { useGetIndexedDBImg } from "@/hooks/storage/get-indexeddb-img";
 
 export type ProductRow = {
   _id: string;
   title: string;
   price: number;
   imageUrl?: string;
+  indexedDBId?: number;
 };
 
 export const columns: ColumnDef<ProductRow>[] = [
   {
     accessorKey: "imageUrl",
     header: "Image",
-    cell: ({ row }) => (
-      <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-md border border-input">
-        {row.original.imageUrl ? (
-          <img
-            src={row.original.imageUrl}
-            alt={row.original.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
-            {row.original.title?.slice(0, 2)}
-          </div>
-        )}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const imageUrl = row.original.imageUrl;
+      const indexedDBId = row.original.indexedDBId;
+      const url = indexedDBId
+        ? (useGetIndexedDBImg(indexedDBId) ?? imageUrl)
+        : imageUrl;
+
+      return (
+        <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-md border border-input">
+          {url ? (
+            <img
+              src={url}
+              alt={row.original.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
+              {row.original.title?.slice(0, 2)}
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "title",

@@ -271,7 +271,7 @@ export default function POSPage() {
 }
 
 function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
-  const { data: productWithVariants } = useGetProductById(product?._id as Id<"products"> | undefined);
+  const productWithVariants: any = useGetProductById(product?._id as Id<"products">);
   const [selections, setSelections] = useState<any[]>([]);
 
   if (!product) return null;

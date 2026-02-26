@@ -4,6 +4,7 @@ import { LocalFiles } from "@/lib/services/files-service";
 import avifEncode, { init as initAvifEncode } from "@jsquash/avif/encode";
 import { init as initAvifDecode } from "@jsquash/avif/decode";
 import { getWorkerPool, CompressionResponse } from "@/lib/worker-pool";
+import { Id } from "api/data-model";
 
 function getPool() {
   return getWorkerPool();
@@ -17,9 +18,7 @@ function getPool() {
 export class Images extends Context.Tag("Images")<
   Images,
   {
-    readonly saveImageLocally: (
-      base64: string,
-    ) => Effect.Effect<number, Error, never>;
+    readonly saveImageLocally: (image: string | File) => Effect.Effect<number, Error, never>;
     readonly uploadImageToCloud: (
       file: File,
     ) => Effect.Effect<string, Error, never>;
@@ -67,7 +66,7 @@ export class Images extends Context.Tag("Images")<
    */
   static readonly layer = Layer.effect(
     Images,
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       // Access the LocalFiles service for local storage operations
       const localFiles = yield* LocalFiles;
 
@@ -94,7 +93,7 @@ export class Images extends Context.Tag("Images")<
 
       return {
         // Delegates to LocalFiles service to store image data in IndexedDB
-        saveImageLocally: (base64: string) => localFiles.write(base64),
+        saveImageLocally: (file) => localFiles.write(file),
         fileToBase64: (file: File) =>
           Effect.async<string, Error, never>((resume) => {
             const reader = new FileReader();
@@ -109,7 +108,7 @@ export class Images extends Context.Tag("Images")<
         // 2. POSTs the file to that URL
         // 3. Retrieves the public image URL using the storage ID
         uploadImageToCloud: (file: File) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             // Step 1: Get pre-signed upload URL from Convex backend
             const uploadUrl = yield* Effect.promise(() => generateUploadUrl());
             // Step 2: Upload the file to the storage service
@@ -128,9 +127,7 @@ export class Images extends Context.Tag("Images")<
             );
 
             // Step 4: Convert storage ID to public accessible URL
-            const imageUrl = yield* Effect.promise(() =>
-              getImageUrl(storageId),
-            );
+            const imageUrl = yield* Effect.promise(() => getImageUrl(storageId as Id<'_storage'>));
             if (!imageUrl) {
               return yield* Effect.fail(new Error("couldn't get image url"));
             }
@@ -144,7 +141,7 @@ export class Images extends Context.Tag("Images")<
           input: File | Blob | string,
           quality: number = 0.8,
         ) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             // Convert input to a Blob for processing
             // If input is a URL string, fetch it first; otherwise use directly
             const imageSource: ImageBitmapSource = yield* Effect.if(
@@ -244,7 +241,7 @@ export class Images extends Context.Tag("Images")<
           id: string,
           quality: number = 0.8,
         ) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             const workerPool = getPool();
 
             const result: CompressionResponse = yield* Effect.tryPromise({
@@ -260,14 +257,14 @@ export class Images extends Context.Tag("Images")<
 
         // Deletes an image from local IndexedDB storage using its numeric ID
         deleteLocalImage: (id: number) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             return yield* localFiles.delete(id);
           }),
 
         // Placeholder for cloud image deletion - requires implementation
         // Would need to integrate with the specific cloud storage provider's API
         deleteCloudImage: (url: string) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             return yield* Effect.fail(
               new Error(
                 "deleteCloudImage not implemented - requires cloud storage API",

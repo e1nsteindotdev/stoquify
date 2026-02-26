@@ -1,4 +1,9 @@
-import { Outlet, createFileRoute, useMatches, Link } from "@tanstack/react-router";
+import {
+  Outlet,
+  createFileRoute,
+  useMatches,
+  Link,
+} from "@tanstack/react-router";
 import { PanelLeft } from "lucide-react";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import {
@@ -16,17 +21,40 @@ import {
 } from "@/components/ui/breadcrumb";
 import React from "react";
 import { idbGet } from "@/lib/idb";
-import { queryClient } from "@/lib/ts-query-client"
+import { queryClient } from "@/lib/ts-query-client";
+import { useAppStore } from "@/lib/store";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+
 
 export const Route = createFileRoute("/_dashboard")({
   loader: async () => {
     try {
-      const products = await idbGet('products');
-      const collections = await idbGet('collections');
+      const [products, collections, user, stores] = await Promise.all([
+        idbGet("products"),
+        idbGet("collections"),
+        idbGet("user"),
+        idbGet("stores"),
+      ]);
+
+      if (user) useAppStore.getState().setUser(user)
+      else {
+        const user = await convex.query(api.users.getUserData);
+        useAppStore.getState().setUser(user)
+      }
+      if (stores?.length > 0) useAppStore.getState().setStores(stores)
+      else {
+        const stores = await convex.query(api.stores.list);
+        useAppStore.getState().setStores(stores)
+      }
+
       queryClient.setQueryData(["products"], products);
       queryClient.setQueryData(["collections"], collections);
+
+      console.log("loader hello world")
+
     } catch (e) {
-      console.log('faild to preload products :', String(e))
+      console.log("faild to preload products :", String(e));
     }
   },
   component: PathlessLayoutComponent,
@@ -46,9 +74,14 @@ const getPathLabel = (path: string) => {
 };
 
 function PathlessLayoutComponent() {
+  // useGetStores()
+  // useGetUser()
   const matches = useMatches();
   const breadcrumbs = matches
-    .filter((match) => match.routeId !== "__root__" && match.routeId !== "/_dashboard")
+    .filter(
+      (match) =>
+        match.routeId !== "__root__" && match.routeId !== "/_dashboard",
+    )
     .map((match) => {
       const pathSegments = match.pathname.split("/").filter(Boolean);
       const lastSegment = pathSegments[pathSegments.length - 1] || "";
@@ -67,9 +100,7 @@ function PathlessLayoutComponent() {
       <AppSidebar />
       <SidebarInset>
         <header className="flex py-4 px-6 shrink-0 items-center gap-2">
-          <SidebarTrigger
-            className="h-9 w-auto px-3 gap-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 shadow-sm"
-          >
+          <SidebarTrigger className="h-9 w-auto px-3 gap-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 shadow-sm">
             <PanelLeft className="size-4" />
             <span className="text-sm font-medium">Menu</span>
           </SidebarTrigger>
@@ -78,7 +109,9 @@ function PathlessLayoutComponent() {
               <BreadcrumbList>
                 {breadcrumbs.map((bc, index) => (
                   <React.Fragment key={bc.href}>
-                    <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
+                    <BreadcrumbItem
+                      className={index === 0 ? "hidden md:block" : ""}
+                    >
                       {index === breadcrumbs.length - 1 ? (
                         <BreadcrumbPage>{bc.label}</BreadcrumbPage>
                       ) : (

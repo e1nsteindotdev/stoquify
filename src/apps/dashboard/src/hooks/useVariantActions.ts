@@ -1,6 +1,15 @@
 import type { Doc } from "api/data-model";
 import { useCallback } from "react";
 
+export type VariantElement = {
+  name: string;
+  order: number;
+  options: any[];
+  [key: string]: any;
+};
+
+export type TVariantsInventory = Map<string, any>;
+
 type FieldLike = {
   state: { value: VariantElement[] };
   setValue: (updater: (prev: VariantElement[]) => VariantElement[]) => void;
@@ -83,7 +92,7 @@ export function generateVIFingerPrint(path: string[]) {
   });
   return fp;
 }
-export function formatVariantsInventory(vis: Doc<"variantsInventory">[]) {
+export function formatVariantsInventory(vis: any[]) {
   const result: TVariantsInventory = new Map();
   vis.forEach((vi) => result.set(generateVIFingerPrint(vi.path), vi));
   return result;

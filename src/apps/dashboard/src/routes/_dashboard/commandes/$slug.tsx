@@ -46,7 +46,7 @@ function OrderDetailComponent() {
   };
 
   const totalCost = order.subTotalCost + order.deliveryCost;
-  const date = new Date(order.createdAt);
+  const date = new Date(order._creationTime);
 
   return (
     <div className="p-4 pt-0 w-full h-full flex flex-col gap-4">

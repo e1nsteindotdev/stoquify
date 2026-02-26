@@ -164,7 +164,6 @@ export default function ImageField({
         <div className="flex flex-col gap-3 border border-neutral-300 rounded-[15px] p-3">
           <div className="flex flex-col gap-3">
             {images.map((image, index) => {
-              const isNew = !("_id" in image);
               return (
                 <ImageItem
                   key={image.tempId}

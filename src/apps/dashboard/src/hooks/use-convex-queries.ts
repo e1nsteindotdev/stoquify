@@ -3,17 +3,17 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "api/convex";
 
 // ============= Products =============
-export function useInitiateProduct() { return useMutation({ mutationFn: useConvexMutation(api.products.initiateProduct), }); }
+export function useInitiateProduct() { return useMutation({ mutationFn: useConvexMutation(api.products.createProduct as any), }); }
 
 export function useRemoveProduct() {
   return useMutation({
-    mutationFn: useConvexMutation(api.products.removeProduct),
+    mutationFn: useConvexMutation(api.products.deleteProduct as any),
   });
 }
 
 export function useUpdateProduct() {
   return useMutation({
-    mutationFn: useConvexMutation(api.products.updateProduct),
+    mutationFn: useConvexMutation(api.products.updateProductMetaData as any),
   });
 }
 
@@ -79,7 +79,7 @@ export function useDeleteFAQ() {
 // ============= Images =============
 export function useGetImageUrl() {
   return useMutation({
-    mutationFn: useConvexMutation(api.images.getUrl),
+    mutationFn: useConvexMutation(api.images.getUrl as any),
   });
 }
 

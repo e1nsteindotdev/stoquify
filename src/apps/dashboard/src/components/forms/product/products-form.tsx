@@ -1,7 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -34,6 +33,10 @@ import { api } from "api/convex";
 import { Effect } from "effect";
 import { Images } from "@/lib/services/image-service";
 import { effectRuntime } from "@/lib/effect-runtime";
+import { queryClient } from "@/lib/ts-query-client";
+import { AnimatedButton } from "@/components/ui/animated-button";
+import { CheckIcon } from "lucide-react";
+import { ClipLoader } from "react-spinners";
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const isNew = !slug || slug === "new";
@@ -76,7 +79,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         // upload new images to the cloud
         const imageService = yield* Images;
         let ensuredProductId = productId;
-
         if (!ensuredProductId) {
           const { productId: newProductId } = yield* Effect.promise(() =>
             convex.mutation(api.products.createProduct, {
@@ -103,11 +105,12 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               stockingStrategy: newProduct.stockingStrategy,
               status: newProduct.status,
             });
-            if (productChanges) {
+            if (productChanges || newProduct.collections) {
               return yield* Effect.promise(() =>
                 convex.mutation(api.products.updateProductMetaData, {
                   productId: ensuredProductId,
                   ...productChanges,
+                  collections: [...newProduct.collections],
                 }),
               );
             }
@@ -115,7 +118,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         });
 
         const uploadImages = Effect.gen(function*() {
-          const imageChanges = getImageChanges(defaultImages, images);
           const result = { ok: false };
           imageChanges.toCreate = yield* Effect.forEach(
             imageChanges.toCreate,
@@ -139,31 +141,58 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           return result;
         });
 
-        const writeImages = yield* Effect.promise(() =>
-          convex.mutation(api.images.handleImageChanges, {
-            productId: ensuredProductId as Id<"products">,
-            toCreate: imageChanges.toCreate.map((img) => ({
-              url: img.url,
-              order: img.order,
-              hidden: img.hidden,
-              indexedDBId: img.indexedDBId,
-            })),
-            toUpdate: imageChanges.toCreate.map((img) => ({
-              imageId: img.tempId as Id<"images">,
-              url: img.url,
-              order: img.order,
-              hidden: img.hidden,
-              indexedDBId: img.indexedDBId,
-            })),
-            toDelete: imageChanges.toDelete.map(
-              (img) => img.tempId as Id<"images">,
-            ),
-          }),
-        );
+        const handleImages = Effect.gen(function*() {
+          yield* uploadImages;
+          yield* Effect.forEach(imageChanges.toCreate, (img) =>
+            Effect.gen(function*() {
+              if (!img.compressedFile) return null;
+              const indexedDBId = yield* imageService.saveImageLocally(
+                img.compressedFile,
+              );
+              const imageIndex = imageChanges.toCreate.findIndex(
+                (img_) => img_.tempId === img.tempId,
+              );
+              imageChanges.toCreate[imageIndex].indexedDBId = indexedDBId;
+            }),
+          );
 
-        const writeVariants = Effect.gen(function*() {
-          if (!variantChanges) return yield* Effect.succeed({ ok: false });
           return yield* Effect.promise(() =>
+            convex.mutation(api.images.handleImageChanges, {
+              productId: ensuredProductId as Id<"products">,
+              toCreate: imageChanges.toCreate.map((img) => ({
+                url: img.url,
+                order: img.order,
+                hidden: img.hidden,
+                indexedDBId: img.indexedDBId,
+              })),
+              toUpdate: imageChanges.toUpdate.map((img) => ({
+                imageId: img.tempId as Id<"images">,
+                url: img.url,
+                order: img.order,
+                hidden: img.hidden,
+                indexedDBId: img.indexedDBId,
+              })),
+              toDelete: imageChanges.toDelete.map(
+                (img) => img.tempId as Id<"images">,
+              ),
+            }),
+          );
+        });
+
+        const handleVariants = Effect.gen(function*() {
+          if (!variantChanges)
+            return yield* Effect.succeed({
+              ok: true,
+              options: new Map(
+                defaultVariants.flatMap((variant) =>
+                  variant.options.map((opt) => [
+                    opt.name,
+                    opt.tempId as Id<"variantOptions">,
+                  ]),
+                ),
+              ),
+            });
+          const result = yield* Effect.promise(() =>
             convex.mutation(api.variants.handleVariantChanges, {
               productId: ensuredProductId as Id<"products">,
               toDelete: variantChanges.toDelete.map(
@@ -188,51 +217,49 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               })),
             }),
           );
+          return {
+            ok: result.ok,
+            options: new Map(result.options.map((opt) => [opt.name, opt._id])),
+          };
         });
 
-        const writeSKUs = Effect.gen(function*() {
-          const optionToVariantMap = new Map<string, string>();
-          for (const v of variants) {
-            for (const opt of v.options) {
-              optionToVariantMap.set(opt.tempId, v.name);
-            }
-          }
-
-          Effect.promise(() =>
-            convex.mutation(api.skus.replaceSKUs, {
-              productId: ensuredProductId as Id<"products">,
-              skus: skus.map((sku) => ({
-                quantity: sku.quantity,
-                options: sku.options.map((opt) => {
-                  const variantName = optionToVariantMap.get(opt.tempId) || "";
-                  return {
-                    variantName,
-                    optionName: opt.optionName,
-                  };
-                }),
-              })),
-            }),
-          );
-        });
+        const handleSKUs = (options: Map<string, Id<"variantOptions">>) =>
+          Effect.gen(function*() {
+            return yield* Effect.promise(() =>
+              convex.mutation(api.skus.replaceSKUs, {
+                productId: ensuredProductId as Id<"products">,
+                skus: skus.map((sku) => ({
+                  quantity: sku.quantity,
+                  options: sku.options
+                    .map((opt) => options.get(opt.optionName))
+                    .filter((v) => v != undefined),
+                })),
+              }),
+            );
+          });
 
         yield* Effect.all(
           [
             updateProductMetaData,
-            uploadImages.pipe(
-              Effect.andThen(({ ok }) => {
-                if (ok) return writeImages;
-              }),
-            ),
-            writeVariants.pipe(
-              Effect.andThen(({ ok }) => {
-                if (ok) return writeSKUs;
+            handleImages,
+            handleVariants.pipe(
+              Effect.andThen(({ ok, options }) => {
+                if (!ok) return;
+                return handleSKUs(options);
               }),
             ),
           ],
           { concurrency: "unbounded" },
         );
+
         return { productId: ensuredProductId };
-      });
+      }).pipe(
+        Effect.ensuring(
+          Effect.sync(() => {
+            queryClient.refetchQueries({ queryKey: ["products"] });
+          }),
+        ),
+      );
 
       const submitResult = await effectRuntime.runPromise(program);
       if (submitResult?.productId && isNew) {
@@ -241,7 +268,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           params: { slug: submitResult.productId },
         });
       }
-
     },
   });
 
@@ -317,7 +343,11 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                     children={(field) => (
                       <div className="grid">
                         <Label className="font-semibold pb-[12px]">Coût</Label>
-                        <field.TextField type="number" placeholder="2500" />
+                        <field.TextField
+                          isNumber={true}
+                          type="number"
+                          placeholder="2500"
+                        />
                       </div>
                     )}
                   />
@@ -368,7 +398,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           </div>
 
           {/* Right column: meta */}
-          <div className="flex flex-col justify-between items-between pt-11.5">
+          <div className="flex flex-col justify-start gap-y-12 items-between pt-11.5">
             <div className="space-y-4">
               <Card className="gap-2 border-white">
                 <CardHeader>
@@ -385,9 +415,22 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                       state.values.price,
                       state.values.title,
                       state.values.images,
+                      state.values.status,
                     ]}
-                    children={([categoryId, title, price, images]) => {
-                      if (categoryId && title && price && images) {
+                    children={([
+                      categoryId,
+                      title,
+                      price,
+                      images,
+                      currentStatus,
+                    ]) => {
+                      const isComplete = !!(
+                        categoryId &&
+                        title &&
+                        price &&
+                        images
+                      );
+                      if (isComplete && currentStatus === "incomplete") {
                         form.setFieldValue("status", "active");
                       }
                       return (
@@ -467,13 +510,26 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 state.isDirty,
               ]}
               children={([canSubmit, isSubmitting, isDirty]) => (
-                <Button
+                <AnimatedButton
                   type="submit"
-                  className="w-full text-[16px] py-5"
+                  className="w-full text-[16px] py-2 bg-primary text-white font-semidbold rounded-md disabled:pointer-events-none disabled:bg-primary/50 font-semibold uppercase"
+                  loading={isSubmitting}
                   disabled={!canSubmit || !isDirty}
+                  animationComponents={{
+                    loading: (
+                      <span className="flex items-center gap-2">
+                        <ClipLoader size={18} color="currentColor" /> EN COURS...
+                      </span>
+                    ),
+                    done: (
+                      <span className="flex items-center gap-2">
+                        <CheckIcon className="size-5" /> C'EST BON!
+                      </span>
+                    ),
+                  }}
                 >
-                  {isSubmitting ? "..." : "Enregistrer"}
-                </Button>
+                  Enregister
+                </AnimatedButton>
               )}
             />
           </div>

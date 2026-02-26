@@ -23,7 +23,9 @@ export class LocalFiles extends Context.Tag("LocalFiles")<
   LocalFiles,
   {
     /** Writes a base64-encoded file to IndexedDB, returns the generated numeric ID */
-    readonly write: (base64: string) => Effect.Effect<number, Error, never>;
+    readonly write: (
+      file: string | File,
+    ) => Effect.Effect<number, Error, never>;
     /** Reads a file from IndexedDB by ID, returns base64-encoded data URL */
     readonly read: (id: number) => Effect.Effect<string | null, Error, never>;
     /** Deletes a file from IndexedDB by ID */
@@ -71,11 +73,16 @@ export class LocalFiles extends Context.Tag("LocalFiles")<
         // 1. Converts base64 to Blob via fetch
         // 2. Generates a random 6-digit numeric ID
         // 3. Stores the blob with that ID
-        write: (base64: string) =>
+        write: (file) =>
           Effect.gen(function*() {
             // Convert base64 to Blob first (async operations)
-            const response = yield* Effect.tryPromise(() => fetch(base64));
-            const blob = yield* Effect.tryPromise(() => response.blob());
+
+            let ensuredFile: File;
+            if (typeof file === "string") {
+              const response = yield* Effect.tryPromise(() => fetch(file));
+              const blob = yield* Effect.tryPromise(() => response.blob());
+              ensuredFile = new File([blob], "image", { type: blob.type });
+            } else ensuredFile = file;
 
             // Generate a 6-digit random ID
             const id = Math.floor(100000 + Math.random() * 900000);
@@ -85,7 +92,7 @@ export class LocalFiles extends Context.Tag("LocalFiles")<
             const store = tx.objectStore(STORE_NAME);
 
             return yield* Effect.async<number, Error, never>((resume) => {
-              const request = store.add({ blob: blob }, id);
+              const request = store.add(ensuredFile, id);
 
               request.onsuccess = () => {
                 resume(Effect.succeed(id));
@@ -110,28 +117,21 @@ export class LocalFiles extends Context.Tag("LocalFiles")<
           Effect.gen(function*() {
             const tx = db.transaction([STORE_NAME], "readonly");
             const store = tx.objectStore(STORE_NAME);
-            return yield* Effect.async<string | null, Error, never>((resume) => {
-              const request = store.get(id);
-              request.onsuccess = () => {
-                if (request.result) {
-                  const blob = request.result.blob;
-                  const url = URL.createObjectURL(blob);
-                  resume(Effect.succeed(url))
-                  // Convert Blob to base64
-                  // const reader = new FileReader();
-                  // reader.onloadend = () => {
-                  //   resume(Effect.succeed(reader.result as string));
-                  // };
-                  // reader.onerror = () => {
-                  //   resume(Effect.fail(new Error("Failed to read blob")));
-                  // };
-                  // reader.readAsDataURL(blob);
-                } else {
-                  resume(Effect.succeed(null));
-                }
-              };
-              request.onerror = () => resume(Effect.succeed(null));
-            });
+            return yield* Effect.async<string | null, Error, never>(
+              (resume) => {
+                const request = store.get(id);
+                request.onsuccess = () => {
+                  if (request.result) {
+                    const file = request.result;
+                    const url = URL.createObjectURL(file);
+                    resume(Effect.succeed(url));
+                  } else {
+                    resume(Effect.succeed(null));
+                  }
+                };
+                request.onerror = () => resume(Effect.succeed(null));
+              },
+            );
           }),
 
         // Deletes a file from IndexedDB by its numeric ID

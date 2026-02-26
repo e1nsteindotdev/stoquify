@@ -114,7 +114,7 @@ function ByVariantsForm({
                 type="number"
                 onChange={(e) => changeQuantity(sku.tempId, Number(e.target.value))}
                 placeholder="0"
-                defaultValue={sku.quantity}
+                value={sku.quantity}
                 className="text-[14px] py-1"
               />
             </div>

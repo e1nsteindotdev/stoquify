@@ -18,6 +18,7 @@ import { useGetFAQs } from "@/database/faqs";
 
 export function SettingsPage() {
   const settingsData = useGetSettings();
+  const settings = settingsData?.data as any;
   const faqsResult = useGetFAQs();
   const faqs = faqsResult?.data ?? [];
   const updateSettings = useUpdateSettings();

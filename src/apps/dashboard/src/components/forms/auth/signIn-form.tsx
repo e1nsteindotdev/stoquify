@@ -10,26 +10,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { useAppStore } from "@/lib/store";
+
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
 
 export function SignInForm({ step, setStep, className, ...props }: { step: string, setStep: Dispatch<SetStateAction<string>> } & React.ComponentProps<"div">) {
   const { signIn } = useAuthActions();
+  const setStores = useAppStore(state => state.setStores)
+  const setUser = useAppStore(state => state.setUser)
 
   const form = useForm({
     defaultValues: {
-      email: "test@gmail.com",
-      password: "admin#123",
+      phone: "0550000000",
+      password: "&c_jJC}<Tw!&_)4g",
     },
     onSubmit: async ({ value }) => {
       try {
-        const data = new FormData()
-        data.set("email", value.email)
-        data.set("password", value.password)
-        data.set("flow", "signIn")
-
-        await signIn("password", data);
+        await signIn("phone", {
+          phone: value.phone,
+          password: value.password,
+          flow: "signIn"
+        });
+        const stores = await convex.query(api.stores.list);
+        const user = await convex.query(api.users.getUserData);
+        setStores(stores)
+        setUser(user)
       } catch (error) {
         console.error("error while trying to sign in :", error)
       }
@@ -57,20 +66,19 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
               >
                 <div className="flex flex-col gap-6">
                   <form.Field
-                    name="email"
+                    name="phone"
                     validators={{
                       onChange: ({ value }) =>
-                          !value
-                            ? "Un email est requis"
-                            : value.length < 3
-                              ? "L'email doit contenir au moins 3 caractères"
-                              : undefined,
+                        !value
+                          ? "Un numéro de téléphone est requis"
+                          : value.length < 8
+                            ? "Le numéro doit être valide"
+                            : undefined,
                     }}
                     children={(field) => {
-                      // Avoid hasty abstractions. Render props are great!
                       return (
                         <div className="grid gap-3">
-                          <Label htmlFor={field.name}>Email</Label>
+                          <Label htmlFor={field.name}>Numéro de téléphone</Label>
                           <Input
                             id={field.name}
                             name={field.name}
