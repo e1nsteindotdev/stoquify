@@ -1,13 +1,37 @@
 import { Link } from "@tanstack/react-router";
 import { Image } from "./ui/image";
 import { useQuery } from "convex/react";
-import { api } from "@repo/backend/_generated/api";
+import { api } from "api/convex";
 import { MenuIcon } from "./icons/menu-icon";
 import { OrderIcon } from "./icons/order-icon";
 import { Cart } from "./cart";
+import { useEffect, useState } from "react";
+import {
+  getCatalog,
+  type CatalogCategory,
+  type CatalogProduct,
+} from "@/lib/catalog";
 
 export function Navbar() {
-  const categories = useQuery(api.categories.listCategories);
+  const [categories, setCategories] = useState<CatalogCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCatalog()
+      .then((catalog) => {
+        setCategories(catalog.categories);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch catalog:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return null;
+  }
+
   return (
     <div className="flex items-center w-full py-3 lg:py-4 px-ip border-b-1 border-seperator">
       <Link to="/" className="mr-auto h-full">
@@ -59,7 +83,21 @@ export function HeaderAnonc() {
 
 export function Header() {
   const settings = useQuery(api.settings.getSettings);
-  const products = useQuery(api.products.listProducts);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCatalog()
+      .then((catalog) => {
+        setProducts(catalog.products);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch catalog:", err);
+        setLoading(false);
+      });
+  }, []);
+
   const productsCount = products?.length ?? 0;
   const locationLink = settings?.locationLink || "";
 
@@ -80,7 +118,7 @@ export function Header() {
         <div className="flex gap-10 font-medium">
           <p>Situé</p>
           <p className="text-black/20">
-            AU CŒUR DE <span className="text-black font-bold">L’ALGÉRIE</span>
+            AU CŒUR DE <span className="text-black font-bold">L'ALGÉRIE</span>
           </p>
         </div>
         {locationLink ? (

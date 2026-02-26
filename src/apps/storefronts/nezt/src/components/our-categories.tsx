@@ -1,14 +1,34 @@
-import { useQuery } from "convex/react";
-import { api } from "@repo/backend/_generated/api";
 import { RightChevron } from "./icons/right-chevron";
 import { DownChevron } from "./icons/down-chevron";
-import type { Doc } from "@repo/backend/_generated/dataModel";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  getCatalog,
+  type CatalogProduct,
+  type CatalogCategory,
+} from "@/lib/catalog";
 
 export function OurCategories() {
-  const categories = useQuery(api.categories.listCategories);
-  const products = useQuery(api.products.listProducts);
+  const [categories, setCategories] = useState<CatalogCategory[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCatalog()
+      .then((catalog) => {
+        setCategories(catalog.categories);
+        setProducts(catalog.products);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch catalog:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <div id="categories" className="flex flex-col pt-6">
@@ -42,8 +62,8 @@ function Category({
 }: {
   categoriesLength: number;
   index: number;
-  products: Doc<"products">[] | undefined | null;
-  category: Doc<"categories">;
+  products: CatalogProduct[] | undefined | null;
+  category: CatalogCategory;
 }) {
   const navigate = useNavigate();
   const [selected, setSelected] = useState(0);
@@ -80,12 +100,10 @@ function Category({
 
   const [isHovered, setIsHovered] = useState(false);
 
-  // Reset image index when product changes
   useEffect(() => {
     setCurrentImageIndex(0);
   }, [selectedProduct?._id]);
 
-  // Cycle through images on hover
   useEffect(() => {
     if (!isHovered || visibleImages.length <= 1) return;
 
@@ -110,7 +128,6 @@ function Category({
       className={`flex flex-col lg:flex-row w-full lg:border-b-1 lg:border-white ${index % 2 === 0 && "justify-end border-r-1"}`}
     >
       <div className="flex justify-center h-[230px] xs:h-auto gap-3 lg:gap-5 xs:px-3 my-5 lg:px-5">
-        {/* left side  */}
         <div
           className={`flex flex-col gap-1.5 lg:gap-3 min-w-[135px] lg:min-w-[300px] flex-1 ${index % 2 === 0 ? "order-1 items-end" : "order-2 item-start"}`}
         >
@@ -151,7 +168,7 @@ function Category({
                     >
                       {p.title}
                     </Link>
-                  )
+                  ),
               )}
             </div>
           </div>
@@ -173,7 +190,6 @@ function Category({
           </div>
         </div>
 
-        {/* right side */}
         <Link
           to={`/categories/$slug`}
           params={{ slug: category._id }}

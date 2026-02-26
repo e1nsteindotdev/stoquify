@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { Doc } from "@repo/backend/_generated/dataModel";
+import type { CatalogProduct } from "@/lib/catalog";
 import { useState, useEffect } from "react";
 
 export function Product({
@@ -8,7 +8,7 @@ export function Product({
 }: {
   imgWidth?: { sm: number; large: number };
   source?: { sourceName: string; sourceType: string };
-  data: Doc<"products"> | undefined;
+  data: CatalogProduct | undefined;
 }) {
   const visibleImages =
     data?.images
@@ -48,11 +48,6 @@ export function Product({
           <p className="font-black text-[20px] leading-[1] font-inter">
             {data?.price} DA
           </p>
-          {/* <button */}
-          {/*   className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter" */}
-          {/* > */}
-          {/*   voir rapidement */}
-          {/* </button> */}
         </div>
         <p className="font-bold lg:text-[14px] leading-[1] uppercase tracking-wider font-inter">
           {data?.title}
@@ -71,7 +66,7 @@ export function CollectionProduct({
 }: {
   imgWidth?: { sm: number; large: number };
   source?: { sourceName: string; sourceType: string };
-  data: Doc<"products"> | undefined;
+  data: CatalogProduct | undefined;
 }) {
   const visibleImages =
     data?.images
@@ -81,7 +76,6 @@ export function CollectionProduct({
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
 
-  // Cycle through images on hover
   useEffect(() => {
     if (!isHovered || visibleImages.length <= 1) return;
 
@@ -126,11 +120,6 @@ export function CollectionProduct({
           <p className="font-black text-[20px] leading-[1] font-inter">
             {data?.price} DA
           </p>
-          {/* <button */}
-          {/*   className="text-[12px] px-2 rounded-full border-1 border-black uppercase font-semibold font-inter" */}
-          {/* > */}
-          {/*   voir rapidement */}
-          {/* </button> */}
         </div>
         <p className="font-bold lg:text-[14px] leading-[1] uppercase tracking-wider font-inter mt-1">
           {data?.title}
