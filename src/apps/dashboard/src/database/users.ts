@@ -1,13 +1,12 @@
 import { convex } from "@/lib/convex-client"
 import { queryCollectionOptions } from '@tanstack/query-db-collection'
 import { api } from 'api/convex'
-import { QueryClient } from "@tanstack/query-core"
 import { createCollection } from "@tanstack/db"
 import { convexQuery } from "@convex-dev/react-query"
 import { useQuery } from "@tanstack/react-query"
+import { queryClient } from "@/lib/ts-query-client"
 
 
-const queryClient = new QueryClient()
 
 export const usersCollection = createCollection(
   queryCollectionOptions({

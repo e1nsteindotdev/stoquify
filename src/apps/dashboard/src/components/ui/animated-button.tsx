@@ -45,7 +45,6 @@ export function AnimatedButton({
 
   const isLoading = stage === "loading";
 
-  console.log(disabled)
   return (
     <motion.button
       className={cn(className, "overflow-clip")}

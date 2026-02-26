@@ -6,12 +6,15 @@ import { useLiveQuery } from '@tanstack/react-db'
 import type { Id } from "api/data-model"
 import { idbRefresh } from "@/lib/idb"
 import { queryClient } from "@/lib/ts-query-client"
+import { useAppStore } from "@/lib/store"
 
 export const productsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ['products'],
     queryFn: async () => {
-      const products = await convex.query(api.products.listProducts)
+      const storeId = useAppStore.getState().selectedStore?._id
+      if (!storeId) return []
+      const products = await convex.query(api.products.listProducts, { storeId })
       idbRefresh('products', products)
       return products
     },

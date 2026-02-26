@@ -9,7 +9,7 @@ if (!CONVEX_URL) {
 }
 
 export const convex = new ConvexReactClient(CONVEX_URL);
-export const convexQueryClient = new ConvexQueryClient(convex);
+const convexQueryClient = new ConvexQueryClient(convex);
 
 export const queryClient = new QueryClient({
   defaultOptions: {

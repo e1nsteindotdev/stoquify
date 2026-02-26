@@ -64,7 +64,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       images: defaultImages,
       variants: defaultVariants,
       skus: defaultSKUs,
-      collections: new Set(product?.collections ?? []),
+      collections: new Set(product?.collections.map(col => col._id) ?? []),
     }),
     [product],
   );

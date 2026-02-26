@@ -4,7 +4,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import { useFieldContext } from "@/hooks/form-context.tsx";
 import { Button } from "@/components/ui/button";
@@ -17,14 +17,19 @@ import {
 } from "@/components/ui/popover";
 import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox"
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Id } from "api/data-model";
 import { useGetCollections } from "@/database/collections";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { queryClient } from "@/lib/ts-query-client";
+import { useAppStore } from "@/lib/store";
 
-export default function CollectionsField({ selectedCollections }: { selectedCollections: Set<Id<'collections'>> }) {
+export default function CollectionsField({
+  selectedCollections,
+}: {
+  selectedCollections: Set<Id<"collections">>;
+}) {
   const field = useFieldContext<Set<string>>();
   const collectionsResult = useGetCollections();
   const collections = collectionsResult?.data;
@@ -34,14 +39,22 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
 
   async function handleCreate() {
     if (!name.trim() || isAdding) return;
+    const storeId = useAppStore.getState().selectedStore?._id;
+    if (!storeId) {
+      toast.error("Aucune boutique sélectionnée");
+      return;
+    }
     setIsAdding(true);
     try {
-      const res = await convex.mutation(api.collections.createCollection, { title: name });
+      const res = await convex.mutation(api.collections.createCollection, {
+        storeId,
+        title: name,
+      });
       if (res.ok) {
-        toast.success('Collection ajoutée avec succès')
-        queryClient.refetchQueries({ queryKey: ['collections'] })
+        toast.success("Collection ajoutée avec succès");
+        queryClient.refetchQueries({ queryKey: ["collections"] });
       } else {
-        toast.error(res.msg,)
+        toast.error(res.msg);
       }
       setName("");
     } finally {
@@ -54,7 +67,10 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
       <Card className="gap-2 border-white">
         <CardHeader>
           <CardTitle>Collections</CardTitle>
-          <CardDescription>Ajouter un produit à des collections le fera apparaître sur la page d'accueil de la boutique</CardDescription>
+          <CardDescription>
+            Ajouter un produit à des collections le fera apparaître sur la page
+            d'accueil de la boutique
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -62,52 +78,67 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
             <PopoverTrigger asChild>
               <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent">
                 <PlusIcon />
-                Ajouter à une nouvelle collection</Button>
+                Ajouter à une nouvelle collection
+              </Button>
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
-              {
-                collections?.length !== 0 ?
-                  collections?.map(c =>
-                    <div key={c._id} className="flex gap-2 items-center uppercase">
-                      <Checkbox
-                        checked={selectedCollections.has(c._id)}
-                        onCheckedChange={(checked) => {
-                          return checked ?
-                            field.setValue(prev =>
-                              prev.add(c._id))
-                            : field.setValue(prev => {
-                              prev.delete(c._id)
-                              return prev
-                            })
-                        }}
-                      />
-                      <p className="text-[12px]">{c.title}</p>
-                    </div>)
-                  :
-                  <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
-                    Aucune collection n'existe, créez d'abord une nouvelle collection.
+              {collections?.length !== 0 ? (
+                collections?.map((c) => (
+                  <div
+                    key={c._id}
+                    className="flex gap-2 items-center uppercase"
+                  >
+                    <Checkbox
+                      checked={selectedCollections.has(c._id)}
+                      onCheckedChange={(checked) => {
+                        return checked
+                          ? field.setValue((prev) => prev.add(c._id))
+                          : field.setValue((prev) => {
+                              prev.delete(c._id);
+                              return prev;
+                            });
+                      }}
+                    />
+                    <p className="text-[12px]">{c.title}</p>
                   </div>
-              }
+                ))
+              ) : (
+                <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
+                  Aucune collection n'existe, créez d'abord une nouvelle
+                  collection.
+                </div>
+              )}
             </PopoverContent>
           </Popover>
 
-          {selectedCollections.size === 0 ?
+          {selectedCollections.size === 0 ? (
             <div className="pt-3 text-red-400 italic text-[12px] uppercase">
               Le produit n'est ajouté à aucune collection
             </div>
-            :
+          ) : (
             <div className="flex flex-col gap-2 pt-3">
-              {Array.from(selectedCollections).map(c => (
-                <div key={c} className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]">
-                  <p className="text-[12px]">{collections?.filter(i => i._id === c)?.[0].title}</p>
-                  <CircleX color="red" size={20} onClick={() => {
-                    field.setValue(prev => { prev.delete(c); return prev })
-                  }} />
+              {Array.from(selectedCollections).map((c) => (
+                <div
+                  key={c}
+                  className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]"
+                >
+                  <p className="text-[12px]">
+                    {collections?.filter((i) => i._id === c)?.[0].title}
+                  </p>
+                  <CircleX
+                    color="red"
+                    size={20}
+                    onClick={() => {
+                      field.setValue((prev) => {
+                        prev.delete(c);
+                        return prev;
+                      });
+                    }}
+                  />
                 </div>
               ))}
-
             </div>
-          }
+          )}
           <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
 
           <Popover>
@@ -125,7 +156,9 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
             </PopoverTrigger>
             <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD] shadow-black/40 shadow-lg ">
               <div className="flex flex-col gap-4">
-                <p className="text-[14px] font-medium">Nom de la collection :</p>
+                <p className="text-[14px] font-medium">
+                  Nom de la collection :
+                </p>
                 <Input
                   placeholder="e.g. New Arrival"
                   value={name}
@@ -144,7 +177,6 @@ export default function CollectionsField({ selectedCollections }: { selectedColl
           </Popover>
         </CardContent>
       </Card>
-
     </div>
   );
 }

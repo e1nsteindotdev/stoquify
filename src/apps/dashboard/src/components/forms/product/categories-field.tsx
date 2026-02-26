@@ -18,16 +18,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import { useGetAllCategories } from "@/database/categories";
+import { useGetCategories } from "@/database/categories";
 import { Id } from "api/data-model";
+import { useAppStore } from "@/lib/store";
+import { convex } from "@/lib/convex-query";
+import { api } from "api/convex";
+import { queryClient } from "@/lib/ts-query-client";
 
 type Props = {
   label?: string;
 };
 
 export default function CategoriesField({ label }: Props) {
-  const field = useFieldContext<Id<'categories'>>();
-  const categoriesResult = useGetAllCategories();
+  const field = useFieldContext<Id<"categories">>();
+  const storeId = useAppStore((state) => state.selectedStore?._id);
+  const categoriesResult = useGetCategories(storeId);
   const categories = categoriesResult?.data ?? [];
 
   const [name, setName] = useState("");
@@ -37,9 +42,15 @@ export default function CategoriesField({ label }: Props) {
     if (!name.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      // const id = await createCategory.mutateAsync({ name });
-      // Select the newly created category
-      // field.handleChange(String(id) as any);
+      if (!storeId) throw Error("no storeId");
+      const id = await convex.mutation(api.categories.createCategory, {
+        name,
+        storeId,
+      });
+      console.log("new id :", id);
+      if (!id) throw Error("failed at creating id");
+      await queryClient.refetchQueries({ queryKey: ["categories"] });
+      field.handleChange(id);
       setName("");
     } finally {
       setIsCreating(false);
@@ -51,7 +62,7 @@ export default function CategoriesField({ label }: Props) {
       {label && <Label className="font-semibold pb-[12px]">{label}</Label>}
       <div className="space-y-1 border border-neutral-300 rounded-[15px] p-3">
         <Select
-          value={(field.state.value as Id<'categories'>) ?? ""}
+          value={(field.state.value as Id<"categories">) ?? ""}
           onValueChange={(v) => field.handleChange(v as any)}
         >
           <SelectTrigger className="w-full">
@@ -62,7 +73,7 @@ export default function CategoriesField({ label }: Props) {
               <SelectItem
                 key={c._id}
                 className="focus:bg-black/5"
-                value={String(c._id)}
+                value={c._id}
               >
                 {c.name}
               </SelectItem>

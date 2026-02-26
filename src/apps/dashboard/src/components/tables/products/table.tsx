@@ -9,9 +9,8 @@ import { api } from "api/convex";
 import { queryClient } from "@/lib/ts-query-client";
 
 export function ProductsTable() {
-  const productsResult = useGetProducts();
-  const products = productsResult?.data ?? [];
-  const isLoading = !productsResult?.isEnabled;
+  const { data: products, isLoading } = useGetProducts();
+  console.log("products from the table :", products)
 
   const rows: ProductRow[] = products.map((p: any) => {
     const firstImage = p.images

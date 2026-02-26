@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestRouteImport } from './routes/test'
 import { Route as PosRouteImport } from './routes/pos'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
@@ -22,11 +21,6 @@ import { Route as DashboardProduitsSlugRouteImport } from './routes/_dashboard/p
 import { Route as DashboardCommandesSlugRouteImport } from './routes/_dashboard/commandes/$slug'
 import { Route as DashboardClientsSlugRouteImport } from './routes/_dashboard/clients/$slug'
 
-const TestRoute = TestRouteImport.update({
-  id: '/test',
-  path: '/test',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PosRoute = PosRouteImport.update({
   id: '/pos',
   path: '/pos',
@@ -85,7 +79,6 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/pos': typeof PosRoute
-  '/test': typeof TestRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -98,7 +91,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/pos': typeof PosRoute
-  '/test': typeof TestRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -113,7 +105,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
   '/pos': typeof PosRoute
-  '/test': typeof TestRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -128,7 +119,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/pos'
-    | '/test'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -141,7 +131,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/pos'
-    | '/test'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -155,7 +144,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_dashboard'
     | '/pos'
-    | '/test'
     | '/_dashboard/clients/$slug'
     | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
@@ -170,18 +158,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   PosRoute: typeof PosRoute
-  TestRoute: typeof TestRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test': {
-      id: '/test'
-      path: '/test'
-      fullPath: '/test'
-      preLoaderRoute: typeof TestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/pos': {
       id: '/pos'
       path: '/pos'
@@ -293,7 +273,6 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   PosRoute: PosRoute,
-  TestRoute: TestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
