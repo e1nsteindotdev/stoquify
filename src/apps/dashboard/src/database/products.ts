@@ -34,23 +34,3 @@ export const useGetProductById = (id: Id<"products">) => {
   return product
 }
 
-
-
-
-// export const productsCollection = createCollection(
-//   queryCollectionOptions({
-//     queryKey: ['products'],
-//     queryFn: async (ctx) => {
-//       const products = await convex.query(api.products.listProducts)
-//       return products
-//     },
-//     queryClient,
-//     getKey: (item) => item._id,
-//     staleTime: 0,
-//     syncMode: 'eager',
-//   })
-// )
-//
-// export const useGetAllProducts = () => {
-//   return useLiveQuery(q => q.from({ products: productsCollection }))
-// }
