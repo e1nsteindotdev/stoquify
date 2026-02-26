@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,6 +32,7 @@ import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { Effect } from "effect";
 import { Images } from "@/lib/services/image-service";
+import { useAppStore } from "@/lib/store";
 import { effectRuntime } from "@/lib/effect-runtime";
 import { queryClient } from "@/lib/ts-query-client";
 import { AnimatedButton } from "@/components/ui/animated-button";
@@ -43,6 +44,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const productId: Id<"products"> | null = isNew ? null : slug;
   const product = productId != null ? useGetProductById(productId) : undefined;
   const router = useRouter();
+  const selectedStore = useAppStore((state) => state.selectedStore);
 
   const defaultImages = decodeImages(product?.images);
   const defaultVariants = decodeVariants(product?.variants);
@@ -80,10 +82,14 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         const imageService = yield* Images;
         let ensuredProductId = productId;
         if (!ensuredProductId) {
+          if (!selectedStore?._id) {
+            throw new Error("Veuillez sélectionner une boutique");
+          }
           const { productId: newProductId } = yield* Effect.promise(() =>
             convex.mutation(api.products.createProduct, {
               ...newProduct,
               collections: [...newProduct.collections],
+              storeId: selectedStore._id,
             }),
           );
           if (newProductId) {
@@ -518,7 +524,8 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   animationComponents={{
                     loading: (
                       <span className="flex items-center gap-2">
-                        <ClipLoader size={18} color="currentColor" /> EN COURS...
+                        <ClipLoader size={18} color="currentColor" /> EN
+                        COURS...
                       </span>
                     ),
                     done: (
@@ -538,16 +545,5 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         </form>
       </div>
     </div>
-  );
-}
-
-function FieldInfo({ field }: { field: AnyFieldApi }) {
-  return (
-    <>
-      {field.state.meta.isTouched && !field.state.meta.isValid ? (
-        <em>{field.state.meta.errors.join(", ")}</em>
-      ) : null}
-      {field.state.meta.isValidating ? "Validation..." : null}
-    </>
   );
 }

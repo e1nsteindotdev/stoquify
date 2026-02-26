@@ -53,6 +53,7 @@ async function compressImage(
   bitmap.close();
 
   const avifBuffer = await avifEncode(imageData, {
+    speed: 10,
     quality: Math.round(quality * 100),
   });
 

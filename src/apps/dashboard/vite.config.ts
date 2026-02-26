@@ -7,6 +7,9 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  worker: {
+    format: "es",
+  },
   plugins: [
     tanstackRouter({ autoCodeSplitting: true }),
     tailwindcss(),
@@ -14,6 +17,10 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        globIgnores: ["**/wasm/*.wasm"],
+      },
       manifest: {
         name: "Stoquify Dashboard",
         short_name: "Stoquify",
