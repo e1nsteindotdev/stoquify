@@ -3,69 +3,79 @@ import { mutation, query } from "./_generated/server";
 
 export const listCollections = query({
   args: {
-    productId: v.optional(v.id('products'))
+    productId: v.optional(v.id("products")),
   },
   handler: async (ctx, args) => {
     if (args.productId) {
-      let collections = await ctx.db.query('collections').collect()
-      return collections.filter(c => {
-        const ids = c?.productIds?.filter(id => id === args.productId)?.length
-        if (ids && ids > 0)
-          return true
-        else
-          return false
-      })
-    }
-    else return undefined
-  }
-})
+      let collections = await ctx.db.query("collections").collect();
+      return collections.filter((c) => {
+        const ids = c?.productIds?.filter(
+          (id) => id === args.productId,
+        )?.length;
+        if (ids && ids > 0) return true;
+        else return false;
+      });
+    } else return undefined;
+  },
+});
 
 export const listAllCollections = query({
-  handler: async (ctx) => {
-    return await ctx.db.query('collections').collect()
-  }
-})
+  args: {
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, { storeId }) => {
+    return await ctx.db
+      .query("collections")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
+  },
+});
 
 export const listSelectedCollectionsIds = query({
   args: {
-    productId: v.optional(v.id('products'))
+    productId: v.optional(v.id("products")),
   },
   handler: async (ctx, args) => {
     if (args.productId) {
-      let collections = await ctx.db.query('collections').collect()
-      const ids = collections.filter(c => {
-        const ids = c?.productIds?.filter(id => id === args.productId)?.length
-        if (ids && ids > 0)
-          return true
-        else
-          return false
-      }).map(c => c._id)
+      let collections = await ctx.db.query("collections").collect();
+      const ids = collections
+        .filter((c) => {
+          const ids = c?.productIds?.filter(
+            (id) => id === args.productId,
+          )?.length;
+          if (ids && ids > 0) return true;
+          else return false;
+        })
+        .map((c) => c._id);
       return ids;
-    }
-    else
-      return;
-  }
-})
+    } else return;
+  },
+});
 
 export const createCollection = mutation({
   args: {
+    storeId: v.id("stores"),
     title: v.string(),
   },
   handler: async (ctx, args) => {
-    const collections = await ctx.db.query('collections').collect()
+    const collections = await ctx.db
+      .query("collections")
+      .filter((e) => e.eq(e.field("storeId"), args.storeId))
+      .collect();
     for (let c of collections) {
       if (c.title == args.title)
         return {
           ok: false,
-          msg: "Collection already exists with this name."
-        }
+          msg: "Collection already exists with this name.",
+        };
     }
-    const id = await ctx.db.insert('collections', { title: args.title })
+    const id = await ctx.db.insert("collections", {
+      storeId: args.storeId,
+      title: args.title,
+    });
     return {
       ok: true,
-      id
-    }
-  }
-})
-
-
+      id,
+    };
+  },
+});

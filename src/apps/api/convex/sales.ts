@@ -12,17 +12,15 @@ export const createSale = mutation({
           v.object({
             variantId: v.id("variants"),
             variantOptionId: v.id("variantOptions"),
-          })
+          }),
         ),
-      })
+      }),
     ),
     subTotalCost: v.number(),
-    createdAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // Fetch product costs
     const products = await Promise.all(
-      args.order.map((item) => ctx.db.get(item.productId))
+      args.order.map((item) => ctx.db.get(item.productId)),
     );
 
     const saleId = await ctx.db.insert("sales", {
@@ -34,7 +32,6 @@ export const createSale = mutation({
         };
       }),
       subTotalCost: args.subTotalCost,
-      createdAt: args.createdAt ?? Date.now(),
     });
     return saleId;
   },
@@ -42,10 +39,6 @@ export const createSale = mutation({
 
 export const listSales = query({
   handler: async (ctx) => {
-    return await ctx.db
-      .query("sales")
-      .withIndex("by_createdAt")
-      .order("desc")
-      .collect();
+    return await ctx.db.query("sales").order("desc").collect();
   },
 });

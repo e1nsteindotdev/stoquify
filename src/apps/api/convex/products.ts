@@ -4,11 +4,12 @@ import {
   insertVariants,
   insertVariantsInventory,
 } from "./actions/product_actions";
-import { internal } from "./_generated/api";
 
 export const listProducts = query({
-  handler: async (ctx) => {
-    const storeId = (await ctx.db.query("stores").first())?._id;
+  args: {
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, { storeId }) => {
     let products = await ctx.db
       .query("products")
       .filter((e) => e.eq(e.field("storeId"), storeId))
@@ -18,7 +19,10 @@ export const listProducts = query({
     const variants = await ctx.db.query("variants").collect();
     const variantOptions = await ctx.db.query("variantOptions").collect();
     const skus = await ctx.db.query("skus").collect();
-    const collections = await ctx.db.query("collections").collect();
+
+    const collections = await ctx.db.query("collections")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
 
     return products.map((product) => {
       return {
@@ -45,8 +49,68 @@ export const listProducts = query({
               options,
             };
           }),
+        collections: product.collections
+          .map(id => collections.find(col => col._id == id))
+          .filter((col): col is NonNullable<typeof col> => col != null)
       };
     });
+  },
+});
+
+export const getCatalog = query({
+  args: {
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, { storeId }) => {
+    let products = await ctx.db
+      .query("products")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
+
+    const images = await ctx.db.query("images").collect();
+    const variants = await ctx.db.query("variants").collect();
+    const variantOptions = await ctx.db.query("variantOptions").collect();
+    const skus = await ctx.db.query("skus").collect();
+    const categories = await ctx.db
+      .query("categories")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
+    const collections = await ctx.db
+      .query("collections")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
+
+    const activeProducts = products.filter((p) => p.status === "active");
+
+    return {
+      products: activeProducts.map((product) => ({
+        ...product,
+        images: images
+          .filter((img) => img.productId === product._id)
+          .sort((a, b) => a.order - b.order),
+        skus: skus
+          .filter((sku) => sku.productId === product._id)
+          .map((sku) => ({
+            ...sku,
+            options: variantOptions.filter((option) =>
+              sku.options.includes(option._id),
+            ),
+          })),
+        variants: variants
+          .filter((v) => v.productId === product._id)
+          .map((variant) => {
+            const options = variantOptions.filter(
+              (option) => option.variantId === variant._id,
+            );
+            return {
+              ...variant,
+              options,
+            };
+          }),
+      })),
+      categories,
+      collections,
+    };
   },
 });
 
@@ -65,8 +129,7 @@ export const getProductById = query({
       .filter((e) => e.eq(e.field("productId"), id))
       .collect();
 
-    const variantOptions = await ctx.db.query("variantOptions")
-      .collect();
+    const variantOptions = await ctx.db.query("variantOptions").collect();
 
     const skus = await ctx.db
       .query("skus")
@@ -76,10 +139,19 @@ export const getProductById = query({
     return {
       ...product,
       variants: variants.map((variant) => ({
-        ...variants,
-        options: variantOptions.filter((option) => option.variantId === variant._id),
+        ...variant,
+        options: variantOptions.filter(
+          (option) => option.variantId === variant._id,
+        ),
       })),
-      skus,
+      skus: skus.map((sku) => {
+        return {
+          ...sku,
+          options: variantOptions.filter((option) =>
+            sku.options.includes(option._id),
+          ),
+        };
+      }),
       images: images.sort((a, b) => a.order - b.order),
     };
   },
@@ -174,6 +246,7 @@ export const getProductByCategory = query({
 
 export const createProduct = mutation({
   args: {
+    storeId: v.id("stores"),
     title: v.optional(v.string()),
     desc: v.optional(v.string()),
     price: v.optional(v.number()),
@@ -225,16 +298,11 @@ export const createProduct = mutation({
         }),
       ),
     ),
-    collections: v.optional(v.array(v.id("collections"))),
+    collections: v.array(v.id("collections")),
     variantsInventory: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     try {
-      const store = await ctx.db.query("stores").first();
-      if (!store?._id) {
-        throw new Error("No store found");
-      }
-
       const {
         variants,
         variantsInventory,
@@ -246,11 +314,11 @@ export const createProduct = mutation({
       } = args;
 
       const productId = await ctx.db.insert("products", {
-        storeId: store._id,
         status: status ?? "incomplete",
         stockingStrategy: stockingStrategy ?? "by_variants",
-        collections: [],
+        collections,
         ...productData,
+        storeId: args.storeId,
       });
 
       if (images && images.length > 0) {
@@ -321,7 +389,6 @@ export const updateProductMetaData = mutation({
         productId,
         status,
         stockingStrategy,
-        collections,
         ...updateData
       } = args;
 
@@ -335,40 +402,7 @@ export const updateProductMetaData = mutation({
           cleanData[key] = value;
         }
       }
-
       await ctx.db.patch(productId, cleanData);
-
-      if (collections !== undefined) {
-        const product = await ctx.db.get(productId);
-        if (product) {
-          const currentCollections = new Set(product.collections ?? []);
-          const newCollections = new Set(collections);
-
-          for (const collectionId of collections) {
-            if (!currentCollections.has(collectionId)) {
-              const collection = await ctx.db.get(collectionId);
-              if (collection) {
-                await ctx.db.patch(collectionId, {
-                  productIds: [...(collection.productIds ?? []), productId],
-                });
-              }
-            }
-          }
-
-          for (const collectionId of product.collections ?? []) {
-            if (!newCollections.has(collectionId)) {
-              const collection = await ctx.db.get(collectionId);
-              if (collection) {
-                await ctx.db.patch(collectionId, {
-                  productIds: (collection.productIds ?? []).filter(
-                    (id) => id !== productId,
-                  ),
-                });
-              }
-            }
-          }
-        }
-      }
 
       return { ok: true };
     } catch (e) {

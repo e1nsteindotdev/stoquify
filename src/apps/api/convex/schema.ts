@@ -2,22 +2,63 @@ import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
+const permissions = v.array(
+  v.object({
+    storeId: v.id("stores"),
+    resource: v.string(),
+    action: v.union(
+      v.literal("write"),
+      v.literal("read"),
+      v.literal("update"),
+      v.literal("delete"),
+      v.literal("create"),
+      v.literal("*"),
+    ),
+  }),
+);
+
 const schema = defineSchema({
   ...authTables,
   users: defineTable({
-    email: v.optional(v.string()),
-    organizationId: v.optional(v.id("organizations")),
-  }),
-
-  stores: defineTable({
     name: v.string(),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.string(),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
     organizationId: v.id("organizations"),
-  }),
+    role: v.union(v.literal("founder"), v.literal("admin"), v.literal("staff")),
+    permissions,
+  })
+    .index("email", ["email"])
+    .index("by_organization", ["organizationId"]),
 
+  // Organizations
   organizations: defineTable({
     name: v.string(),
     owner: v.optional(v.id("users")),
   }),
+
+  // Stores
+  stores: defineTable({
+    name: v.string(),
+    organizationId: v.id("organizations"),
+  }).index("by_organization", ["organizationId"]),
+
+  // Magic links for invitations
+  magicLinks: defineTable({
+    email: v.string(),
+    token: v.string(),
+    role: v.union(v.literal("admin"), v.literal("staff")),
+    permissions,
+    organizationId: v.id("organizations"),
+    storeId: v.id("stores"),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_token", ["token"])
+    .index("by_email", ["email"]),
 
   categories: defineTable({
     name: v.string(),
@@ -74,9 +115,10 @@ const schema = defineSchema({
   }).index("productId", ["productId"]),
 
   collections: defineTable({
+    storeId: v.id("stores"),
     title: v.string(),
     productIds: v.optional(v.array(v.id("products"))),
-  }),
+  }).index("by_store", ["storeId"]),
 
   wilayat: defineTable({
     name: v.string(),
@@ -120,10 +162,7 @@ const schema = defineSchema({
       v.literal("confirmed"),
       v.literal("denied"),
     ),
-    createdAt: v.number(),
-  })
-    .index("by_customer", ["customerId"])
-    .index("by_createdAt", ["createdAt"]),
+  }).index("by_customer", ["customerId"]),
 
   sales: defineTable({
     order: v.array(
@@ -141,8 +180,7 @@ const schema = defineSchema({
       }),
     ),
     subTotalCost: v.number(),
-    createdAt: v.number(),
-  }).index("by_createdAt", ["createdAt"]),
+  }),
 
   faqs: defineTable({
     question: v.string(),

@@ -130,18 +130,17 @@ export async function insertVariants(
 ) {
   variants = variants.sort((a, b) => a.order - b.order);
   for (let v of variants) {
-    const optionNames = v.options.map((o) => o.optionName);
     const newVariantId: Id<"variants"> = await ctx.db.insert("variants", {
       productId: productId,
       name: v.name,
       order: v.order,
-      options: optionNames,
     });
 
     await Promise.all(
-      v.options.map((o) =>
+      v.options.map((o, ix) =>
         ctx.db.insert("variantOptions", {
-          optionName: o.optionName,
+          name: o.optionName,
+          order: ix,
           variantId: newVariantId,
         }),
       ),
@@ -155,10 +154,11 @@ export async function insertVariantsInventory(
   productId: Id<"products">,
 ) {
   for (let v of variantsInventory) {
+    const optionsArray = v.options.map(o => o.optionId);
     await ctx.db.insert("skus", {
       productId: productId,
       quantity: v.quantity ?? 0,
-      options: v.options,
+      options: optionsArray,
     });
   }
 }

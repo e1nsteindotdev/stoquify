@@ -33,7 +33,8 @@
     "@auth/core": "0.37.0",
     "@convex-dev/auth": "^0.0.90",
     "@radix-ui/react-dialog": "^1.1.14",
-    "convex": "^1.31.2",
+    "convex": "^1.32.0",
+    "nanoid": "^5.1.6",
     "recharts": "^2.15.4"
   }
 }
