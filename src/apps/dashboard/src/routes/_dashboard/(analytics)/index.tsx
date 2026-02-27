@@ -1,19 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from "@/components/ui/chart";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
-import { useGetSalesData, useGetSalesByTimePeriod, useGetProductPerformance } from "@/database/analytics";
-
 type TimePeriod = "today" | "week" | "month" | "year" | "all";
-
 const PERIOD_LABELS: Record<TimePeriod, string> = {
   today: "Aujourd'hui",
   week: "Cette semaine",

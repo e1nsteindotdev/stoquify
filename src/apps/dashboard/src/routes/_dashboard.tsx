@@ -25,34 +25,38 @@ import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
+import { initializeCollections } from "@/database/initialize";
 
 
 export const Route = createFileRoute("/_dashboard")({
   loader: async () => {
     try {
+      console.log('loader')
       const [products, collections, user, stores] = await Promise.all([
         idbGet("products"),
         idbGet("collections"),
         idbGet("user"),
         idbGet("stores"),
       ]);
+      if (stores?.length > 0) {
+        const selectedStore = useAppStore.getState().selectedStore
+        useAppStore.getState().setStores(stores)
+        if (!selectedStore) useAppStore.getState().setStore(stores[0])
+      }
+      else {
+        const stores = await convex.query(api.stores.list);
+        useAppStore.getState().setStores(stores)
+      }
+
 
       if (user) useAppStore.getState().setUser(user)
       else {
         const user = await convex.query(api.users.getUserData);
         useAppStore.getState().setUser(user)
       }
-      if (stores?.length > 0) useAppStore.getState().setStores(stores)
-      else {
-        const stores = await convex.query(api.stores.list);
-        useAppStore.getState().setStores(stores)
-      }
-
       queryClient.setQueryData(["products"], products);
       queryClient.setQueryData(["collections"], collections);
-
-      console.log("loader hello world")
-
+      initializeCollections()
     } catch (e) {
       console.log("faild to preload products :", String(e));
     }

@@ -30,6 +30,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useAppStore } from "@/lib/store";
+import { clearIDB } from "@/lib/idb";
 
 export function NavUser({ avatar }: { avatar: string }) {
   const user = useAppStore(get => get.user);
@@ -45,6 +46,7 @@ export function NavUser({ avatar }: { avatar: string }) {
   if (!user) return <ClipLoader />
 
   const handleSignOut = async () => {
+    await clearIDB()
     await signOut();
     navigate({ to: "/" });
   };

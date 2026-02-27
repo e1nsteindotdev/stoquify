@@ -20,7 +20,7 @@ export const ordersCollection = createCollection(
     },
     queryClient,
     getKey: (item) => item._id,
-    syncMode: 'on-demand',
+    syncMode: 'eager',
   })
 )
 

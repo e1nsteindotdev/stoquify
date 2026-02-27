@@ -20,7 +20,7 @@ import { InputsContainer, InputsTitle } from "../../ui/inputs-container";
 import { useAppForm } from "@/hooks/form";
 import StockageField from "./stockage-field";
 import { type Id } from "api/data-model";
-import { useGetProductById } from "@/database/products";
+import { productsCollection, useGetProductById } from "@/database/products";
 import { decodeVariants, decodeSKUs, decodeImages } from "../types";
 import {
   getImageChanges,
@@ -261,9 +261,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         return { productId: ensuredProductId };
       }).pipe(
         Effect.ensuring(
-          Effect.sync(() => {
-            queryClient.refetchQueries({ queryKey: ["products"] });
-          }),
+          Effect.promise(() => productsCollection.preload())
         ),
       );
 

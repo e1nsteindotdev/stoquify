@@ -12,15 +12,18 @@ export const productsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ['products'],
     queryFn: async () => {
+      console.log('products collection')
       const storeId = useAppStore.getState().selectedStore?._id
+      console.log('storeId :', storeId)
       if (!storeId) return []
       const products = await convex.query(api.products.listProducts, { storeId })
+      console.log('products from convex :', products)
       idbRefresh('products', products)
       return products
     },
     queryClient,
     getKey: (item) => item._id,
-    syncMode: 'on-demand',
+    syncMode: 'eager',
   })
 )
 

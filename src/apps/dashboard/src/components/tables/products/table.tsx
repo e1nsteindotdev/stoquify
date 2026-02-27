@@ -10,7 +10,6 @@ import { queryClient } from "@/lib/ts-query-client";
 
 export function ProductsTable() {
   const { data: products, isLoading } = useGetProducts();
-  console.log("products from the table :", products)
 
   const rows: ProductRow[] = products.map((p: any) => {
     const firstImage = p.images

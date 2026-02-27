@@ -11,7 +11,7 @@ if (!CONVEX_URL) {
 export const convex = new ConvexReactClient(CONVEX_URL);
 const convexQueryClient = new ConvexQueryClient(convex);
 
-export const queryClient = new QueryClient({
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryKeyHashFn: convexQueryClient.hashFn(),
@@ -20,5 +20,4 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Connect the ConvexQueryClient to the QueryClient
 convexQueryClient.connect(queryClient);

@@ -66,3 +66,14 @@ export async function idbRefresh(store: string, data: any) {
     //console.log("puting into idb store failed :", String(e));
   }
 }
+
+export async function clearIDB() {
+  STORES.forEach(async (store) => {
+    try {
+      await idbClear(store)
+    } catch (e) {
+
+    }
+  })
+
+}
