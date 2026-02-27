@@ -1,27 +1,12 @@
-import { ChevronDown } from "lucide-react";
 import { DownChevron } from "./icons/down-chevron";
-import { useEffect, useState } from "react";
-import { getCatalog, type CatalogCollection } from "@/lib/catalog";
+import { useCatalogStore } from "@/lib/catalog-store";
 
 import { smoothScrollTo } from "../lib/scroll";
 
 export function CTA() {
-  const [collections, setCollections] = useState<CatalogCollection[]>([]);
-  const [loading, setLoading] = useState(true);
+  const collections = useCatalogStore((state) => state.collections);
 
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        setCollections(catalog.collections);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  const collectionsCount = (loading ? 0 : (collections?.length ?? 0))
+  const collectionsCount = (collections?.length ?? 0)
     .toString()
     .padStart(2, "0");
 

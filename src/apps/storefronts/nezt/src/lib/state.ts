@@ -39,19 +39,19 @@ export const useCartStore = create<Store>((set) => ({
     }),
   removeProductFromCart: (productId) =>
     set((state) => {
-      const cart = state.cart;
+      const cart = new Map(state.cart);
       cart.delete(productId);
       persistCart(cart);
       return {
-        cart: new Map(cart),
+        cart,
       };
     }),
   changeProduct: (productId, content) =>
     set((state) => {
-      const cart = state.cart;
+      const cart = new Map(state.cart);
       cart.set(productId, content);
       persistCart(cart);
-      return { cart: new Map(cart) };
+      return { cart };
     }),
 }));
 
@@ -66,11 +66,10 @@ function loadCart() {
   return cart;
 }
 
-export const getTotal = () => {
+export const useCartTotal = () => {
   const cart = useCartStore((state) => state.cart);
-  let result = 0;
-  cart.forEach((v) => {
-    result = v.quantity * v.price;
-  });
-  return result;
+  return Array.from(cart).reduce(
+    (sum, [_, item]) => sum + item.quantity * item.price,
+    0,
+  );
 };

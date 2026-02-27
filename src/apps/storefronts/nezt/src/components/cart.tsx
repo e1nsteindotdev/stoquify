@@ -11,47 +11,22 @@ import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { LoadingSpinner } from "./loading-spinner";
-import { useEffect, useState } from "react";
-import { getCatalog, type CatalogProduct } from "@/lib/catalog";
+import { useCatalogStore } from "@/lib/catalog-store";
 import type { Id } from "api/data-model";
 
 export function Cart() {
-  const toggleCart = useCartStore((state) => state.toggleCart);
   const removeProductFromCart = useCartStore(
     (state) => state.removeProductFromCart,
   );
   const cart = useCartStore((state) => state.cart);
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        setProducts(catalog.products);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, []);
+  const products = useCatalogStore((state) => state.products);
 
   const totalCost = Array.from(cart)
     .map(([_, product]) => product.quantity * product.price)
     .reduce((current, prev) => current + prev, 0);
 
   return (
-    <Sheet
-      onOpenChange={(open) => {
-        if (!open) {
-          setTimeout(() => {
-            toggleCart();
-          }, 100);
-        } else {
-          toggleCart();
-        }
-      }}
-    >
+    <Sheet>
       <SheetTrigger className="">
         <div className="relative">
           <div className="flex lg:hidden">
@@ -85,10 +60,8 @@ export function Cart() {
                 </div>
               ) : (
                 Array.from(cart.keys()).map((key) => {
-                  const product = products?.find(
-                    (product) => product?._id === key,
-                  );
-                  if (!product || loading)
+                  const product = products?.find((p) => p._id === key);
+                  if (!product)
                     return (
                       <LoadingSpinner size={20} key={key} className="py-2" />
                     );

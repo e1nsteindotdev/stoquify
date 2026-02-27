@@ -3,32 +3,14 @@ import { DownChevron } from "./icons/down-chevron";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  getCatalog,
+  useCatalogStore,
   type CatalogProduct,
   type CatalogCategory,
-} from "@/lib/catalog";
+} from "@/lib/catalog-store";
 
 export function OurCategories() {
-  const [categories, setCategories] = useState<CatalogCategory[]>([]);
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        setCategories(catalog.categories);
-        setProducts(catalog.products);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return null;
-  }
+  const categories = useCatalogStore((state) => state.categories);
+  const products = useCatalogStore((state) => state.products);
 
   return (
     <div id="categories" className="flex flex-col pt-6">
@@ -90,13 +72,13 @@ function Category({
   }
 
   useEffect(() => {
-    const id = setTimeout(() => {
+    const id = setInterval(() => {
       up();
     }, 2000);
     return () => {
-      clearTimeout(id);
+      clearInterval(id);
     };
-  });
+  }, []);
 
   const [isHovered, setIsHovered] = useState(false);
 
@@ -152,7 +134,7 @@ function Category({
               ${index % 2 === 0 ? "text-end" : "text-start"}`}
             >
               {products?.map(
-                (p, i) =>
+                (p) =>
                   p.categoryId === category._id && (
                     <Link
                       to={`/products/$slug`}
@@ -163,7 +145,7 @@ function Category({
                         },
                       }}
                       params={{ slug: p._id }}
-                      key={i}
+                      key={p._id}
                       className={`text-black font-medium text-wrap transition-all duration-400 ease-out leading-[1.2] ${selectedProduct?._id === p._id ? "opacity-100" : "opacity-30"}`}
                     >
                       {p.title}

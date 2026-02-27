@@ -11,34 +11,21 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { getTotal, useCartStore } from "@/lib/state";
+import { useCartTotal, useCartStore } from "@/lib/state";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
 import { XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Id } from "api/data-model";
-import { useEffect, useState } from "react";
-import { getCatalog, type CatalogProduct } from "@/lib/catalog";
+import { useCatalogStore } from "@/lib/catalog-store";
 
 export const Route = createFileRoute("/checkout")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        setProducts(catalog.products);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, []);
+  const products = useCatalogStore((state) => state.products);
+  const cartTotal = useCartTotal();
 
   const removeProductFromCart = useCartStore(
     (state) => state.removeProductFromCart,
@@ -68,10 +55,8 @@ function RouteComponent() {
               <p className="text-[25px] font-bold uppercase">REÇU</p>
               <div className="flex flex-col gap-3 pt-3 lg:pt-4">
                 {Array.from(cart.keys()).map((key) => {
-                  const product = products?.find(
-                    (product) => product?._id === key,
-                  );
-                  if (!product || loading)
+                  const product = products?.find((p) => p._id === key);
+                  if (!product)
                     return (
                       <LoadingSpinner size={20} key={key} className="py-2" />
                     );
@@ -135,7 +120,7 @@ function RouteComponent() {
             <div className="flex flex-col gap-2 text-[14px] uppercase border-t-1 border-black pt-3">
               <div className="w-full flex justify-between">
                 <p className="font-bold">SOUS-TOTAL</p>
-                <p>{getTotal()} DA</p>
+                <p>{cartTotal} DA</p>
               </div>
 
               <div className="w-full flex justify-between">
@@ -145,7 +130,7 @@ function RouteComponent() {
 
               <div className="w-full  text-[18px] flex justify-between pt-2 mt-3 border-t-1 border-black/40 border-dashed">
                 <p className="font-black">TOTAL</p>
-                <p className="font-black">{getTotal() + 400} DA</p>
+                <p className="font-black">{cartTotal + 400} DA</p>
               </div>
             </div>
           </div>

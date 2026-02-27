@@ -100,8 +100,6 @@ export async function getCatalog(): Promise<Catalog> {
     throw new Error(`Failed to fetch catalog: ${response.statusText}`);
   }
   const data = await response.json();
-  console.log('data : ', data.value)
-
   return data.value;
 }
 

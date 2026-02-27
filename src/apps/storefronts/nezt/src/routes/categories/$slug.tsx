@@ -6,12 +6,7 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import {
-  getCatalog,
-  type CatalogProduct,
-  type CatalogCategory,
-} from "@/lib/catalog";
+import { useCatalogStore } from "@/lib/catalog-store";
 
 export const Route = createFileRoute("/categories/$slug")({
   component: RouteComponent,
@@ -22,27 +17,11 @@ function RouteComponent() {
   const categoryId = params.slug;
   const navigate = useNavigate();
 
-  const [category, setCategory] = useState<CatalogCategory | null>(null);
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  const categories = useCatalogStore((state) => state.categories);
+  const products = useCatalogStore((state) => state.products);
 
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        const foundCategory = catalog.categories.find(
-          (c) => c._id === categoryId,
-        );
-        setCategory(foundCategory || null);
-        setProducts(
-          catalog.products.filter((p) => p.categoryId === categoryId),
-        );
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, [categoryId]);
+  const category = categories.find((c) => c._id === categoryId) || null;
+  const filteredProducts = products.filter((p) => p.categoryId === categoryId);
 
   return (
     <div className="overflow-clip">
@@ -80,8 +59,8 @@ function RouteComponent() {
                 )}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-4 gap-y-8 pt-4">
-                {category && !loading
-                  ? products?.map((p) => (
+                {category
+                  ? filteredProducts?.map((p) => (
                       <Product
                         source={{
                           sourceType: "categories",

@@ -1,35 +1,12 @@
-import { SimpleChevronDownIcon } from "./icons/simple-down-chevron";
 import { CollectionProduct, Product } from "./products";
-import { useEffect, useState } from "react";
-import {
-  getCatalog,
-  type CatalogProduct,
-  type CatalogCollection,
-} from "@/lib/catalog";
+import { useCatalogStore } from "@/lib/catalog-store";
 
 export function OurCollections() {
-  const [collections, setCollections] = useState<CatalogCollection[]>([]);
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        setCollections(
-          catalog.collections.filter((c) => c.productIds?.length !== 0),
-        );
-        setProducts(catalog.products);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return null;
-  }
+  let collections = useCatalogStore((state) =>
+    state.collections,
+  );
+  collections = collections.filter((c) => c.productIds?.length !== 0)
+  const products = useCatalogStore((state) => state.products);
 
   return (
     <div id="collections" className="flex flex-col gap-4 py-3">
@@ -44,10 +21,11 @@ export function OurCollections() {
       <div className="flex flex-col border-t-1 border-b-1 border-white bg-white/40">
         {collections?.map((c) => {
           const ids = c?.productIds;
-          const collection_products = ids?.map((id) =>
-            products?.find((p) => p._id == id),
+          const uniqueIds = ids ? [...new Set(ids)] : [];
+          const collection_products = uniqueIds.map((id) =>
+            products?.find((p) => p._id === id),
           );
-          const collectionProducts = c?.productIds?.map((id) =>
+          const collectionProducts = uniqueIds.map((id) =>
             products?.filter((p) => p._id === id),
           );
           return (
@@ -67,18 +45,18 @@ export function OurCollections() {
                   <div className="flex overflow-x-scroll gap-4 px-3 no-scrollbar">
                     {collection_products
                       ? collection_products.map((p) => (
-                          <CollectionProduct
-                            source={{
-                              sourceType: "collections",
-                              sourceName: c.title,
-                            }}
-                            key={p?._id}
-                            data={p}
-                          />
-                        ))
+                        <CollectionProduct
+                          source={{
+                            sourceType: "collections",
+                            sourceName: c.title,
+                          }}
+                          key={p?._id}
+                          data={p}
+                        />
+                      ))
                       : Array.from({ length: 10 }).map((_) => (
-                          <Product data={undefined} />
-                        ))}
+                        <Product data={undefined} />
+                      ))}
                   </div>
                 </div>
               </div>
