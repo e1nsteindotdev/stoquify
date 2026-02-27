@@ -10,7 +10,6 @@ export const categoriesCollection = createCollection(
     queryKey: ['categories'],
     queryFn: async () => {
       const categories = await convex.query(api.categories.listCategories)
-      console.log('just fetched categories :', categories)
       return categories
     },
     queryClient,

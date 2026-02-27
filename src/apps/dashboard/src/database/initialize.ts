@@ -6,5 +6,4 @@ export function initializeCollections() {
   productsCollection.preload()
   categoriesCollection.preload()
   collectionsCollection.preload()
-  console.log("finished initializing collections")
 }

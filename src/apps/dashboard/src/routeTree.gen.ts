@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PosRouteImport } from './routes/pos'
+import { Route as MagicLinkRouteImport } from './routes/magic-link'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
 import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
+import { Route as DashboardEmployesIndexRouteImport } from './routes/_dashboard/employes/index'
 import { Route as DashboardCommandesIndexRouteImport } from './routes/_dashboard/commandes/index'
 import { Route as DashboardClientsIndexRouteImport } from './routes/_dashboard/clients/index'
 import { Route as DashboardanalyticsIndexRouteImport } from './routes/_dashboard/(analytics)/index'
@@ -24,6 +26,11 @@ import { Route as DashboardClientsSlugRouteImport } from './routes/_dashboard/cl
 const PosRoute = PosRouteImport.update({
   id: '/pos',
   path: '/pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MagicLinkRoute = MagicLinkRouteImport.update({
+  id: '/magic-link',
+  path: '/magic-link',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -41,6 +48,11 @@ const DashboardParametresIndexRoute =
     path: '/parametres/',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardEmployesIndexRoute = DashboardEmployesIndexRouteImport.update({
+  id: '/employes/',
+  path: '/employes/',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardCommandesIndexRoute = DashboardCommandesIndexRouteImport.update({
   id: '/commandes/',
   path: '/commandes/',
@@ -78,6 +90,7 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/magic-link': typeof MagicLinkRoute
   '/pos': typeof PosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
@@ -86,10 +99,12 @@ export interface FileRoutesByFullPath {
   '/': typeof DashboardanalyticsIndexRoute
   '/clients': typeof DashboardClientsIndexRoute
   '/commandes': typeof DashboardCommandesIndexRoute
+  '/employes': typeof DashboardEmployesIndexRoute
   '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/magic-link': typeof MagicLinkRoute
   '/pos': typeof PosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
@@ -98,12 +113,14 @@ export interface FileRoutesByTo {
   '/': typeof DashboardanalyticsIndexRoute
   '/clients': typeof DashboardClientsIndexRoute
   '/commandes': typeof DashboardCommandesIndexRoute
+  '/employes': typeof DashboardEmployesIndexRoute
   '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
+  '/magic-link': typeof MagicLinkRoute
   '/pos': typeof PosRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
@@ -112,12 +129,14 @@ export interface FileRoutesById {
   '/_dashboard/(analytics)/': typeof DashboardanalyticsIndexRoute
   '/_dashboard/clients/': typeof DashboardClientsIndexRoute
   '/_dashboard/commandes/': typeof DashboardCommandesIndexRoute
+  '/_dashboard/employes/': typeof DashboardEmployesIndexRoute
   '/_dashboard/parametres/': typeof DashboardParametresIndexRoute
   '/_dashboard/produits/': typeof DashboardProduitsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/magic-link'
     | '/pos'
     | '/clients/$slug'
     | '/commandes/$slug'
@@ -126,10 +145,12 @@ export interface FileRouteTypes {
     | '/'
     | '/clients'
     | '/commandes'
+    | '/employes'
     | '/parametres'
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/magic-link'
     | '/pos'
     | '/clients/$slug'
     | '/commandes/$slug'
@@ -138,11 +159,13 @@ export interface FileRouteTypes {
     | '/'
     | '/clients'
     | '/commandes'
+    | '/employes'
     | '/parametres'
     | '/produits'
   id:
     | '__root__'
     | '/_dashboard'
+    | '/magic-link'
     | '/pos'
     | '/_dashboard/clients/$slug'
     | '/_dashboard/commandes/$slug'
@@ -151,12 +174,14 @@ export interface FileRouteTypes {
     | '/_dashboard/(analytics)/'
     | '/_dashboard/clients/'
     | '/_dashboard/commandes/'
+    | '/_dashboard/employes/'
     | '/_dashboard/parametres/'
     | '/_dashboard/produits/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
+  MagicLinkRoute: typeof MagicLinkRoute
   PosRoute: typeof PosRoute
 }
 
@@ -167,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/pos'
       fullPath: '/pos'
       preLoaderRoute: typeof PosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/magic-link': {
+      id: '/magic-link'
+      path: '/magic-link'
+      fullPath: '/magic-link'
+      preLoaderRoute: typeof MagicLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard': {
@@ -188,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/parametres'
       fullPath: '/parametres'
       preLoaderRoute: typeof DashboardParametresIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/employes/': {
+      id: '/_dashboard/employes/'
+      path: '/employes'
+      fullPath: '/employes'
+      preLoaderRoute: typeof DashboardEmployesIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/commandes/': {
@@ -250,6 +289,7 @@ interface DashboardRouteChildren {
   DashboardanalyticsIndexRoute: typeof DashboardanalyticsIndexRoute
   DashboardClientsIndexRoute: typeof DashboardClientsIndexRoute
   DashboardCommandesIndexRoute: typeof DashboardCommandesIndexRoute
+  DashboardEmployesIndexRoute: typeof DashboardEmployesIndexRoute
   DashboardParametresIndexRoute: typeof DashboardParametresIndexRoute
   DashboardProduitsIndexRoute: typeof DashboardProduitsIndexRoute
 }
@@ -262,6 +302,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardanalyticsIndexRoute: DashboardanalyticsIndexRoute,
   DashboardClientsIndexRoute: DashboardClientsIndexRoute,
   DashboardCommandesIndexRoute: DashboardCommandesIndexRoute,
+  DashboardEmployesIndexRoute: DashboardEmployesIndexRoute,
   DashboardParametresIndexRoute: DashboardParametresIndexRoute,
   DashboardProduitsIndexRoute: DashboardProduitsIndexRoute,
 }
@@ -272,6 +313,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
+  MagicLinkRoute: MagicLinkRoute,
   PosRoute: PosRoute,
 }
 export const routeTree = rootRouteImport

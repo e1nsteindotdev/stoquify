@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
 import QRCode from "react-qr-code";
-import { useAppStore } from "@/lib/store";
 
 export function InviteStaffModal() {
   const [email, setEmail] = useState("");
@@ -12,15 +11,9 @@ export function InviteStaffModal() {
 
   const invite = useMutation(api.magicLinks.invite);
   const availablePermissions = useQuery(api.permissions?.list || null);
-  const currentStore = useAppStore(state => state.selectedStore)
 
   const handleGenerateLink = async () => {
-    if (!currentStore?._id) {
-      throw new Error("No store selected");
-    }
-
     const permissions = selectedPermissions.map((perm) => ({
-      storeId: currentStore._id as any,
       resource: perm,
       action: "*" as const,
     }));
@@ -29,10 +22,9 @@ export function InviteStaffModal() {
       email,
       role,
       permissions,
-      storeId: currentStore._id as any,
     });
 
-    const link = `${window.location.origin}/auth/verify?magicLinkId=${result._id}`;
+    const link = `${window.location.origin}/magic-link?magicLinkId=${result._id}`;
     setGeneratedLink(link);
   };
 

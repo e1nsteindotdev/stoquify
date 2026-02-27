@@ -31,7 +31,6 @@ import { initializeCollections } from "@/database/initialize";
 export const Route = createFileRoute("/_dashboard")({
   loader: async () => {
     try {
-      console.log('loader')
       const [products, collections, user, stores] = await Promise.all([
         idbGet("products"),
         idbGet("collections"),

@@ -14,19 +14,6 @@ export const Route = createFileRoute("/order-success")({
 
 function RouteComponent() {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getCatalog()
-      .then((catalog) => {
-        setProducts(catalog.products);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch catalog:", err);
-        setLoading(false);
-      });
-  }, []);
 
   const cart = useCartStore((state) => state.cart);
 
@@ -36,7 +23,6 @@ function RouteComponent() {
   const cartArray = Array.from(cart);
   const navigate = useNavigate();
 
-  if (loading) return <LoadingScreen />;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#EAEAEA] px-4">
