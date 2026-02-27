@@ -12,6 +12,7 @@ import type * as actions_product_actions from "../actions/product_actions.js";
 import type * as auth from "../auth.js";
 import type * as categories from "../categories.js";
 import type * as collections from "../collections.js";
+import type * as customeFunction from "../customeFunction.js";
 import type * as customers from "../customers.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   categories: typeof categories;
   collections: typeof collections;
+  customeFunction: typeof customeFunction;
   customers: typeof customers;
   http: typeof http;
   images: typeof images;

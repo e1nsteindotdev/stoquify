@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-export const listCategories = query({
+export const listActiveCategories = query({
   handler: async (ctx) => {
     const categories = await ctx.db.query("categories").collect();
     const products = await ctx.db.query('products').collect()
@@ -11,8 +11,7 @@ export const listCategories = query({
     })
   },
 });
-
-export const listAllCategories = query({
+export const listCategories = query({
   handler: async (ctx) => {
     const categories = await ctx.db.query("categories").collect()
     return categories
@@ -21,15 +20,15 @@ export const listAllCategories = query({
 
 export const createCategory = mutation({
   args: {
+    storeId: v.id('stores'),
     name: v.string()
   },
   handler: async (ctx, args) => {
-    const store = await ctx.db.query("stores").first()
     const categories = await ctx.db.query("categories").collect()
-    if (!store) return;
     if (categories.filter(c => c.name === args.name).length > 0) return;
-
-    return await ctx.db.insert("categories", { name: args.name, storeId: store?._id })
+    const id = await ctx.db.insert("categories", { name: args.name, storeId: args.storeId })
+    console.log('created cat :', id)
+    return id
   },
 });
 

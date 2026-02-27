@@ -4,6 +4,7 @@ import {
   insertVariants,
   insertVariantsInventory,
 } from "./actions/product_actions";
+import { authedMutation } from "./customeFunction";
 
 export const listProducts = query({
   args: {
@@ -20,7 +21,8 @@ export const listProducts = query({
     const variantOptions = await ctx.db.query("variantOptions").collect();
     const skus = await ctx.db.query("skus").collect();
 
-    const collections = await ctx.db.query("collections")
+    const collections = await ctx.db
+      .query("collections")
       .filter((e) => e.eq(e.field("storeId"), storeId))
       .collect();
 
@@ -50,8 +52,8 @@ export const listProducts = query({
             };
           }),
         collections: product.collections
-          .map(id => collections.find(col => col._id == id))
-          .filter((col): col is NonNullable<typeof col> => col != null)
+          .map((id) => collections.find((col) => col._id == id))
+          .filter((col): col is NonNullable<typeof col> => col != null),
       };
     });
   },
@@ -82,7 +84,14 @@ export const getCatalog = query({
 
     const activeProducts = products.filter((p) => p.status === "active");
 
-    return {
+    const activeCategoryIds = new Set(
+      activeProducts.map((p) => p.categoryId).filter((id) => id !== undefined),
+    );
+    const activeCollectionIds = new Set(
+      activeProducts.flatMap((p) => p.collections ?? []),
+    );
+
+    const data = {
       products: activeProducts.map((product) => ({
         ...product,
         images: images
@@ -108,9 +117,12 @@ export const getCatalog = query({
             };
           }),
       })),
-      categories,
-      collections,
+      categories: categories.filter((c) => activeCategoryIds.has(c._id)),
+      collections: collections.filter((c) => activeCollectionIds.has(c._id)),
     };
+    console.log("returning cataglog data :", data);
+
+    return data;
   },
 });
 
@@ -244,7 +256,7 @@ export const getProductByCategory = query({
   },
 });
 
-export const createProduct = mutation({
+export const createProduct = authedMutation({
   args: {
     storeId: v.id("stores"),
     title: v.optional(v.string()),
@@ -385,12 +397,7 @@ export const updateProductMetaData = mutation({
   },
   handler: async (ctx, args) => {
     try {
-      const {
-        productId,
-        status,
-        stockingStrategy,
-        ...updateData
-      } = args;
+      const { productId, status, stockingStrategy, ...updateData } = args;
 
       const cleanData: Record<string, unknown> = {};
       for (const [key, value] of Object.entries({
