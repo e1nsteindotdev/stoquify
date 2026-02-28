@@ -4,7 +4,7 @@ import { v } from "convex/values";
 
 const permissions = v.array(
   v.object({
-    storeId: v.id("stores"),
+    storeId: v.optional(v.id("stores")),
     resource: v.string(),
     action: v.union(
       v.literal("write"),
@@ -48,17 +48,16 @@ const schema = defineSchema({
 
   // Magic links for invitations
   magicLinks: defineTable({
-    email: v.string(),
+    email: v.optional(v.string()),
     token: v.string(),
-    role: v.union(v.literal("admin"), v.literal("staff")),
+    role: v.union(v.literal("founder"), v.literal("admin"), v.literal("staff")),
     permissions,
     organizationId: v.id("organizations"),
-    storeId: v.id("stores"),
     expiresAt: v.number(),
     usedAt: v.optional(v.number()),
   })
     .index("by_token", ["token"])
-    .index("by_email", ["email"]),
+    .index("by_organization", ["organizationId"]),
 
   categories: defineTable({
     name: v.string(),
@@ -139,6 +138,7 @@ const schema = defineSchema({
   }),
 
   orders: defineTable({
+    orderTime: v.string(),
     customerId: v.id("customers"),
     order: v.array(
       v.object({
@@ -165,6 +165,7 @@ const schema = defineSchema({
   }).index("by_customer", ["customerId"]),
 
   sales: defineTable({
+    saleTime: v.string(),
     order: v.array(
       v.object({
         quantity: v.number(),

@@ -34,9 +34,10 @@ import { clearIDB } from "@/lib/idb";
 
 export function NavUser({ avatar }: { avatar: string }) {
   const user = useAppStore(get => get.user);
-  const setStore = useAppStore(state => state.setStore)
   const stores = useAppStore(state => state.stores)
   const store = useAppStore(state => state.selectedStore)
+
+  const setStore = useAppStore(state => state.setStore)
 
   const { isMobile } = useSidebar();
   const navigate = useNavigate();

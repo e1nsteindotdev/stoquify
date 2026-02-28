@@ -26,7 +26,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 
   callbacks: {
     async createOrUpdateUser(ctx, args) {
-      console.log("create or update user called ")
+      console.log("create or update user called ");
       const role = (args.profile as any).role;
       const organizationName = (args.profile as any).organizationName;
       const magicLinkId = (args.profile as any).magicLinkId;
@@ -34,7 +34,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       // Founder signup - create org, store, and user
       if (role === "founder") {
         if (!organizationName) {
-          throw new ConvexError("Organization name is required for founder signup");
+          throw new ConvexError(
+            "Organization name is required for founder signup",
+          );
         }
 
         const organizationId = await ctx.db.insert("organizations", {
@@ -62,15 +64,45 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 
       // Staff/admin invite - verify magic link
       if (magicLinkId) {
-        const result = await ctx.runMutation(
-          internal.magicLinks.verifyMagicLink,
-          {
-            magicLinkId: magicLinkId as any,
-            name: args.profile.name as string | undefined,
-            phone: args.profile.phone as string | undefined,
-          },
-        );
-        return result.userId;
+        const magicLink = await ctx.db.get(magicLinkId as any);
+        if (!magicLink) {
+          throw new ConvexError("Invalid magic link");
+        }
+        if (magicLink.usedAt) {
+          throw new ConvexError("Magic link already used");
+        }
+        if (Date.now() > magicLink.expiresAt) {
+          throw new ConvexError("Magic link expired");
+        }
+
+        let user = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("phone"), args.profile.phone))
+          .unique();
+
+        if (!user) {
+          const newUserId = await ctx.db.insert("users", {
+            name: args.profile.name || "",
+            email: (args.profile as any).actualEmail || undefined,
+            phone: args.profile.phone,
+            organizationId: magicLink.organizationId,
+            role: magicLink.role,
+            permissions: magicLink.permissions,
+          });
+          user = await ctx.db.get(newUserId);
+        } else {
+          await ctx.db.patch(user._id, {
+            organizationId: magicLink.organizationId,
+            role: magicLink.role,
+            permissions: magicLink.permissions,
+          });
+        }
+
+        if (!user) throw new Error("Failed to create user");
+
+        await ctx.db.patch(magicLinkId as any, { usedAt: Date.now() });
+
+        return user._id;
       }
 
       // Regular user - existing user updating profile

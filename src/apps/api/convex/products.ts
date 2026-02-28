@@ -257,6 +257,8 @@ export const getProductByCategory = query({
 });
 
 export const createProduct = authedMutation({
+  resource: "products",
+  action: "create",
   args: {
     storeId: v.id("stores"),
     title: v.optional(v.string()),

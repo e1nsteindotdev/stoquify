@@ -2,7 +2,13 @@ import { createFileRoute, useParams, Link } from "@tanstack/react-router";
 import type { Id } from "api/data-model";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useConfirmOrder, useDenyOrder } from "@/hooks/use-convex-queries";
 import { useGetOrderById } from "@/database/orders";
 import { ClipLoader } from "react-spinners";
@@ -46,13 +52,15 @@ function OrderDetailComponent() {
   };
 
   const totalCost = order.subTotalCost + order.deliveryCost;
-  const date = new Date(order._creationTime);
+  const date = new Date(order.orderTime);
 
   return (
     <div className="p-4 pt-0 w-full h-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Commande #{order._id.slice(-8)}</h1>
+          <h1 className="text-2xl font-bold">
+            Commande #{order._id.slice(-8)}
+          </h1>
           <p className="text-sm text-gray-500">
             {date.toLocaleDateString("fr-FR", {
               day: "2-digit",
@@ -72,9 +80,7 @@ function OrderDetailComponent() {
               <Button variant="destructive" onClick={handleDeny}>
                 Refuser
               </Button>
-              <Button onClick={handleConfirm}>
-                Confirmer
-              </Button>
+              <Button onClick={handleConfirm}>Confirmer</Button>
             </>
           )}
         </div>
@@ -142,14 +148,23 @@ function OrderDetailComponent() {
         <CardContent>
           <div className="space-y-4">
             {order.order.map((item, index) => (
-              <div key={index} className="flex gap-4 border-b pb-4 last:border-0">
+              <div
+                key={index}
+                className="flex gap-4 border-b pb-4 last:border-0"
+              >
                 <div className="flex-1">
-                  <p className="font-semibold">{item.product?.title || "Produit"}</p>
+                  <p className="font-semibold">
+                    {item.product?.title || "Produit"}
+                  </p>
                   <p className="text-sm text-gray-500">{item.product?.desc}</p>
                   {item.selections && item.selections.length > 0 && (
                     <div className="flex gap-2 mt-2">
                       {item.selections.map((sel: any, selIndex: number) => (
-                        <Badge key={selIndex} variant="outline" className="text-xs">
+                        <Badge
+                          key={selIndex}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {sel.variant?.name}: {sel.variantOption?.name}
                         </Badge>
                       ))}
@@ -171,4 +186,3 @@ function OrderDetailComponent() {
     </div>
   );
 }
-

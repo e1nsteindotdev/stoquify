@@ -180,7 +180,7 @@ function RouteComponent() {
                 <div className="pb-4 lg:pt-8">
                   <img
                     className="w-full aspect-[3/4] border-white object-cover"
-                    src={images?.[0].url}
+                    src={images?.[0]?.url}
                   />
                   {images.length >= 2 && (
                     <div className="w-full">

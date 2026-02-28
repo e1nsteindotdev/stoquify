@@ -38,11 +38,11 @@ export const list = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
-
     const [userId] = identity.subject.split("|")
     const user = await ctx.db.get(userId as Id<'users'>)
     if (!user?.organizationId) return [];
 
+    console.log(user?.organizationId)
     return await ctx.db
       .query("stores")
       .withIndex("by_organization", (q) =>

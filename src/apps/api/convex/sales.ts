@@ -24,6 +24,7 @@ export const createSale = mutation({
     );
 
     const saleId = await ctx.db.insert("sales", {
+      saleTime: new Date().toISOString(),
       order: args.order.map((item) => {
         const product = products.find((p) => p?._id === item.productId);
         return {

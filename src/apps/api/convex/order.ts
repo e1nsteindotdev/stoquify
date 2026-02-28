@@ -79,6 +79,7 @@ export const placeOrder = mutation({
     console.log("calculated the total cost :", subTotalCost);
 
     const placedOrder = await ctx.db.insert("orders", {
+      orderTime: new Date().toISOString(),
       order: args.order.map((item) => {
         const product = products.find((p) => p?._id === item.productId);
         return {

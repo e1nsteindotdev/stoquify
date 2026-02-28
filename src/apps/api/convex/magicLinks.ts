@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 
 const permissions = v.array(
   v.object({
-    storeId: v.id("stores"),
+    storeId: v.optional(v.id("stores")),
     resource: v.string(),
     action: v.union(
       v.literal("write"),
@@ -18,31 +18,14 @@ const permissions = v.array(
   }),
 );
 
-// Generate magic link for invitation
 export const invite = mutation({
   args: {
-    email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("staff")),
+    email: v.optional(v.string()),
+    role: v.union(v.literal("founder"), v.literal("admin"), v.literal("staff")),
+    organizationId: v.id("organizations"),
     permissions,
-    storeId: v.optional(v.id("stores")),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email!))
-      .unique();
-
-    if (!user?.organizationId) {
-      throw new Error("No organization found");
-    }
-
-    if (!user.role || user.role === "staff") {
-      throw new Error("Not authorized to invite");
-    }
-
     const token = nanoid(32);
     const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
 
@@ -51,8 +34,7 @@ export const invite = mutation({
       token,
       role: args.role,
       permissions: args.permissions,
-      organizationId: user.organizationId,
-      storeId: args.storeId!,
+      organizationId: args.organizationId,
       expiresAt,
       usedAt: undefined,
     });
@@ -61,8 +43,7 @@ export const invite = mutation({
   },
 });
 
-// List pending invitations
-export const listPending = query({
+export const getPendingByOrganization = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
@@ -74,24 +55,49 @@ export const listPending = query({
 
     if (!user?.organizationId) return [];
 
-    // Only founder/admin can view invites
-    if (!user.role || user.role === "staff") return [];
+    const hasPermission = user.permissions?.some(
+      (p) =>
+        (p.resource === "employees" || p.resource === "*") &&
+        (p.action === "read" || p.action === "*"),
+    );
+
+    if (!hasPermission) return [];
 
     const invites = await ctx.db
       .query("magicLinks")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("organizationId"), user.organizationId),
-          q.eq(q.field("usedAt"), undefined),
-        ),
+      .withIndex("by_organization", (q) =>
+        q.eq("organizationId", user.organizationId),
       )
+      .filter((q) => q.eq(q.field("usedAt"), undefined))
       .collect();
 
     return invites;
   },
 });
 
-// Revoke invitation
+export const getById = query({
+  args: {
+    magicLinkId: v.id("magicLinks"),
+  },
+  handler: async (ctx, args) => {
+    const magicLink = await ctx.db.get(args.magicLinkId);
+
+    if (!magicLink) {
+      return null;
+    }
+
+    if (magicLink.usedAt) {
+      return { ...magicLink, error: "already_used" };
+    }
+
+    if (Date.now() > magicLink.expiresAt) {
+      return { ...magicLink, error: "expired" };
+    }
+
+    return magicLink;
+  },
+});
+
 export const revoke = mutation({
   args: {
     invitationId: v.id("magicLinks"),
@@ -123,9 +129,10 @@ export const verifyMagicLink = internalMutation({
     magicLinkId: v.id("magicLinks"),
     name: v.optional(v.string()),
     phone: v.optional(v.string()),
+    password: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { magicLinkId, name, phone } = args;
+    const { magicLinkId, name, phone, password } = args;
     const magicLink = await ctx.db.get(magicLinkId);
     if (!magicLink) {
       throw new Error("Invalid magic link");
@@ -139,18 +146,25 @@ export const verifyMagicLink = internalMutation({
       throw new Error("Magic link expired");
     }
 
-    console.log("magicLink found:", magicLink);
-
     let user = await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", magicLink.email))
+      .withIndex("email", (q) => q.eq("email", magicLink.email ?? ""))
       .unique();
 
-    if (!user) {
-      if (!name || !phone) {
-        throw new Error("Name and phone are required");
-      }
+    if (!user && magicLink.email) {
+      user = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("phone"), phone))
+        .unique();
+    }
 
+    const userId = magicLink.organizationId;
+
+    if (!name || !phone) {
+      throw new Error("Name and phone are required");
+    }
+
+    if (!user) {
       console.log("Creating new user with:", {
         name,
         email: magicLink.email,
@@ -161,7 +175,7 @@ export const verifyMagicLink = internalMutation({
 
       const newUserId = await ctx.db.insert("users", {
         name: name,
-        email: magicLink.email,
+        email: magicLink.email ?? undefined,
         phone: phone,
         organizationId: magicLink.organizationId,
         role: magicLink.role,
