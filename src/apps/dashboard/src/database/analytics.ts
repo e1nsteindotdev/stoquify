@@ -20,6 +20,7 @@ type AnalyticsKpi = {
 
 type AnalyticsTransaction = {
   timestamp: number;
+  type?: "online" | "in-site";
   items: Array<{
     productId: unknown;
     price: number;
@@ -32,6 +33,8 @@ type Totals = {
   revenue: number;
   profit: number;
   transactions: number;
+  onlineTransactions: number;
+  inSiteTransactions: number;
 };
 
 export type AnalyticsData = {
@@ -40,7 +43,7 @@ export type AnalyticsData = {
     todayProfit: AnalyticsKpi;
     monthRevenue: AnalyticsKpi;
     monthProfit: AnalyticsKpi;
-    transactions: AnalyticsKpi;
+    transactions: AnalyticsKpi & { online: number; inSite: number };
     averageTicket: AnalyticsKpi;
     inventoryValue: AnalyticsKpi;
     inventoryRetailValue: number;
@@ -217,9 +220,20 @@ const calculateTotals = (
         acc.profit += totals.profit;
       }
       acc.transactions += 1;
+      if (transaction.type === "online") {
+        acc.onlineTransactions += 1;
+      } else if (transaction.type === "in-site") {
+        acc.inSiteTransactions += 1;
+      }
       return acc;
     },
-    { revenue: 0, profit: 0, transactions: 0 },
+    {
+      revenue: 0,
+      profit: 0,
+      transactions: 0,
+      onlineTransactions: 0,
+      inSiteTransactions: 0,
+    },
   );
 };
 
@@ -249,6 +263,7 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
         })
         .map((order: any) => ({
           timestamp: new Date(order.orderTime).getTime(),
+          type: "online" as const,
           items: order.order ?? [],
         })),
       ...sales
@@ -258,6 +273,7 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
         })
         .map((sale: any) => ({
           timestamp: new Date(sale.saleTime).getTime(),
+          type: "in-site" as const,
           items: sale.order ?? [],
         })),
     ];
@@ -629,6 +645,10 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
         : 0;
 
     const thirtyDaysAgo = now - 30 * DAY_MS;
+    const recentTransactions = allTransactions.filter(
+      (t) => t.timestamp >= thirtyDaysAgo && t.timestamp <= now,
+    );
+
     const productDailySales = new Map<string, number>();
 
     for (const transaction of allTransactions) {
@@ -766,6 +786,8 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
         },
         transactions: {
           value: rangeTotals.transactions,
+          online: rangeTotals.onlineTransactions,
+          inSite: rangeTotals.inSiteTransactions,
           change: percentageChange(
             rangeTotals.transactions,
             previousRangeTotals.transactions,

@@ -11,7 +11,6 @@ import {
   IconPackage,
   IconShoppingBag,
   IconUsers,
-  IconSettings,
 } from "@tabler/icons-react";
 import { useAppStore } from "@/lib/store";
 import {
@@ -34,7 +33,6 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { title: "POS", url: "/pos", icon: IconShoppingBag },
   { title: "Produits", url: "/produits", icon: IconPackage },
   { title: "Commandes", url: "/commandes", icon: IconShoppingBag },
   { title: "Clients", url: "/clients", icon: IconUsers },
@@ -48,7 +46,6 @@ const navItems: NavItem[] = [
       scope: "global",
     },
   },
-  { title: "Paramètres", url: "/parametres", icon: IconSettings },
 ];
 
 export function NavMain() {

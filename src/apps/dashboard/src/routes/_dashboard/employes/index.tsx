@@ -72,11 +72,19 @@ function Page() {
 
   return (
     <div className="p-4 pt-0 w-full h-full flex flex-col gap-6 overflow-auto">
-      <div className="flex justify-end">
-        <Button onClick={() => setShowForm(true)}>
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Ajouter un employé
-        </Button>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Employés</h1>
+          <p className="text-sm text-muted-foreground">
+            Gérez les membres de votre équipe et leurs permissions.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowForm(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Ajouter un employé
+          </Button>
+        </div>
       </div>
 
       {pendingInvites.length > 0 && (

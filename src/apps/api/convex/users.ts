@@ -15,6 +15,7 @@ export const get = query(async ({ auth, db }) => {
 });
 
 export const getUserData = query(async ({ auth, db }) => {
+  console.log("[CONVEX] running getUser Data")
   const userId = await getAuthUserId({ auth });
   if (!userId) return null;
 

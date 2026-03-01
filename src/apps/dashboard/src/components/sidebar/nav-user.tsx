@@ -20,7 +20,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { ClipLoader } from "react-spinners";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -33,21 +32,23 @@ import { useAppStore } from "@/lib/store";
 import { clearIDB } from "@/lib/idb";
 
 export function NavUser({ avatar }: { avatar: string }) {
-  const user = useAppStore(get => get.user);
-  const stores = useAppStore(state => state.stores)
-  const store = useAppStore(state => state.selectedStore)
-
-  const setStore = useAppStore(state => state.setStore)
+  const user = useAppStore((get) => get.user);
+  const stores = useAppStore((state) => state.stores);
+  const store = useAppStore((state) => state.selectedStore);
+  const setStore = useAppStore((state) => state.setStore);
 
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
-  const { signOut } = useAuthActions()
+  const { signOut } = useAuthActions();
 
-  if (!store) setStore(stores[0])
-  if (!user) return <ClipLoader />
+  if (!store) setStore(stores[0]);
+  if (!user) {
+    void signOut();
+    return null;
+  }
 
   const handleSignOut = async () => {
-    await clearIDB()
+    await clearIDB();
     await signOut();
     navigate({ to: "/" });
   };

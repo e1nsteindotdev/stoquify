@@ -33,10 +33,9 @@ export function HeatmapCard() {
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Hourly Sales Heatmap</CardTitle>
-            <CardDescription>
-              Best selling hours by day for staffing and promotion decisions.
-            </CardDescription>
+            <CardTitle className="text-lg">
+              Carte de Chaleur des Ventes
+            </CardTitle>
           </div>
           <DateController
             defaultPreset="thisMonth"
@@ -52,7 +51,9 @@ export function HeatmapCard() {
               gridTemplateColumns: "100px repeat(24, minmax(26px, 1fr))",
             }}
           >
-            <div className="p-2 text-xs text-muted-foreground">Day / Hour</div>
+            <div className="p-2 text-xs text-muted-foreground">
+              Jour / Heure
+            </div>
             {Array.from({ length: 24 }, (_, hour) => (
               <div
                 key={`h-${hour}`}
@@ -62,13 +63,13 @@ export function HeatmapCard() {
               </div>
             ))}
             {[
-              { display: "Sunday", key: "Dim" },
-              { display: "Monday", key: "Lun" },
-              { display: "Tuesday", key: "Mar" },
-              { display: "Wednesday", key: "Mer" },
-              { display: "Thursday", key: "Jeu" },
-              { display: "Friday", key: "Ven" },
-              { display: "Saturday", key: "Sam" },
+              { display: "Dimanche", key: "Dim" },
+              { display: "Lundi", key: "Lun" },
+              { display: "Mardi", key: "Mar" },
+              { display: "Mercredi", key: "Mer" },
+              { display: "Jeudi", key: "Jeu" },
+              { display: "Vendredi", key: "Ven" },
+              { display: "Samedi", key: "Sam" },
             ].map(({ display, key }) => (
               <Fragment key={key}>
                 <div key={`${key}-label`} className="p-2 text-sm font-medium">
@@ -84,7 +85,7 @@ export function HeatmapCard() {
                     <div
                       key={`${key}-${hour}`}
                       className="h-6 border"
-                      title={`${display} ${hour}:00 - ${count} sales`}
+                      title={`${display} ${hour}:00 - ${count} ventes`}
                       style={{
                         backgroundColor: `hsl(25 95% 50% / ${Math.max(0.06, intensity)})`,
                       }}

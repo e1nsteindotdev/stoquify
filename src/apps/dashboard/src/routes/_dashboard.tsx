@@ -3,14 +3,10 @@ import {
   createFileRoute,
   useMatches,
   Link,
+  useLocation,
 } from "@tanstack/react-router";
-import { PanelLeft } from "lucide-react";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,16 +16,20 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import React from "react";
-import { idbGet } from "@/lib/idb";
+import { idbGet, idbPut } from "@/lib/idb";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { initializeCollections } from "@/database/initialize";
 
+let initialized = false;
 
 export const Route = createFileRoute("/_dashboard")({
   loader: async () => {
+    if (initialized) return;
+    console.log("_dashboard loader");
+    initialized = true;
     try {
       const [products, collections, user, stores] = await Promise.all([
         idbGet("products"),
@@ -37,25 +37,31 @@ export const Route = createFileRoute("/_dashboard")({
         idbGet("user"),
         idbGet("stores"),
       ]);
+      console.log("loader run , ", user);
       if (stores?.length > 0) {
-        const selectedStore = useAppStore.getState().selectedStore
-        useAppStore.getState().setStores(stores)
-        if (!selectedStore) useAppStore.getState().setStore(stores[0])
-      }
-      else {
+        const selectedStore = useAppStore.getState().selectedStore;
+        useAppStore.getState().setStores(stores);
+        if (!selectedStore) useAppStore.getState().setStore(stores[0]);
+      } else {
+        console.log("fetching stores from convex");
         const stores = await convex.query(api.stores.list);
-        useAppStore.getState().setStores(stores)
+        console.log("finished");
+        useAppStore.getState().setStores(stores);
       }
-
-
-      if (user) useAppStore.getState().setUser(user)
-      else {
+      if (user) {
+        useAppStore.getState().setUser(user);
+      } else {
+        console.log("fetching user from convex");
         const user = await convex.query(api.users.getUserData);
-        useAppStore.getState().setUser(user)
+        idbPut("user", user);
+        console.log("finished");
+        useAppStore.getState().setUser(user);
       }
+
+      console.log("initializing queries");
       queryClient.setQueryData(["products"], products);
       queryClient.setQueryData(["collections"], collections);
-      initializeCollections()
+      initializeCollections();
     } catch (e) {
       console.log("faild to preload products :", String(e));
     }
@@ -77,8 +83,7 @@ const getPathLabel = (path: string) => {
 };
 
 function PathlessLayoutComponent() {
-  // useGetStores()
-  // useGetUser()
+  const location = useLocation();
   const matches = useMatches();
   const breadcrumbs = matches
     .filter(
@@ -102,11 +107,7 @@ function PathlessLayoutComponent() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex py-4 px-6 shrink-0 items-center gap-2">
-          <SidebarTrigger className="h-9 w-auto px-3 gap-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 shadow-sm">
-            <PanelLeft className="size-4" />
-            <span className="text-sm font-medium">Menu</span>
-          </SidebarTrigger>
+        {/* <header className="flex py-4 px-6 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-3">
             <Breadcrumb>
               <BreadcrumbList>
@@ -131,9 +132,11 @@ function PathlessLayoutComponent() {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-        </header>
+        </header> */}
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-[#EEEFEF]">
-          <Outlet />
+          <div className="flex flex-1 flex-col">
+            <Outlet />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

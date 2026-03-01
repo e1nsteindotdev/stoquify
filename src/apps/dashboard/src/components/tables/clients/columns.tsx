@@ -1,4 +1,5 @@
 import { type ColumnDef } from "@tanstack/react-table";
+import { DataTableColumnHeader } from "../data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
@@ -13,19 +14,27 @@ export type ClientRow = {
 export const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: "name",
-    header: "Nom",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Nom" />
+    ),
   },
   {
     accessorKey: "phoneNumber",
-    header: "Téléphone",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Téléphone" />
+    ),
   },
   {
     accessorKey: "address",
-    header: "Adresse",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Adresse" />
+    ),
   },
   {
     accessorKey: "orderCount",
-    header: "Commandes",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Commandes" />
+    ),
   },
   {
     id: "actions",
@@ -41,4 +50,3 @@ export const columns: ColumnDef<ClientRow>[] = [
     ),
   },
 ];
-

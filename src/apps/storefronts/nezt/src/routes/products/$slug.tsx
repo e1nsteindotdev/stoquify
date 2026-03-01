@@ -70,6 +70,19 @@ function RouteComponent() {
 
   const navigation = useNavigate();
 
+  const selectedOptionIds = Object.values(selectedVariants)
+    .filter((v) => v && v.variantOptionId)
+    .map((v) => v.variantOptionId);
+
+  const currentSku = product?.skus.find((sku) =>
+    sku.options.every((opt) => selectedOptionIds.includes(opt._id)),
+  );
+  const isOutOfStock = !currentSku || currentSku.quantity === 0;
+  const isInsufficientStock =
+    currentSku &&
+    currentSku.quantity > 0 &&
+    currentSku.quantity < selectedQuantity;
+
   if (!product) return <LoadingScreen />;
   const header = (
     <div className="flex-col items-start gap-1 hidden lg:flex">
@@ -97,29 +110,34 @@ function RouteComponent() {
   );
 
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
+    if (isOutOfStock) return;
+
     if (mode === "ADD_TO_CART") {
       if (
         product?._id &&
-        Object.values(selectedVariants).includes(null) === false
+        Object.values(selectedVariants).includes(null) === false &&
+        currentSku
       ) {
         addProductToCart(product?._id, {
-          price: product?.price ?? 0,
-          selection: Object.fromEntries(selectedVariants),
+          skuId: currentSku._id as Id<"skus">,
           quantity: selectedQuantity,
+          price: product?.price ?? 0,
         });
       }
     } else if (mode === "BUY_IT_NOW") {
       if (
         product?._id &&
-        Object.values(selectedVariants).includes(null) === false
+        Object.values(selectedVariants).includes(null) === false &&
+        currentSku
       ) {
         cartArray.forEach(([productId]) => {
           removeProductFromCart(productId);
         });
+
         addProductToCart(product?._id, {
-          price: product?.price ?? 0,
-          selection: Object.fromEntries(selectedVariants),
+          skuId: currentSku._id as Id<"skus">,
           quantity: selectedQuantity,
+          price: product?.price ?? 0,
         });
         navigation({ to: "/checkout" });
       }
@@ -231,11 +249,12 @@ function RouteComponent() {
                                       });
                                     }}
                                     className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
-                                    ${selectedVariants.get(variant._id)
+                                    ${
+                                      selectedVariants.get(variant._id)
                                         ?.variantOptionName === option.name
                                         ? "text-primary border-primary bg-primary/5"
                                         : "border-white"
-                                      } `}
+                                    } `}
                                   >
                                     {option.name}
                                   </button>
@@ -284,16 +303,35 @@ function RouteComponent() {
                     </div>
 
                     <div className="mb-20 w-full flex flex-col gap-4 pt-8 lg:pt-20">
+                      {isOutOfStock && (
+                        <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-center font-semibold">
+                          Rupture de stock
+                        </div>
+                      )}
+                      {isInsufficientStock && (
+                        <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg text-center font-semibold">
+                          Stock insuffisant (max: {currentSku?.quantity})
+                        </div>
+                      )}
                       <motion.button
-                        whileTap={{ scale: 0.95 }}
+                        whileTap={{ scale: isOutOfStock ? 1 : 0.95 }}
                         onClick={() => handleSubmit("BUY_IT_NOW")}
-                        className="font-semibold uppercase text-primary pt-[11px] pb-[12px] w-full rounded-[16px] bg-primary/5 ring-1 ring-primary lg:text-[18px] lg:w-[500px]"
+                        disabled={isOutOfStock}
+                        className={cn(
+                          "font-semibold uppercase pt-[11px] pb-[12px] w-full rounded-[16px] ring-1 lg:text-[18px] lg:w-[500px]",
+                          isOutOfStock
+                            ? "bg-gray-200 text-gray-400 ring-gray-300 cursor-not-allowed"
+                            : "bg-primary/5 text-primary ring-primary",
+                        )}
                       >
                         <p className="leading-[1] pt-1.25 font-bold">
                           ACHETER MAINTENANT
                         </p>
                       </motion.button>
-                      <FuckingButton handleSubmit={handleSubmit} />
+                      <FuckingButton
+                        handleSubmit={handleSubmit}
+                        disabled={isOutOfStock}
+                      />
 
                       <p className="uppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic text-center lg:text-start">
                         LIVRAISON 48H MAXIMUM
@@ -317,7 +355,13 @@ function RouteComponent() {
   );
 }
 
-function FuckingButton({ handleSubmit }: { handleSubmit: any }) {
+function FuckingButton({
+  handleSubmit,
+  disabled,
+}: {
+  handleSubmit: any;
+  disabled?: boolean;
+}) {
   const [clicked, setClicked] = useState(false);
   useEffect(() => {
     if (clicked === true) {
@@ -332,11 +376,18 @@ function FuckingButton({ handleSubmit }: { handleSubmit: any }) {
   return (
     <motion.button
       onClick={() => {
+        if (disabled) return;
         setClicked(true);
         handleSubmit("ADD_TO_CART");
       }}
-      whileTap={{ scale: 0.95 }}
-      className="font-semibold uppercase text-white pt-[11px] pb-[12px] rounded-[12px] bg-primary lg:text-[18px]  w-full lg:w-[500px] flex-1 grow-1 overflow-clip lg:h-[45px] cursor-pointer"
+      whileTap={{ scale: disabled ? 1 : 0.95 }}
+      disabled={disabled}
+      className={cn(
+        "font-semibold uppercase pt-[11px] pb-[12px] rounded-[12px] lg:text-[18px] w-full lg:w-[500px] flex-1 grow-1 overflow-clip lg:h-[45px]",
+        disabled
+          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+          : "bg-primary text-white cursor-pointer",
+      )}
     >
       <div className="h-[23px]">
         <AnimatePresence>

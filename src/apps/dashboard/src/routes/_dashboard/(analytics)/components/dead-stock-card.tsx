@@ -50,10 +50,7 @@ export function DeadStockCard() {
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Slow & Dead Stock</CardTitle>
-            <CardDescription>
-              SKUs with no movement for 30/60/90+ days and tied inventory value.
-            </CardDescription>
+            <CardTitle className="text-lg">Stock Dormant</CardTitle>
           </div>
           <DateController
             defaultPreset="thisMonth"
@@ -66,7 +63,7 @@ export function DeadStockCard() {
           <BarChart
             data={[
               {
-                name: "Dead Stock",
+                name: "Stock Dormant",
                 dead30: analytics.deadStock.buckets[0]?.value ?? 0,
                 dead60: analytics.deadStock.buckets[1]?.value ?? 0,
                 dead90: analytics.deadStock.buckets[2]?.value ?? 0,
@@ -108,7 +105,7 @@ export function DeadStockCard() {
           ))}
         </div>
         <p className="text-sm text-muted-foreground">
-          Total value tied in dead stock:{" "}
+          Valeur totale du stock dormant :{" "}
           {formatMoney(analytics.deadStock.totalValue)}
         </p>
       </CardContent>

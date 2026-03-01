@@ -3,7 +3,11 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "api/convex";
 
 // ============= Products =============
-export function useInitiateProduct() { return useMutation({ mutationFn: useConvexMutation(api.products.createProduct as any), }); }
+export function useInitiateProduct() {
+  return useMutation({
+    mutationFn: useConvexMutation(api.products.createProduct as any),
+  });
+}
 
 export function useRemoveProduct() {
   return useMutation({
@@ -41,6 +45,12 @@ export function useConfirmOrder() {
 export function useDenyOrder() {
   return useMutation({
     mutationFn: useConvexMutation(api.order.denyOrder),
+  });
+}
+
+export function useDeleteOrder() {
+  return useMutation({
+    mutationFn: useConvexMutation(api.order.deleteOrder),
   });
 }
 

@@ -12,6 +12,7 @@ import {
 import { useConfirmOrder, useDenyOrder } from "@/hooks/use-convex-queries";
 import { useGetOrderById } from "@/database/orders";
 import { ClipLoader } from "react-spinners";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_dashboard/commandes/$slug")({
   component: OrderDetailComponent,
@@ -44,7 +45,38 @@ function OrderDetailComponent() {
   }
 
   const handleConfirm = async () => {
-    await confirmOrder.mutateAsync({ orderId: slug as Id<"orders"> });
+    try {
+      const result = await confirmOrder.mutateAsync({
+        orderId: slug as Id<"orders">,
+      });
+      if (result.ok) {
+        toast.success("Commande confirmée");
+      } else if (result.error === "stock_not_sufficient") {
+        const items = result.insufficientStockItems || [];
+        const errorMessage = items
+          .map(
+            (item) =>
+              `SKU ${item.skuId}: demandé ${item.requested}, disponible ${item.available}`,
+          )
+          .join(", ");
+        toast.error(`Stock insuffisant: ${errorMessage}`);
+      } else {
+        toast.error(result.error || "Erreur lors de la confirmation");
+      }
+    } catch (error: any) {
+      if (error.data?.error === "stock_not_sufficient") {
+        const items = error.data?.insufficientStockItems || [];
+        const errorMessage = items
+          .map(
+            (item: any) =>
+              `SKU ${item.skuId}: demandé ${item.requested}, disponible ${item.available}`,
+          )
+          .join(", ");
+        toast.error(`Stock insuffisant: ${errorMessage}`);
+      } else {
+        toast.error("Erreur lors de la confirmation");
+      }
+    }
   };
 
   const handleDeny = async () => {
@@ -157,15 +189,15 @@ function OrderDetailComponent() {
                     {item.product?.title || "Produit"}
                   </p>
                   <p className="text-sm text-gray-500">{item.product?.desc}</p>
-                  {item.selections && item.selections.length > 0 && (
+                  {item.variantOptions && item.variantOptions.length > 0 && (
                     <div className="flex gap-2 mt-2">
-                      {item.selections.map((sel: any, selIndex: number) => (
+                      {item.variantOptions.map((opt: any, optIndex: number) => (
                         <Badge
-                          key={selIndex}
+                          key={optIndex}
                           variant="outline"
                           className="text-xs"
                         >
-                          {sel.variant?.name}: {sel.variantOption?.name}
+                          {opt?.name}
                         </Badge>
                       ))}
                     </div>

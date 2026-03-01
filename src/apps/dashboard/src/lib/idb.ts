@@ -4,6 +4,7 @@ let dbPromise: Promise<IDBPDatabase> | null = null;
 
 const STORES = [
   "products",
+  "user",
   "users",
   "sales",
   "categories",
@@ -19,7 +20,7 @@ const STORES = [
 
 export const idbPromise = () => {
   if (!dbPromise) {
-    dbPromise = openDB("app-db", 2, {
+    dbPromise = openDB("app-db", 4, {
       upgrade(db) {
         for (const store of STORES) {
           if (!db.objectStoreNames.contains(store)) {
@@ -38,9 +39,8 @@ export async function idbGet(store: string) {
     return (await db.get(store, "all")) ?? [];
   } catch (e) {
     //    console.log("faild to preload products :", String(e));
-    return null
+    return null;
   }
-
 }
 
 export async function idbPut(store: string, data: any) {
@@ -70,10 +70,7 @@ export async function idbRefresh(store: string, data: any) {
 export async function clearIDB() {
   STORES.forEach(async (store) => {
     try {
-      await idbClear(store)
-    } catch (e) {
-
-    }
-  })
-
+      await idbClear(store);
+    } catch (e) {}
+  });
 }

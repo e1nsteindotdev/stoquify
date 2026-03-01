@@ -12,14 +12,9 @@ export const placeOrder = mutation({
       v.object({
         quantity: v.number(),
         productId: v.id("products"),
+        skuId: v.id("skus"),
         price: v.number(),
         cost: v.optional(v.number()),
-        selection: v.array(
-          v.object({
-            variantId: v.id("variants"),
-            variantOptionId: v.id("variantOptions"),
-          }),
-        ),
       }),
     ),
   }),
@@ -83,7 +78,10 @@ export const placeOrder = mutation({
       order: args.order.map((item) => {
         const product = products.find((p) => p?._id === item.productId);
         return {
-          ...item,
+          quantity: item.quantity,
+          productId: item.productId,
+          skuId: item.skuId,
+          price: item.price,
           cost: product?.cost,
         };
       }),
@@ -92,6 +90,7 @@ export const placeOrder = mutation({
       deliveryCost: fullWilaya.deliveryCost,
       subTotalCost,
       status: "pending",
+      source: "online",
     });
     console.log("ordered placed correctly :", placedOrder);
 
@@ -113,11 +112,30 @@ export const listOrders = query({
       (a, b) => (b._creationTime || 0) - (a._creationTime || 0),
     );
 
+    const phoneNumberCounts = new Map<string, number>();
+    for (const order of orders) {
+      const customer = await ctx.db.get(order.customerId);
+      if (customer?.phoneNumber) {
+        const count =
+          phoneNumberCounts.get(customer.phoneNumber.toString()) || 0;
+        phoneNumberCounts.set(customer.phoneNumber.toString(), count + 1);
+      }
+    }
+
     return await Promise.all(
       sortedOrders.map(async (order) => {
         const customer = await ctx.db.get(order.customerId);
         const address = await ctx.db.get(order.addressId);
         const wilaya = address ? await ctx.db.get(address.wilayaId) : null;
+
+        const itemCount = order.order.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        );
+        const profit = order.order.reduce((sum, item) => {
+          const itemCost = item.cost || 0;
+          return sum + (item.price - itemCost) * item.quantity;
+        }, 0);
 
         return {
           ...order,
@@ -128,6 +146,11 @@ export const listOrders = query({
                 wilaya,
               }
             : null,
+          itemCount,
+          profit,
+          customerOrderCount: customer?.phoneNumber
+            ? phoneNumberCounts.get(customer.phoneNumber.toString()) || 0
+            : 0,
         };
       }),
     );
@@ -147,20 +170,19 @@ export const getOrder = query({
     const orderItems = await Promise.all(
       order.order.map(async (item) => {
         const product = await ctx.db.get(item.productId);
-        const selections = await Promise.all(
-          item.selection.map(async (sel) => {
-            const variant = await ctx.db.get(sel.variantId);
-            const variantOption = await ctx.db.get(sel.variantOptionId);
-            return {
-              variant,
-              variantOption,
-            };
-          }),
-        );
+        const sku = await ctx.db.get(item.skuId);
+        const variantOptions = sku
+          ? await Promise.all(
+              sku.options.map(async (optId) => {
+                return await ctx.db.get(optId);
+              }),
+            )
+          : [];
         return {
           ...item,
           product,
-          selections,
+          sku,
+          variantOptions: variantOptions.filter(Boolean),
         };
       }),
     );
@@ -182,8 +204,44 @@ export const getOrder = query({
 export const confirmOrder = mutation({
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order) return { ok: false, error: "order not found" };
+
+    const insufficientStockItems: Array<{
+      skuId: string;
+      requested: number;
+      available: number;
+    }> = [];
+
+    for (const item of order.order) {
+      const sku = await ctx.db.get(item.skuId);
+      if (sku && sku.quantity < item.quantity) {
+        insufficientStockItems.push({
+          skuId: item.skuId,
+          requested: item.quantity,
+          available: sku.quantity,
+        });
+      }
+    }
+
+    if (insufficientStockItems.length > 0) {
+      return {
+        ok: false,
+        error: "stock_not_sufficient",
+        insufficientStockItems,
+      };
+    }
+
+    for (const item of order.order) {
+      const sku = await ctx.db.get(item.skuId);
+      if (sku) {
+        const newQuantity = Math.max(0, sku.quantity - item.quantity);
+        await ctx.db.patch(item.skuId, { quantity: newQuantity });
+      }
+    }
+
     await ctx.db.patch(orderId, { status: "confirmed" });
-    return "success";
+    return { ok: true, message: "success" };
   },
 });
 
@@ -191,6 +249,14 @@ export const denyOrder = mutation({
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }) => {
     await ctx.db.patch(orderId, { status: "denied" });
+    return "success";
+  },
+});
+
+export const deleteOrder = mutation({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, { orderId }) => {
+    await ctx.db.delete(orderId);
     return "success";
   },
 });

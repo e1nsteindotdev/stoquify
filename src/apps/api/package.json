@@ -5,7 +5,16 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "convex dev"
+    "dev": "convex dev",
+    "seed": "convex run seed:seed",
+    "seed:products": "convex run seed:seed",
+    "seed:inventory": "convex run seed:seed",
+    "seed:orders": "convex run seed:seed",
+    "seed:all": "convex run seed:seed",
+    "clean:products": "convex run cleanProducts:cleanProducts",
+    "clean:inventory": "convex run cleanInventory:cleanInventory",
+    "clean:orders": "convex run cleanOrders:cleanOrders && convex run cleanOrders:cleanSales",
+    "clean:all": "convex run cleanOrders:cleanOrders && convex run cleanOrders:cleanSales && convex run cleanInventory:cleanSkus && convex run cleanInventory:cleanVariantOptions && convex run cleanInventory:cleanVariants && convex run cleanProducts:cleanProducts"
   },
   "exports": {
     "./schema": {

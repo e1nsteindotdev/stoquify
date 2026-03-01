@@ -7,6 +7,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -18,6 +26,8 @@ import { XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Id } from "api/data-model";
 import { useCatalogStore } from "@/lib/catalog-store";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/checkout")({
   component: RouteComponent,
@@ -87,16 +97,19 @@ function RouteComponent() {
                         </div>
 
                         <div className="flex gap-2">
-                          {Object.entries(cart.get(key)!.selection).map(
-                            ([key, value]) => (
+                          {(() => {
+                            const sku = product?.skus.find(
+                              (s) => s._id === cart.get(key)?.skuId,
+                            );
+                            return sku?.options.map((opt) => (
                               <div
                                 className="bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase"
-                                key={key}
+                                key={opt._id}
                               >
-                                <p>{value.variantOptionName}</p>
+                                <p>{opt.name}</p>
                               </div>
-                            ),
-                          )}
+                            ));
+                          })()}
                         </div>
 
                         <button
@@ -149,6 +162,104 @@ function OrderForm() {
   const cartArray = Array.from(cart);
   const navigate = useNavigate();
 
+  const [stockError, setStockError] = useState<{
+    items: Array<{
+      productTitle: string;
+      requested: number;
+      available: number;
+    }>;
+    isOpen: boolean;
+  }>({ items: [], isOpen: false });
+
+  const products = useCatalogStore((state) => state.products);
+  const skuIds = cartArray.map(([_, content]) => content.skuId);
+  const skuQuantities = useQuery(api.skus.getSkuQuantities, { skuIds });
+
+  const handleSubmit = async (
+    firstName: string,
+    lastName: string,
+    phoneNumber: number,
+    address: string,
+    wilaya: string,
+  ) => {
+    if (!skuQuantities) return;
+
+    const insufficientItems: Array<{
+      productTitle: string;
+      requested: number;
+      available: number;
+    }> = [];
+
+    for (const [productId, content] of cartArray) {
+      const skuData = skuQuantities.find((s) => s.skuId === content.skuId);
+      const product = products?.find((p) => p._id === productId);
+
+      if (skuData && skuData.quantity < content.quantity) {
+        insufficientItems.push({
+          productTitle: product?.title || "Unknown Product",
+          requested: content.quantity,
+          available: skuData.quantity,
+        });
+      }
+    }
+
+    if (insufficientItems.length > 0) {
+      setStockError({ items: insufficientItems, isOpen: true });
+      return;
+    }
+
+    const data = {
+      firstName,
+      lastName,
+      phoneNumber,
+      address,
+      wilaya,
+      order: cartArray.map(([productId, content]) => ({
+        quantity: content.quantity,
+        productId,
+        price: content.price,
+        skuId: content.skuId,
+      })),
+    };
+    const orderId = await sendOrder(data);
+    if (orderId) {
+      navigate({ to: "/order-success", search: { orderId } });
+    }
+  };
+
+  const handleContinueWithAvailableStock = async (
+    firstName: string,
+    lastName: string,
+    phoneNumber: number,
+    address: string,
+    wilaya: string,
+  ) => {
+    const data = {
+      firstName,
+      lastName,
+      phoneNumber,
+      address,
+      wilaya,
+      order: cartArray.map(([productId, content]) => {
+        const skuData = skuQuantities?.find((s) => s.skuId === content.skuId);
+        const availableQty = skuData
+          ? Math.min(content.quantity, skuData.quantity)
+          : content.quantity;
+        return {
+          quantity: availableQty,
+          productId,
+          price: content.price,
+          skuId: content.skuId,
+        };
+      }),
+    };
+    const orderId = await sendOrder(data);
+    if (orderId) {
+      setStockError({ items: [], isOpen: false });
+      navigate({ to: "/order-success", search: { orderId } });
+    }
+  };
+
   const form = useForm({
     defaultValues: {
       firstName: "Abdelmajid",
@@ -160,26 +271,7 @@ function OrderForm() {
     onSubmit: async ({
       value: { firstName, lastName, phoneNumber, address, wilaya },
     }) => {
-      const data = {
-        firstName,
-        lastName,
-        phoneNumber,
-        address,
-        wilaya,
-        order: cartArray.map(([productId, content]) => ({
-          quantity: content.quantity,
-          productId,
-          price: content.price,
-          selection: Object.entries(content.selection).map(([key, value]) => ({
-            variantOptionId: value.variantOptionId as Id<"variantOptions">,
-            variantId: key as Id<"variants">,
-          })),
-        })),
-      };
-      const orderId = await sendOrder(data);
-      if (orderId) {
-        navigate({ to: "/order-success", search: { orderId } });
-      }
+      await handleSubmit(firstName, lastName, phoneNumber, address, wilaya);
     },
   });
   const wilayat = useQuery(api.order.getWilayat);
@@ -290,6 +382,77 @@ function OrderForm() {
             Finaliser la commande
           </button>
         </form>
+
+        <Dialog
+          open={stockError.isOpen}
+          onOpenChange={(open) =>
+            setStockError({ items: stockError.items, isOpen: open })
+          }
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Stock insuffisant</DialogTitle>
+              <DialogDescription>
+                Certains articles ne sont plus disponibles en quantité
+                suffisante.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {stockError.items.map((item, index) => (
+                <div key={index} className="flex justify-between py-2 border-b">
+                  <span className="font-medium">{item.productTitle}</span>
+                  <span className="text-red-600">
+                    Demandé: {item.requested} / Disponible: {item.available}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setStockError({ items: [], isOpen: false })}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={() => {
+                  const firstName = (
+                    document.querySelector(
+                      'input[name="firstName"]',
+                    ) as HTMLInputElement
+                  )?.value;
+                  const lastName = (
+                    document.querySelector(
+                      'input[name="lastName"]',
+                    ) as HTMLInputElement
+                  )?.value;
+                  const phoneNumber = Number(
+                    (
+                      document.querySelector(
+                        'input[name="phoneNumber"]',
+                      ) as HTMLInputElement
+                    )?.value,
+                  );
+                  const address = (
+                    document.querySelector(
+                      'input[name="address"]',
+                    ) as HTMLInputElement
+                  )?.value;
+                  const wilaya = form.getFieldValue("wilaya") ?? "Algiers";
+                  handleContinueWithAvailableStock(
+                    firstName,
+                    lastName,
+                    phoneNumber,
+                    address,
+                    wilaya,
+                  );
+                }}
+              >
+                Commander avec quantité disponible
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

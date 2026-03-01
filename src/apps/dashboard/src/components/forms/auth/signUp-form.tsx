@@ -29,12 +29,12 @@ export function SignUpForm({
 } & React.ComponentProps<"div">) {
   const { signIn } = useAuthActions();
 
-  const setStores = useAppStore(state => state.setStores)
-  const setUser = useAppStore(state => state.setUser)
+  const setStores = useAppStore((state) => state.setStores);
+  const setUser = useAppStore((state) => state.setUser);
 
   const form = useForm({
     defaultValues: {
-      organizationName: "nezt",
+      storeName: "Ma Boutique",
       email: "einstein@gmail.com",
       phone: "0550000000",
       name: "Founder",
@@ -51,8 +51,8 @@ export function SignUpForm({
 
         const stores = await convex.query(api.stores.list);
         const user = await convex.query(api.users.getUserData);
-        setStores(stores)
-        setUser(user)
+        setStores(stores);
+        setUser(user);
       } catch (error) {
         console.error("error while trying to sign up :", error);
       }
@@ -158,22 +158,19 @@ export function SignUpForm({
                     }}
                   />
                   <form.Field
-                    name="organizationName"
+                    name="storeName"
                     validators={{
                       onChange: ({ value }) =>
                         !value
-                          ? "Un nom d'entreprise est requis"
+                          ? "Un nom de boutique est requis"
                           : value.length < 3
-                            ? "Le nom d'entreprise doit contenir au moins 3 caractères"
+                            ? "Le nom de boutique doit contenir au moins 3 caractères"
                             : undefined,
                     }}
                     children={(field) => {
-                      // Avoid hasty abstractions. Render props are great!
                       return (
                         <div className="grid gap-3">
-                          <Label htmlFor={field.name}>
-                            Nom de votre entreprise
-                          </Label>
+                          <Label htmlFor={field.name}>Nom de la boutique</Label>
                           <Input
                             id={field.name}
                             name={field.name}

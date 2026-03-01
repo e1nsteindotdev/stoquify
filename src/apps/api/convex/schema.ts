@@ -36,7 +36,7 @@ const schema = defineSchema({
 
   // Organizations
   organizations: defineTable({
-    name: v.string(),
+    name: v.optional(v.string()),
     owner: v.optional(v.id("users")),
   }),
 
@@ -44,7 +44,9 @@ const schema = defineSchema({
   stores: defineTable({
     name: v.string(),
     organizationId: v.id("organizations"),
-  }).index("by_organization", ["organizationId"]),
+  })
+    .index("by_organization", ["organizationId"])
+    .index("by_name", ["name"]),
 
   // Magic links for invitations
   magicLinks: defineTable({
@@ -144,14 +146,9 @@ const schema = defineSchema({
       v.object({
         quantity: v.number(),
         productId: v.id("products"),
+        skuId: v.id("skus"),
         price: v.number(),
         cost: v.optional(v.number()),
-        selection: v.array(
-          v.object({
-            variantId: v.id("variants"),
-            variantOptionId: v.id("variantOptions"),
-          }),
-        ),
       }),
     ),
     addressId: v.id("addresses"),
@@ -162,6 +159,7 @@ const schema = defineSchema({
       v.literal("confirmed"),
       v.literal("denied"),
     ),
+    source: v.optional(v.union(v.literal("online"), v.literal("in_store"))),
   }).index("by_customer", ["customerId"]),
 
   sales: defineTable({
@@ -170,14 +168,9 @@ const schema = defineSchema({
       v.object({
         quantity: v.number(),
         productId: v.id("products"),
+        skuId: v.id("skus"),
         price: v.number(),
         cost: v.optional(v.number()),
-        selection: v.array(
-          v.object({
-            variantId: v.id("variants"),
-            variantOptionId: v.id("variantOptions"),
-          }),
-        ),
       }),
     ),
     subTotalCost: v.number(),

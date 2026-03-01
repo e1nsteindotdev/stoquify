@@ -1,13 +1,16 @@
-- seed prodcuts and orders
+- analytics page :
+    - fix the low stocks & dead stock charts.
+    - find a good chart to put besides the revenue overtime chart.
+    - check how the ui looks in mobile and fix it.
+
+- fix the products/table
 - fix inventory syncing with the storefront
-- fix analytics
 - fix POS
 - fix orders
-- fix clients.
+- fix clients
 - fix settings
 - fix all the ui
 - check the PWA
-
 
 
 [ AFTER ]

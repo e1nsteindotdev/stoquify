@@ -16,7 +16,6 @@
   scrollbar-width: none;
 }
 
-
 /* put in your global CSS */
 .text-stroke {
   color: black;
@@ -28,20 +27,18 @@
   --font-sans: "Futura", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Futura Condensed", sans-serif;
   --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-primary: #664CCC;
-  --color-global-background: #E6E6E6;
+  --color-primary: #18382a;
+  --color-global-background: #e6e6e6;
   --color-seperator: white;
   --spacing-ip: 16px;
   --breakpoint-xs: 375px;
 }
 
 body {
-  background-color: '#E6E6E6';
+  background-color: "#E6E6E6";
 }
 
-
 @layer base {
-
   /* Medium (weight 500, normal style) */
   @font-face {
     font-family: "Futura";
@@ -84,14 +81,16 @@ body {
 
 @layer utilities {
   .display_font {
-    @apply font-display tracking-tight leading-[1]
+    @apply font-display tracking-tight leading-[1];
   }
 
   .seperated {
-    @apply border-t-1 border-b-1 border-white
+    @apply border-t-1 border-b-1 border-white;
   }
 
-  td, tr, table {
-    @apply border-1 border-black
+  td,
+  tr,
+  table {
+    @apply border-1 border-black;
   }
 }

@@ -2,9 +2,7 @@ import type { Id } from "api/data-model";
 import { create } from "zustand";
 
 type CartContentType = {
-  selection: {
-    [variantId: string]: { variantOptionName: string; variantOptionId: string };
-  };
+  skuId: Id<"skus">;
   quantity: number;
   price: number;
 };

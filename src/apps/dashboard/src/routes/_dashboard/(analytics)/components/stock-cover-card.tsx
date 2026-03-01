@@ -22,25 +22,26 @@ export function StockCoverCard() {
     <Card id="stock-cover">
       <CardHeader>
         <div>
-          <CardTitle>Stock Cover (Days of Inventory)</CardTitle>
-          <CardDescription>
-            SKUs ordered by days of cover. Highlight: red &lt;7 days.
-          </CardDescription>
+          <CardTitle className="text-lg">Couverture de Stock (Jours)</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {critical.length === 0 ? (
           <div className="flex h-[200px] items-center justify-center text-muted-foreground">
-            No stock cover data available
+            Aucune donnée de couverture de stock disponible
           </div>
         ) : (
           <>
             {critical.length > 0 && (
               <div>
                 <div className="mb-2 flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-red-500" />
+                  <div className="h-3 w-3 rounded-none bg-red-500" />
                   <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                    Critical: Less than 7 days ({critical.length} SKUs)
+                    Top 5 Critiques
+                  </span>
+                  <div className="h-3 w-3 rounded-none bg-orange-500 ml-2" />
+                  <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                    Autres critiques ({Math.max(0, critical.length - 5)} SKUs)
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -60,9 +61,9 @@ export function StockCoverCard() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 h-2 w-full rounded-full bg-muted relative">
+                        <div className="mt-1 h-2 w-full rounded-none bg-gray-100 dark:bg-gray-800 relative">
                           <div
-                            className="h-full rounded-full bg-red-500 absolute top-0 left-0"
+                            className={`h-full rounded-none absolute top-0 left-0 ${idx < 5 ? "bg-red-500" : "bg-orange-500"}`}
                             style={{
                               width: `${(Math.max(item.daysCover, 1) / maxDays) * 100}%`,
                             }}
@@ -70,11 +71,13 @@ export function StockCoverCard() {
                         </div>
                       </div>
                       <div className="min-w-[80px] text-right">
-                        <span className="text-sm font-bold text-red-600 dark:text-red-400">
-                          {Math.max(item.daysCover, 1)} days
+                        <span
+                          className={`text-sm font-bold ${idx < 5 ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}
+                        >
+                          {Math.max(item.daysCover, 1)} jours
                         </span>
                         <div className="text-xs text-muted-foreground">
-                          {item.quantity} units
+                          {item.quantity} unités
                         </div>
                       </div>
                     </div>

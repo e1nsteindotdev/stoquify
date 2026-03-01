@@ -7,13 +7,8 @@ export const createSale = mutation({
       v.object({
         quantity: v.number(),
         productId: v.id("products"),
+        skuId: v.id("skus"),
         price: v.number(),
-        selection: v.array(
-          v.object({
-            variantId: v.id("variants"),
-            variantOptionId: v.id("variantOptions"),
-          }),
-        ),
       }),
     ),
     subTotalCost: v.number(),
@@ -28,7 +23,10 @@ export const createSale = mutation({
       order: args.order.map((item) => {
         const product = products.find((p) => p?._id === item.productId);
         return {
-          ...item,
+          quantity: item.quantity,
+          productId: item.productId,
+          skuId: item.skuId,
+          price: item.price,
           cost: product?.cost,
         };
       }),

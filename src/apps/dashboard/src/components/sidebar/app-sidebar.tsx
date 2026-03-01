@@ -10,11 +10,11 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
   IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
+  IconShoppingBag,
   IconUsers,
 } from "@tabler/icons-react";
 
@@ -118,8 +118,13 @@ const data = {
   ],
   navSecondary: [
     {
+      title: "POS",
+      url: "/pos",
+      icon: IconShoppingBag,
+    },
+    {
       title: "Paramètres",
-      url: "#",
+      url: "/parametres",
       icon: IconSettings,
     },
     // {
@@ -157,10 +162,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center">
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5" >
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Stoquify</span>
+                <img
+                  src="/full-logo.png"
+                  alt="Stoquify Logo"
+                  className="h-6 w-auto object-contain"
+                />
               </a>
             </SidebarMenuButton>
             <SidebarTrigger />

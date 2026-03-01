@@ -14,8 +14,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           name: params.name || "",
           phone: params.phone || "",
           actualEmail: params.email || "",
-          ...(params.organizationName && {
-            organizationName: params.organizationName,
+          ...(params.storeName && {
+            storeName: params.storeName,
           }),
           ...(params.role && { role: params.role }),
           ...(params.magicLinkId && { magicLinkId: params.magicLinkId }),
@@ -28,23 +28,21 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     async createOrUpdateUser(ctx, args) {
       console.log("create or update user called ");
       const role = (args.profile as any).role;
-      const organizationName = (args.profile as any).organizationName;
+      const storeName = (args.profile as any).storeName;
       const magicLinkId = (args.profile as any).magicLinkId;
 
       // Founder signup - create org, store, and user
       if (role === "founder") {
-        if (!organizationName) {
-          throw new ConvexError(
-            "Organization name is required for founder signup",
-          );
+        if (!storeName) {
+          throw new ConvexError("Store name is required for founder signup");
         }
 
         const organizationId = await ctx.db.insert("organizations", {
-          name: organizationName as string,
+          name: undefined,
         });
 
         const storeId = await ctx.db.insert("stores", {
-          name: "Main Store",
+          name: storeName as string,
           organizationId: organizationId as any,
         });
 
@@ -56,6 +54,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           role: "founder",
           permissions: [
             { storeId: storeId as any, resource: "*", action: "*" },
+            { resource: "*", action: "*" },
           ],
         });
 

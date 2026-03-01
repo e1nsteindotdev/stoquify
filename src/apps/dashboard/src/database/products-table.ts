@@ -1,0 +1,276 @@
+import { useMemo } from "react";
+import { useGetProducts } from "./products";
+import { useGetSales } from "./sales";
+import { useGetOrders } from "./orders";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const toAlgeriaDayStart = (ts: number) => {
+  const date = new Date(ts);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+};
+
+export type ProductTableRow = {
+  _id: string;
+  title: string;
+  price: number;
+  cost: number;
+  imageUrl?: string;
+  indexedDBId?: number;
+  skus: Array<{
+    _id: string;
+    name: string;
+    quantity: number;
+    cost?: number;
+    creationTime?: number;
+    options?: Record<string, string>;
+  }>;
+
+  totalQuantity: number;
+  unitsSold: number;
+  revenue: number;
+  profit: number;
+  margin: number;
+  sellThrough: number;
+  daysSinceLastSale: number | null;
+  stockValue: number;
+  agingBand: number;
+  daysOfCover: number;
+  lastSaleTime: number | null;
+
+  sizeImbalance: boolean;
+};
+
+const getProductInventoryQuantity = (product: any) => {
+  if (Array.isArray(product?.skus) && product.skus.length > 0) {
+    return product.skus.reduce(
+      (sum: number, sku: any) => sum + (sku.quantity ?? 0),
+      0,
+    );
+  }
+  return product?.quantity ?? 0;
+};
+
+const getOldestSkuCreationTime = (product: any) => {
+  if (!Array.isArray(product?.skus) || product.skus.length === 0) {
+    return null;
+  }
+  let oldest: number | null = null;
+  for (const sku of product.skus) {
+    if (sku.creationTime) {
+      if (oldest === null || sku.creationTime < oldest) {
+        oldest = sku.creationTime;
+      }
+    }
+  }
+  return oldest;
+};
+
+const checkSizeImbalance = (product: any): boolean => {
+  if (!Array.isArray(product?.skus) || product.skus.length === 0) {
+    return false;
+  }
+  const totalQuantity = product.skus.reduce(
+    (sum: number, sku: any) => sum + (sku.quantity ?? 0),
+    0,
+  );
+  if (totalQuantity === 0) return false;
+
+  for (const sku of product.skus) {
+    const skuQty = sku.quantity ?? 0;
+    if (skuQty > totalQuantity * 0.5) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const useGetProductTableData = (
+  from: number,
+  to: number,
+): ProductTableRow[] => {
+  const { data: products = [] } = useGetProducts();
+  const { data: sales = [] } = useGetSales();
+  const { data: orders = [] } = useGetOrders();
+
+  return useMemo(() => {
+    const fromTime = toAlgeriaDayStart(from);
+    const toTime = toAlgeriaDayStart(to) + DAY_MS - 1;
+    const now = Date.now();
+
+    const productSales = new Map<
+      string,
+      {
+        unitsSold: number;
+        revenue: number;
+        cost: number;
+        lastSaleTime: number | null;
+      }
+    >();
+
+    for (const sale of sales) {
+      const saleTime = new Date(sale.saleTime).getTime();
+      if (saleTime < fromTime || saleTime > toTime) continue;
+
+      for (const item of sale.items ?? []) {
+        const pid = String(item.productId);
+        const existing = productSales.get(pid) || {
+          unitsSold: 0,
+          revenue: 0,
+          cost: 0,
+          lastSaleTime: null,
+        };
+
+        const units = item.quantity ?? 0;
+        const revenue = (item.price ?? 0) * units;
+        const cost = (item.cost ?? 0) * units;
+
+        existing.unitsSold += units;
+        existing.revenue += revenue;
+        existing.cost += cost;
+        existing.lastSaleTime =
+          existing.lastSaleTime === null
+            ? saleTime
+            : Math.max(existing.lastSaleTime, saleTime);
+
+        productSales.set(pid, existing);
+      }
+    }
+
+    for (const order of orders) {
+      const orderTime = new Date(order.orderTime).getTime();
+      if (orderTime < fromTime || orderTime > toTime) continue;
+
+      for (const item of order.order ?? []) {
+        const pid = String(item.productId);
+        const existing = productSales.get(pid) || {
+          unitsSold: 0,
+          revenue: 0,
+          cost: 0,
+          lastSaleTime: null,
+        };
+
+        const units = item.quantity ?? 0;
+        const revenue = (item.price ?? 0) * units;
+        const cost = (item.cost ?? 0) * units;
+
+        existing.unitsSold += units;
+        existing.revenue += revenue;
+        existing.cost += cost;
+        existing.lastSaleTime =
+          existing.lastSaleTime === null
+            ? orderTime
+            : Math.max(existing.lastSaleTime, orderTime);
+
+        productSales.set(pid, existing);
+      }
+    }
+
+    return products.map((product: any) => {
+      const totalQuantity = getProductInventoryQuantity(product);
+      const salesData = productSales.get(String(product._id)) || {
+        unitsSold: 0,
+        revenue: 0,
+        cost: 0,
+        lastSaleTime: null,
+      };
+
+      const avgDailySales =
+        salesData.unitsSold / ((toTime - fromTime) / DAY_MS);
+      const daysOfCover =
+        avgDailySales > 0
+          ? Math.round(totalQuantity / avgDailySales)
+          : Infinity;
+
+      const lastSaleTime = salesData.lastSaleTime;
+      const daysSinceLastSale =
+        lastSaleTime !== null
+          ? Math.floor((now - lastSaleTime) / DAY_MS)
+          : null;
+
+      const sellThrough =
+        salesData.unitsSold + totalQuantity > 0
+          ? (salesData.unitsSold / (salesData.unitsSold + totalQuantity)) * 100
+          : 0;
+
+      const stockValue = totalQuantity * (product.cost ?? 0);
+      const profit = salesData.revenue - salesData.cost;
+      const margin =
+        salesData.revenue > 0 ? (profit / salesData.revenue) * 100 : 0;
+
+      const oldestCreationTime = getOldestSkuCreationTime(product);
+      const agingBand =
+        oldestCreationTime !== null
+          ? Math.floor((now - oldestCreationTime) / DAY_MS)
+          : 0;
+
+      const firstImage = product.images
+        ?.filter((img: any) => !img.hidden && img.url)
+        .sort((a: any, b: any) => a.order - b.order)[0];
+
+      return {
+        _id: product._id,
+        title: product.title,
+        price: product.price,
+        cost: product.cost ?? 0,
+        imageUrl: firstImage?.url,
+        indexedDBId: firstImage?.indexedDBId,
+        skus: product.skus ?? [],
+
+        totalQuantity,
+        unitsSold: salesData.unitsSold,
+        revenue: salesData.revenue,
+        profit,
+        margin,
+        sellThrough,
+        daysSinceLastSale,
+        stockValue,
+        agingBand,
+        daysOfCover,
+        lastSaleTime,
+
+        sizeImbalance: checkSizeImbalance(product),
+      };
+    });
+  }, [products, sales, orders, from, to]);
+};
+
+export type FilterChip =
+  | "highPerformers"
+  | "lowStock"
+  | "deadStock"
+  | "lowMargin";
+
+export const filterProducts = (
+  products: ProductTableRow[],
+  filters: FilterChip[],
+  marginThreshold: number = 20,
+): ProductTableRow[] => {
+  if (filters.length === 0) return products;
+
+  return products.filter((product) => {
+    for (const filter of filters) {
+      switch (filter) {
+        case "highPerformers":
+          if (product.sellThrough > 70) return true;
+          break;
+        case "lowStock":
+          if (product.daysOfCover < 7 && product.daysOfCover !== Infinity)
+            return true;
+          break;
+        case "deadStock":
+          if (
+            product.daysSinceLastSale !== null &&
+            product.daysSinceLastSale > 30
+          )
+            return true;
+          break;
+        case "lowMargin":
+          if (product.margin < marginThreshold) return true;
+          break;
+      }
+    }
+    return false;
+  });
+};

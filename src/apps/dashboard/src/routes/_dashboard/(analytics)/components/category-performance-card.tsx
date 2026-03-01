@@ -47,10 +47,7 @@ export function CategoryPerformanceCard() {
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Category Performance</CardTitle>
-            <CardDescription>
-              Revenue and profit share by category.
-            </CardDescription>
+            <CardTitle className="text-lg">Performance par Catégorie</CardTitle>
           </div>
           <DateController
             defaultPreset="thisMonth"
@@ -68,9 +65,9 @@ export function CategoryPerformanceCard() {
                     {category.name}
                   </div>
                   <div className="flex-1">
-                    <div className="relative h-6 w-full rounded bg-muted">
+                    <div className="relative h-6 w-full rounded-none bg-stone-200">
                       <div
-                        className="absolute inset-y-0 left-0 rounded bg-primary"
+                        className="absolute inset-y-0 left-0 rounded-none bg-primary"
                         style={{
                           width: `${(category.percentage / maxPercentage) * 100}%`,
                         }}
@@ -86,13 +83,13 @@ export function CategoryPerformanceCard() {
                   <div className="text-sm font-medium">{category.name}</div>
                   <div className="mt-2 space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Orders</span>
+                      <span className="text-muted-foreground">Commandes</span>
                       <span className="font-medium">
                         {category.transactions.toLocaleString("fr-FR")}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Revenue</span>
+                      <span className="text-muted-foreground">Revenu</span>
                       <span className="font-medium">
                         {formatMoney(category.revenue)}
                       </span>
@@ -110,7 +107,7 @@ export function CategoryPerformanceCard() {
           </div>
         ) : (
           <div className="flex h-[260px] items-center justify-center text-muted-foreground">
-            No category data
+            Aucune donnée de catégorie
           </div>
         )}
       </CardContent>

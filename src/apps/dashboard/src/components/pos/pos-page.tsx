@@ -1,9 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { IconArrowLeft, IconMinus, IconPlus, IconShoppingCart, IconX } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconMinus,
+  IconPlus,
+  IconShoppingCart,
+  IconX,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useCreateSale } from "@/hooks/use-convex-queries";
 import { useGetCategories } from "@/database/categories";
@@ -12,6 +23,7 @@ import type { Id } from "api/data-model";
 
 interface CartItem {
   productId: string;
+  skuId: string;
   title: string;
   price: number;
   quantity: number;
@@ -37,14 +49,17 @@ export default function POSPage() {
   const products = productsResult?.data ?? [];
   const createSale = useCreateSale();
 
-  const filteredProducts = selectedCategory 
-    ? products?.filter(p => p.categoryId === selectedCategory)
+  const filteredProducts = selectedCategory
+    ? products?.filter((p) => p.categoryId === selectedCategory)
     : products;
 
   const addToCart = (product: any, selection: any[] = []) => {
-    const existingIndex = cart.findIndex(item => 
-      item.productId === product._id && 
-      JSON.stringify(item.selection) === JSON.stringify(selection)
+    const skuId = "00000000000000000000000000";
+
+    const existingIndex = cart.findIndex(
+      (item) =>
+        item.productId === product._id &&
+        JSON.stringify(item.selection) === JSON.stringify(selection),
     );
 
     if (existingIndex > -1) {
@@ -52,13 +67,17 @@ export default function POSPage() {
       newCart[existingIndex].quantity += 1;
       setCart(newCart);
     } else {
-      setCart([...cart, {
-        productId: product._id,
-        title: product.title || "Produit sans titre",
-        price: product.price || 0,
-        quantity: 1,
-        selection
-      }]);
+      setCart([
+        ...cart,
+        {
+          productId: product._id,
+          skuId,
+          title: product.title || "Produit sans titre",
+          price: product.price || 0,
+          quantity: 1,
+          selection,
+        },
+      ]);
     }
     setShowProductSelector(false);
     setSelectedProduct(null);
@@ -78,18 +97,18 @@ export default function POSPage() {
     if (cart.length === 0) return;
 
     try {
-      const subTotalCost = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+      const subTotalCost = cart.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0,
+      );
       await createSale.mutateAsync({
-        order: cart.map(item => ({
+        order: cart.map((item) => ({
           productId: item.productId as any,
+          skuId: item.skuId as any,
           price: item.price,
           quantity: item.quantity,
-          selection: item.selection.map(s => ({
-            variantId: s.variantId as any,
-            variantOptionId: s.variantOptionId as any
-          }))
         })),
-        subTotalCost
+        subTotalCost,
       });
       toast.success("Vente confirmée !");
       setCart([]);
@@ -103,13 +122,19 @@ export default function POSPage() {
       {/* Header */}
       <header className="h-16 border-b flex items-center justify-between px-6 bg-card">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/" })}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: "/" })}
+          >
             <IconArrowLeft className="size-6" />
           </Button>
           <h1 className="text-xl font-bold">Point de Vente (POS)</h1>
         </div>
         <div className="flex items-center gap-2">
-           <Button variant="outline" onClick={() => navigate({ to: "/" })}>Quitter</Button>
+          <Button variant="outline" onClick={() => navigate({ to: "/" })}>
+            Quitter
+          </Button>
         </div>
       </header>
 
@@ -120,9 +145,11 @@ export default function POSPage() {
             <h2 className="font-semibold flex items-center gap-2">
               <IconShoppingCart className="size-5" /> Panier
             </h2>
-            <span className="text-sm text-muted-foreground">{cart.length} articles</span>
+            <span className="text-sm text-muted-foreground">
+              {cart.length} articles
+            </span>
           </div>
-          
+
           <div className="flex-1 p-4 overflow-auto">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 mt-20">
@@ -146,61 +173,103 @@ export default function POSPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 border rounded-md px-2 py-1 bg-background">
-                        <Button variant="ghost" size="icon" className="size-6" onClick={() => updateQuantity(index, -1)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          onClick={() => updateQuantity(index, -1)}
+                        >
                           <IconMinus className="size-3" />
                         </Button>
-                        <span className="min-w-[20px] text-center font-medium">{item.quantity}</span>
-                        <Button variant="ghost" size="icon" className="size-6" onClick={() => updateQuantity(index, 1)}>
+                        <span className="min-w-[20px] text-center font-medium">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          onClick={() => updateQuantity(index, 1)}
+                        >
                           <IconPlus className="size-3" />
                         </Button>
                       </div>
-                      <p className="text-sm font-semibold">{(item.price * item.quantity).toFixed(2)} DA</p>
+                      <p className="text-sm font-semibold">
+                        {(item.price * item.quantity).toFixed(2)} DA
+                      </p>
                     </div>
                   </Card>
                 ))}
               </div>
             )}
-            </div>
+          </div>
 
           <div className="p-6 border-t bg-card space-y-4">
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
-              <span>{cart.reduce((acc, item) => acc + (item.price * item.quantity), 0).toFixed(2)} DA</span>
+              <span>
+                {cart
+                  .reduce((acc, item) => acc + item.price * item.quantity, 0)
+                  .toFixed(2)}{" "}
+                DA
+              </span>
             </div>
-            
-            <Button className="w-full py-6 text-lg" variant="secondary" onClick={() => setShowProductSelector(true)}>
+
+            <Button
+              className="w-full py-6 text-lg"
+              variant="secondary"
+              onClick={() => setShowProductSelector(true)}
+            >
               <IconPlus className="mr-2" /> Ajouter un produit
             </Button>
-            
-            <Button className="w-full py-6 text-lg" disabled={cart.length === 0} onClick={handleConfirm}>
+
+            <Button
+              className="w-full py-6 text-lg"
+              disabled={cart.length === 0}
+              onClick={handleConfirm}
+            >
               Confirmer la vente
             </Button>
           </div>
         </div>
 
         {/* Content Side */}
-        <div className={`
+        <div
+          className={`
           flex-1 flex flex-col bg-background z-10
-          ${showProductSelector 
-            ? "fixed inset-0 pt-16 md:relative md:pt-0" 
-            : "hidden md:flex md:relative"}
-        `}>
+          ${
+            showProductSelector
+              ? "fixed inset-0 pt-16 md:relative md:pt-0"
+              : "hidden md:flex md:relative"
+          }
+        `}
+        >
           {!showProductSelector ? (
             <div className="hidden md:flex flex-1 flex-col items-center justify-center text-muted-foreground opacity-50">
-               <IconShoppingCart className="size-24 mb-4" />
-               <p className="text-xl">Cliquez sur "Ajouter un produit" pour commencer</p>
+              <IconShoppingCart className="size-24 mb-4" />
+              <p className="text-xl">
+                Cliquez sur "Ajouter un produit" pour commencer
+              </p>
             </div>
           ) : (
             <div className="h-full flex flex-col transition-all p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">
-                  {!selectedCategory ? "Choisir une catégorie" : categories?.find(c => c._id === selectedCategory)?.name}
+                  {!selectedCategory
+                    ? "Choisir une catégorie"
+                    : categories?.find((c) => c._id === selectedCategory)?.name}
                 </h2>
-                <Button variant="ghost" onClick={() => {
-                   if (selectedCategory) setSelectedCategory(null);
-                   else setShowProductSelector(false);
-                }}>
-                  {selectedCategory ? <IconArrowLeft className="mr-2" /> : <IconX />}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (selectedCategory) setSelectedCategory(null);
+                    else setShowProductSelector(false);
+                  }}
+                >
+                  {selectedCategory ? (
+                    <IconArrowLeft className="mr-2" />
+                  ) : (
+                    <IconX />
+                  )}
                   {selectedCategory ? "Retour aux catégories" : ""}
                 </Button>
               </div>
@@ -209,8 +278,8 @@ export default function POSPage() {
                 /* Categories Grid */
                 <div className="flex-1 overflow-auto">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {categories?.map(cat => (
-                      <Card 
+                    {categories?.map((cat) => (
+                      <Card
                         key={cat._id}
                         className="p-6 flex items-center justify-center cursor-pointer hover:bg-accent transition-colors text-center font-bold text-lg h-32"
                         onClick={() => setSelectedCategory(cat._id)}
@@ -224,9 +293,9 @@ export default function POSPage() {
                 /* Products Grid */
                 <div className="flex-1 overflow-auto">
                   <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {filteredProducts?.map(product => (
-                      <Card 
-                        key={product._id} 
+                    {filteredProducts?.map((product) => (
+                      <Card
+                        key={product._id}
                         className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all group"
                         onClick={() => {
                           setSelectedProduct(product);
@@ -235,7 +304,11 @@ export default function POSPage() {
                       >
                         <div className="aspect-square bg-muted relative">
                           {product.images?.[0]?.url ? (
-                            <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover" />
+                            <img
+                              src={product.images[0].url}
+                              alt={product.title}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                               Aucune image
@@ -243,8 +316,12 @@ export default function POSPage() {
                           )}
                         </div>
                         <div className="p-4">
-                          <h3 className="font-semibold truncate">{product.title}</h3>
-                          <p className="text-primary font-bold mt-1 text-lg">{product.price} DA</p>
+                          <h3 className="font-semibold truncate">
+                            {product.title}
+                          </h3>
+                          <p className="text-primary font-bold mt-1 text-lg">
+                            {product.price} DA
+                          </p>
                         </div>
                       </Card>
                     ))}
@@ -257,9 +334,9 @@ export default function POSPage() {
       </div>
 
       {/* Variant Modal */}
-      <VariantSelectionModal 
-        product={selectedProduct} 
-        open={showVariantModal} 
+      <VariantSelectionModal
+        product={selectedProduct}
+        open={showVariantModal}
         onClose={() => {
           setShowVariantModal(false);
           setSelectedProduct(null);
@@ -271,40 +348,46 @@ export default function POSPage() {
 }
 
 function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
-  const productWithVariants: any = useGetProductById(product?._id as Id<"products">);
+  const productWithVariants: any = useGetProductById(
+    product?._id as Id<"products">,
+  );
   const [selections, setSelections] = useState<any[]>([]);
 
   if (!product) return null;
 
   const handleSelect = (variant: any, option: any) => {
     const newSelections = [...selections];
-    const index = newSelections.findIndex(s => s.variantId === variant._id);
+    const index = newSelections.findIndex((s) => s.variantId === variant._id);
     if (index > -1) {
       newSelections[index] = {
         variantId: variant._id,
         variantOptionId: option._id,
         variantName: variant.name,
-        optionName: option.name
+        optionName: option.name,
       };
     } else {
       newSelections.push({
         variantId: variant._id,
         variantOptionId: option._id,
         variantName: variant.name,
-        optionName: option.name
+        optionName: option.name,
       });
     }
     setSelections(newSelections);
   };
 
-  const isComplete = productWithVariants?.variants?.every((v: any) => 
-    selections.find(s => s.variantId === v._id)
-  ) ?? true;
+  const isComplete =
+    productWithVariants?.variants?.every((v: any) =>
+      selections.find((s) => s.variantId === v._id),
+    ) ?? true;
 
-  if (productWithVariants && (!productWithVariants.variants || productWithVariants.variants.length === 0)) {
+  if (
+    productWithVariants &&
+    (!productWithVariants.variants || productWithVariants.variants.length === 0)
+  ) {
     // If no variants, just confirm directly
     setTimeout(() => {
-        onConfirm([]);
+      onConfirm([]);
     }, 0);
     return null;
   }
@@ -318,12 +401,16 @@ function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
         <div className="space-y-6 py-4">
           {productWithVariants?.variants?.map((variant: any) => (
             <div key={variant._id} className="space-y-3">
-              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">{variant.name}</h4>
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                {variant.name}
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {variant.options?.map((option: any) => {
-                  const isSelected = selections.find(s => s.variantOptionId === option._id);
+                  const isSelected = selections.find(
+                    (s) => s.variantOptionId === option._id,
+                  );
                   return (
-                    <Button 
+                    <Button
                       key={option._id}
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleSelect(variant, option)}
@@ -337,8 +424,12 @@ function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
           ))}
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button disabled={!isComplete} onClick={() => onConfirm(selections)}>Ajouter au panier</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button disabled={!isComplete} onClick={() => onConfirm(selections)}>
+            Ajouter au panier
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

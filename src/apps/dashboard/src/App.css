@@ -1,9 +1,102 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicLight.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicBook.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicMedium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicDemi.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicBold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Futura PT";
+  src: url("/fonts/futura-pt/FuturaCyrillicHeavy.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SF Compact";
+  src: url("/fonts/San Francisco Compact Text/SFCompactDisplay-Light.otf")
+    format("opentype");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SF Compact";
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Regular.otf")
+    format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SF Compact";
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Medium.otf")
+    format("opentype");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SF Compact";
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Semibold.otf")
+    format("opentype");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SF Compact";
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Bold.otf")
+    format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans:
+    "SF Compact", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: "Futura PT", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -42,16 +135,15 @@
 }
 
 :root {
-
-  --input-border: #D6D6D6;
+  --input-border: #d6d6d6;
   --radius: 0.625rem;
-  --background: #EEEFEF;
+  --background: #eeefef;
   --foreground: oklch(0.145 0 0);
-  --card: #F2F2F2;
+  --card: #f2f2f2;
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #6A4FFF;
+  --primary: #18382a;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -60,7 +152,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #D6D6D6;
+  --border: #d6d6d6;
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
@@ -76,7 +168,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --cardborder: #FBFAFD;
+  --cardborder: #fbfafd;
 }
 
 .dark {
@@ -110,7 +202,7 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --card-border: #FBFAFD;
+  --card-border: #fbfafd;
   --sidebar-ring: oklch(0.556 0 0);
 }
 
@@ -121,5 +213,6 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: "SF Compact", sans-serif;
   }
 }

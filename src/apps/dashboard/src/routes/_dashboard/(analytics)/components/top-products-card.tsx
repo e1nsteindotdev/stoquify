@@ -46,10 +46,7 @@ export function TopProductsCard() {
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Top 10 Performing Products</CardTitle>
-            <CardDescription>
-              Products that drive units sold, revenue, and profit.
-            </CardDescription>
+            <CardTitle className="text-lg">Top 10 Produits</CardTitle>
           </div>
           <DateController
             defaultPreset="thisMonth"
@@ -67,9 +64,9 @@ export function TopProductsCard() {
                     {product.name}
                   </div>
                   <div className="flex-1">
-                    <div className="relative h-6 w-full rounded bg-muted">
+                    <div className="relative h-6 w-full rounded-none bg-stone-200">
                       <div
-                        className="absolute inset-y-0 left-0 rounded bg-primary"
+                        className="absolute inset-y-0 left-0 rounded-none bg-primary"
                         style={{
                           width: `${(product.percentage / maxPercentage) * 100}%`,
                         }}
@@ -89,7 +86,7 @@ export function TopProductsCard() {
                   <div className="text-sm font-medium">{product.name}</div>
                   <div className="mt-2 space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Revenue</span>
+                      <span className="text-muted-foreground">Revenu</span>
                       <span className="font-medium">
                         {formatMoney(product.revenue)}
                       </span>
@@ -101,7 +98,7 @@ export function TopProductsCard() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Margin</span>
+                      <span className="text-muted-foreground">Marge</span>
                       <span className="font-medium">
                         {product.margin.toFixed(1)}%
                       </span>
@@ -113,7 +110,7 @@ export function TopProductsCard() {
           </div>
         ) : (
           <div className="flex h-[220px] items-center justify-center text-muted-foreground">
-            No product performance data
+            Aucune donnée de performance produit
           </div>
         )}
       </CardContent>

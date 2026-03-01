@@ -82,16 +82,20 @@ function RouteComponent() {
                   </div>
 
                   <div className="flex gap-2">
-                    {Object.entries(cart.get(key)!.selection).map(
-                      ([key, value]) => (
+                    {(() => {
+                      const product = products?.find((p) => p._id === key);
+                      const sku = product?.skus.find(
+                        (s) => s._id === cart.get(key)?.skuId,
+                      );
+                      return sku?.options.map((opt) => (
                         <div
                           className="bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase"
-                          key={key}
+                          key={opt._id}
                         >
-                          <p>{value.variantOptionName}</p>
+                          <p>{opt.name}</p>
                         </div>
-                      ),
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
               );
