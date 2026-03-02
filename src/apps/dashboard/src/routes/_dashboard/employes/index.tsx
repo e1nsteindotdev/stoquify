@@ -38,7 +38,7 @@ function Page() {
 
   if (!users || pendingInvites === undefined) {
     return (
-      <div className="p-4 pt-0 w-full h-full flex items-center justify-center">
+      <div className="container mx-auto py-6 flex justify-center">
         <ClipLoader />
       </div>
     );
@@ -71,7 +71,7 @@ function Page() {
   };
 
   return (
-    <div className="p-4 pt-0 w-full h-full flex flex-col gap-6 overflow-auto">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Employés</h1>

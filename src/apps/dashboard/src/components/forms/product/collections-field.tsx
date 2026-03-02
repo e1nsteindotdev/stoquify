@@ -112,7 +112,7 @@ export default function CollectionsField({
           </Popover>
 
           {selectedCollections.size === 0 ? (
-            <div className="pt-3 text-red-400 italic text-[12px] uppercase">
+            <div className="pt-3 text-black/50 italic text-[12px] uppercase">
               Le produit n'est ajouté à aucune collection
             </div>
           ) : (
@@ -146,7 +146,7 @@ export default function CollectionsField({
               <Button
                 type="button"
                 variant="ghost"
-                className="flex pt-3 gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
+                className="flex gap-1 justify-start pl-2 py-2 text-[15px] text-foreground/90 hover:text-foreground w-full border border-neutral-300 hover:bg-black/5"
               >
                 <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
                   <AddIcon />
@@ -169,7 +169,7 @@ export default function CollectionsField({
               <Button
                 onClick={handleCreate}
                 disabled={!name.trim() || isAdding}
-                className="rounded-[12px] bg-[#DDDAE7] text-primary"
+                className="bg-primary text-white hover:bg-primary/90"
               >
                 {isAdding ? "Création..." : "Créer"}
               </Button>

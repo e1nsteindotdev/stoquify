@@ -46,5 +46,9 @@ export const formatSeriesLabel = (
     const end = new Date(timestamp + 6 * 24 * 60 * 60 * 1000);
     return `${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} - ${end.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}`;
   }
+  if (granularity === "2weeks") {
+    const end = new Date(timestamp + 13 * 24 * 60 * 60 * 1000);
+    return `${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} - ${end.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}`;
+  }
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 };

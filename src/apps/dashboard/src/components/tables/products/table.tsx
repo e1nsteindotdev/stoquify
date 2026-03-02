@@ -133,10 +133,6 @@ export function ProductsTable() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <DateController
-            defaultPreset="thisMonth"
-            onChange={(range) => setDateRange(range)}
-          />
           <Link to="/produits/create">
             <Button variant="default">Nouveau produit</Button>
           </Link>
@@ -209,6 +205,18 @@ export function ProductsTable() {
           ? ` (recherche: "${deferredQuery}")`
           : activeFilters.length > 0 &&
             ` (filtré${activeFilters.length !== 1 ? "s" : ""})`}
+      </div>
+
+      <div className="flex w-full justify-end">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            Afficher les données uniquement pour cette période :
+          </span>
+          <DateController
+            defaultPreset="thisMonth"
+            onChange={(range) => setDateRange(range)}
+          />
+        </div>
       </div>
 
       {filteredProducts.length === 0 ? (

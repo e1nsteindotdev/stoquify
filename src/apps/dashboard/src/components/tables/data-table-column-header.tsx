@@ -10,9 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 
 interface DataTableColumnHeaderProps<TData, TValue>
@@ -35,6 +32,7 @@ export function DataTableColumnHeader<TData, TValue>({
   }
 
   const selectedFilters = new Set(column.getFilterValue() as string[]);
+  const hasFilterOptions = isChoice && choices && choices.length > 0;
 
   return (
     <div className={cn("flex items-center space-x-2", className)}>
@@ -50,16 +48,22 @@ export function DataTableColumnHeader<TData, TValue>({
               <ArrowDown className="ml-2 h-3 w-3" />
             ) : column.getIsSorted() === "asc" ? (
               <ArrowUp className="ml-2 h-3 w-3" />
+            ) : hasFilterOptions ? (
+              <Filter
+                className={cn(
+                  "ml-2 h-2.5 w-2.5",
+                  column.getFilterValue()
+                    ? "text-primary"
+                    : "text-muted-foreground",
+                )}
+              />
             ) : (
               <ChevronsUpDown className="ml-2 h-3 w-3" />
-            )}
-            {!!column.getFilterValue() && (
-              <Filter className="ml-2 h-3 w-3 text-primary" />
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="rounded-none">
-          {column.getCanSort() && (
+          {column.getCanSort() && !hasFilterOptions && (
             <>
               <DropdownMenuItem
                 className="rounded-none cursor-pointer"
@@ -85,51 +89,41 @@ export function DataTableColumnHeader<TData, TValue>({
             </>
           )}
 
-          {column.getCanSort() && isChoice && <DropdownMenuSeparator />}
-
-          {isChoice && choices && (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="rounded-none cursor-pointer">
-                <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                <span>Filtrer</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="rounded-none">
-                {choices.map((choice) => (
-                  <DropdownMenuCheckboxItem
-                    key={choice.value}
-                    className="rounded-none cursor-pointer"
-                    checked={selectedFilters.has(choice.value)}
-                    onCheckedChange={(checked) => {
-                      const newFilters = new Set(selectedFilters);
-                      if (checked) {
-                        newFilters.add(choice.value);
-                      } else {
-                        newFilters.delete(choice.value);
-                      }
-                      column.setFilterValue(
-                        newFilters.size > 0
-                          ? Array.from(newFilters)
-                          : undefined,
-                      );
-                    }}
+          {hasFilterOptions && choices && (
+            <>
+              {choices.map((choice) => (
+                <DropdownMenuCheckboxItem
+                  key={choice.value}
+                  className="rounded-none cursor-pointer"
+                  checked={selectedFilters.has(choice.value)}
+                  onCheckedChange={(checked) => {
+                    const newFilters = new Set(selectedFilters);
+                    if (checked) {
+                      newFilters.add(choice.value);
+                    } else {
+                      newFilters.delete(choice.value);
+                    }
+                    column.setFilterValue(
+                      newFilters.size > 0 ? Array.from(newFilters) : undefined,
+                    );
+                  }}
+                >
+                  {choice.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {selectedFilters.size > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="rounded-none cursor-pointer justify-center"
+                    onClick={() => column.setFilterValue(undefined)}
                   >
-                    {choice.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                {selectedFilters.size > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="rounded-none cursor-pointer justify-center"
-                      onClick={() => column.setFilterValue(undefined)}
-                    >
-                      <X className="mr-2 h-3.5 w-3.5" />
-                      Réinitialiser
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+                    <X className="mr-2 h-3.5 w-3.5" />
+                    Réinitialiser
+                  </DropdownMenuItem>
+                </>
+              )}
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

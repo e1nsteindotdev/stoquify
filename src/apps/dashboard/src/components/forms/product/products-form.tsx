@@ -64,7 +64,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       images: defaultImages,
       variants: defaultVariants,
       skus: defaultSKUs,
-      collections: new Set(product?.collections.map(col => col._id) ?? []),
+      collections: new Set(product?.collections.map((col) => col._id) ?? []),
     }),
     [product],
   );
@@ -77,7 +77,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       const imageChanges = getImageChanges(defaultImages, images);
       const variantChanges = getVariantChanges(defaultVariants, variants);
 
-      const program = Effect.gen(function*() {
+      const program = Effect.gen(function* () {
         // upload new images to the cloud
         const imageService = yield* Images;
         let ensuredProductId = productId;
@@ -98,7 +98,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         }
         if (!ensuredProductId) return;
 
-        const updateProductMetaData = Effect.gen(function*() {
+        const updateProductMetaData = Effect.gen(function* () {
           if (!isNew) {
             const productChanges = getProductChanges(product, {
               categoryId: newProduct.categoryId,
@@ -123,12 +123,12 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           } else return yield* Effect.succeed(null);
         });
 
-        const uploadImages = Effect.gen(function*() {
+        const uploadImages = Effect.gen(function* () {
           const result = { ok: false };
           imageChanges.toCreate = yield* Effect.forEach(
             imageChanges.toCreate,
             (image) =>
-              Effect.gen(function*() {
+              Effect.gen(function* () {
                 let compressedfile = image.compressedFile;
                 if (!compressedfile) {
                   const { file } = yield* imageService.compressImageWithWorker(
@@ -147,10 +147,10 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           return result;
         });
 
-        const handleImages = Effect.gen(function*() {
+        const handleImages = Effect.gen(function* () {
           yield* uploadImages;
           yield* Effect.forEach(imageChanges.toCreate, (img) =>
-            Effect.gen(function*() {
+            Effect.gen(function* () {
               if (!img.compressedFile) return null;
               const indexedDBId = yield* imageService.saveImageLocally(
                 img.compressedFile,
@@ -185,7 +185,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           );
         });
 
-        const handleVariants = Effect.gen(function*() {
+        const handleVariants = Effect.gen(function* () {
           if (!variantChanges)
             return yield* Effect.succeed({
               ok: true,
@@ -230,7 +230,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         });
 
         const handleSKUs = (options: Map<string, Id<"variantOptions">>) =>
-          Effect.gen(function*() {
+          Effect.gen(function* () {
             return yield* Effect.promise(() =>
               convex.mutation(api.skus.replaceSKUs, {
                 productId: ensuredProductId as Id<"products">,
@@ -260,9 +260,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
 
         return { productId: ensuredProductId };
       }).pipe(
-        Effect.ensuring(
-          Effect.promise(() => productsCollection.preload())
-        ),
+        Effect.ensuring(Effect.promise(() => productsCollection.preload())),
       );
 
       const submitResult = await effectRuntime.runPromise(program);
@@ -282,9 +280,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
 
   const isCompleted =
     form.getFieldValue("images") &&
-      form.getFieldValue("price") !== 0 &&
-      form.getFieldValue("title") &&
-      form.getFieldValue("categoryId")
+    form.getFieldValue("price") !== 0 &&
+    form.getFieldValue("title") &&
+    form.getFieldValue("categoryId")
       ? true
       : false;
 
@@ -302,7 +300,11 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           {/* Left column: main product info */}
           <div className="space-y-6">
             <div className="flex flex-col gap-3">
-              <InputsTitle>Produits</InputsTitle>
+              <InputsTitle className="tracking-tight">
+                {isNew
+                  ? "Créer un nouveau produit"
+                  : "Mettre à jour le produit"}
+              </InputsTitle>
               <InputsContainer>
                 <form.AppField
                   name="title"
@@ -489,22 +491,6 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   />
                 )}
               />
-              <Card className="gap-2 border-white">
-                <CardHeader>
-                  <CardTitle>Statistiques du produit</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-1">
-                  <div>
-                    Ventes : <span className="text-foreground">—</span>
-                  </div>
-                  <div>
-                    Argent généré : <span className="text-foreground">—</span>
-                  </div>
-                  <div>
-                    Classement : <span className="text-foreground">—</span>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             <form.Subscribe
@@ -516,7 +502,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               children={([canSubmit, isSubmitting, isDirty]) => (
                 <AnimatedButton
                   type="submit"
-                  className="w-full text-[16px] py-2 bg-primary text-white font-semidbold rounded-md disabled:pointer-events-none disabled:bg-primary/50 font-semibold uppercase"
+                  className="w-full text-[16px] py-2 bg-primary text-white font-semidbold disabled:pointer-events-none disabled:bg-primary/50 font-semibold uppercase"
                   loading={isSubmitting}
                   disabled={!canSubmit || !isDirty}
                   animationComponents={{

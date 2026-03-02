@@ -17,6 +17,8 @@ import type * as cleanProducts from "../cleanProducts.js";
 import type * as collections from "../collections.js";
 import type * as customeFunction from "../customeFunction.js";
 import type * as customers from "../customers.js";
+import type * as expenseCategories from "../expenseCategories.js";
+import type * as expenses from "../expenses.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as magicLinks from "../magicLinks.js";
@@ -50,6 +52,8 @@ declare const fullApi: ApiFromModules<{
   collections: typeof collections;
   customeFunction: typeof customeFunction;
   customers: typeof customers;
+  expenseCategories: typeof expenseCategories;
+  expenses: typeof expenses;
   http: typeof http;
   images: typeof images;
   magicLinks: typeof magicLinks;

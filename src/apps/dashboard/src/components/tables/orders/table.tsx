@@ -81,12 +81,6 @@ export function OrdersTable() {
             Gérez vos commandes et suivez les performances.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <DateController
-            defaultPreset="thisMonth"
-            onChange={(range) => setDateRange(range)}
-          />
-        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -118,6 +112,18 @@ export function OrdersTable() {
       <div className="text-sm text-muted-foreground">
         {filteredRows.length} commande{filteredRows.length !== 1 ? "s" : ""}
         {deferredQuery.trim() && ` (recherche: "${deferredQuery}")`}
+      </div>
+
+      <div className="flex w-full justify-end">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            Afficher les données uniquement pour cette période :
+          </span>
+          <DateController
+            defaultPreset="thisMonth"
+            onChange={(range) => setDateRange(range)}
+          />
+        </div>
       </div>
 
       {filteredRows.length === 0 ? (

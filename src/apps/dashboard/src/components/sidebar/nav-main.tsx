@@ -11,6 +11,7 @@ import {
   IconPackage,
   IconShoppingBag,
   IconUsers,
+  IconReceipt2,
 } from "@tabler/icons-react";
 import { useAppStore } from "@/lib/store";
 import {
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { title: "Produits", url: "/produits", icon: IconPackage },
   { title: "Commandes", url: "/commandes", icon: IconShoppingBag },
   { title: "Clients", url: "/clients", icon: IconUsers },
+  { title: "Dépenses", url: "/depenses", icon: IconReceipt2 },
   {
     title: "Employés",
     url: "/employes",

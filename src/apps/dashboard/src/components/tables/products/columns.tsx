@@ -31,37 +31,76 @@ const formatDays = (days: number) => {
 
 const SKU_OPTION_ORDER = ["Taille", "Couleur", "Pointure", "Size", "Color"];
 
-const getSkuOptionValues = (options?: Record<string, string>): string[] => {
+const formatSkuOptionNames = (
+  options?: ProductTableRow["skus"][number]["options"],
+): string[] => {
   if (!options) return [];
-  const entries = Object.entries(options);
-  entries.sort((a, b) => {
-    const aIndex = SKU_OPTION_ORDER.findIndex(
-      (o) => o.toLowerCase() === a[0].toLowerCase(),
-    );
-    const bIndex = SKU_OPTION_ORDER.findIndex(
-      (o) => o.toLowerCase() === b[0].toLowerCase(),
-    );
-    if (aIndex === -1 && bIndex === -1) return 0;
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-    return aIndex - bIndex;
-  });
-  return entries.map(([, value]) => value);
+
+  if (Array.isArray(options)) {
+    return options
+      .map((option, index) => {
+        if (!option) return null;
+        if (typeof option === "string") {
+          return { label: option, order: index };
+        }
+        if (typeof option === "object") {
+          const label = (option as any).optionName ?? option.name;
+          if (!label) return null;
+          const order = typeof option.order === "number" ? option.order : index;
+          return { label, order };
+        }
+        return null;
+      })
+      .filter((item): item is { label: string; order: number } => item !== null)
+      .sort((a, b) => a.order - b.order)
+      .map((item) => item.label);
+  }
+
+  if (typeof options === "object") {
+    const entries = Object.entries(options);
+    entries.sort((a, b) => {
+      const aIndex = SKU_OPTION_ORDER.findIndex(
+        (o) => o.toLowerCase() === a[0].toLowerCase(),
+      );
+      const bIndex = SKU_OPTION_ORDER.findIndex(
+        (o) => o.toLowerCase() === b[0].toLowerCase(),
+      );
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+    return entries.map(([, value]) => value);
+  }
+
+  return [];
 };
 
-const SkuOptionBadges = ({ options }: { options?: Record<string, string> }) => {
-  const values = getSkuOptionValues(options);
-  if (values.length === 0) return null;
+const SkuOptionBadges = ({
+  options,
+  quantity,
+}: {
+  options?: ProductTableRow["skus"][number]["options"];
+  quantity?: number;
+}) => {
+  const values = formatSkuOptionNames(options);
+  const showQuantity = typeof quantity === "number";
+  if (values.length === 0 && !showQuantity) return null;
   return (
-    <div className="flex gap-1 flex-wrap">
+    <div className="flex gap-1 flex-wrap items-center">
       {values.map((value, index) => (
         <span
-          key={index}
-          className="inline-flex items-center px-1.5 py-0.5 text-xs rounded border border-primary/20 bg-primary/5"
+          key={`${value}-${index}`}
+          className="inline-flex items-center px-1.5 py-0.5 text-xs rounded border border-primary bg-primary/10 text-primary"
         >
           {value}
         </span>
       ))}
+      {showQuantity && (
+        <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded border border-primary bg-primary/10 text-primary">
+          Qté: {quantity}
+        </span>
+      )}
     </div>
   );
 };
@@ -247,14 +286,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
                 <div className="font-medium">Détail des SKUs</div>
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {skus.map((sku) => (
-                    <div
-                      key={sku._id}
-                      className="flex items-center justify-between gap-2 py-1"
-                    >
-                      <SkuOptionBadges options={sku.options} />
-                      <span className="font-medium text-xs">
-                        {sku.quantity}
-                      </span>
+                    <div key={sku._id} className="py-1">
+                      <SkuOptionBadges
+                        options={sku.options}
+                        quantity={sku.quantity}
+                      />
                     </div>
                   ))}
                 </div>
@@ -365,14 +401,10 @@ export const renderExpandedRow = ({ row }: { row: any }) => {
         {product.skus.map((sku: any) => (
           <div
             key={sku._id}
-            className="flex items-center justify-between bg-background p-2 rounded border"
+            className="flex flex-col gap-2 bg-background p-3 rounded border"
           >
-            <SkuOptionBadges options={sku.options} />
-            <div className="flex items-center gap-4 text-sm">
-              <div className="text-right">
-                <div className="text-muted-foreground">Stock</div>
-                <div className="font-medium">{sku.quantity}</div>
-              </div>
+            <SkuOptionBadges options={sku.options} quantity={sku.quantity} />
+            <div className="flex flex-wrap items-center gap-4 text-sm">
               {sku.creationTime && (
                 <div className="text-right">
                   <div className="text-muted-foreground">Créé le</div>

@@ -156,7 +156,7 @@ export function KPISection() {
                       <span className="text-sm font-bold">
                         {formatMoney(kpi.profit)}
                       </span>
-                      <span className="text-[11px] font-medium text-muted-foreground bg-background px-1 py-0.5 shadow-sm border border-border">
+                      <span className="text-[11px] font-medium text-muted-foreground bg-background px-1 py-0.5 border border-border">
                         {((kpi.profit / (kpi.rawValue || 1)) * 100).toFixed(1)}%
                         marge
                       </span>

@@ -21,7 +21,7 @@ async function ensureAuthenticated(ctx: any, opts?: AuthOption) {
   const user = await ctx.db.get(userId);
   const hasPermission = user?.permissions?.some(
     (perm: { resource: string; action: string }) =>
-      perm.resource === resource &&
+      (perm.resource === "*" || perm.resource === resource) &&
       (perm.action === action || perm.action === "*"),
   );
   if (!hasPermission)
@@ -34,25 +34,25 @@ async function ensureAuthenticated(ctx: any, opts?: AuthOption) {
 
 export const authedQuery = customQuery(query, {
   args: {},
-  input: async (ctx, args, opts?: { permission?: AuthOption }) => {
-    await ensureAuthenticated(ctx, opts?.permission as AuthOption | undefined);
-    return { ctx: {}, args };
+  input: async (ctx, args, opts?: Record<string, any>) => {
+    await ensureAuthenticated(ctx, opts as AuthOption | undefined);
+    return { ctx, args };
   },
 });
 
 export const authedMutation = customMutation(mutation, {
   args: {},
 
-  input: async (ctx, args, opts?: { permission?: AuthOption }) => {
-    await ensureAuthenticated(ctx, opts?.permission as AuthOption | undefined);
-    return { ctx: {}, args };
+  input: async (ctx, args, opts?: Record<string, any>) => {
+    await ensureAuthenticated(ctx, opts as AuthOption | undefined);
+    return { ctx, args };
   },
 });
 
 export const authedAction = customAction(action, {
   args: {},
-  input: async (ctx, args, opts?: { permission?: AuthOption }) => {
-    await ensureAuthenticated(ctx, opts?.permission as AuthOption | undefined);
-    return { ctx: {}, args };
+  input: async (ctx, args, opts?: Record<string, any>) => {
+    await ensureAuthenticated(ctx, opts as AuthOption | undefined);
+    return { ctx, args };
   },
 });

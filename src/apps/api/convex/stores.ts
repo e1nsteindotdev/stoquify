@@ -1,9 +1,11 @@
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { authedMutation } from "./customeFunction";
 
-// Create new store (founder/admin only)
-export const create = mutation({
+export const create = authedMutation({
+  resource: "stores",
+  action: "create",
   args: {
     name: v.string(),
   },
@@ -20,10 +22,6 @@ export const create = mutation({
       throw new Error("No organization found");
     }
 
-    if (!user.role || user.role === "staff") {
-      throw new Error("Not authorized");
-    }
-
     const store = await ctx.db.insert("stores", {
       name: args.name,
       organizationId: user.organizationId,
@@ -38,11 +36,11 @@ export const list = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
-    const [userId] = identity.subject.split("|")
-    const user = await ctx.db.get(userId as Id<'users'>)
+    const [userId] = identity.subject.split("|");
+    const user = await ctx.db.get(userId as Id<"users">);
     if (!user?.organizationId) return [];
 
-    console.log(user?.organizationId)
+    console.log(user?.organizationId);
     return await ctx.db
       .query("stores")
       .withIndex("by_organization", (q) =>
@@ -51,5 +49,3 @@ export const list = query({
       .collect();
   },
 });
-
-

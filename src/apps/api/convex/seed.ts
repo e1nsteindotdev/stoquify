@@ -533,9 +533,7 @@ export const seed = internalMutation({
     console.log("Creating orders...");
     const monthsIn3Years = 36;
     const ordersPerMonth = 80;
-    const monthDistribution = [
-      1.0, 0.9, 1.0, 1.0, 1.1, 1.2, 0.8, 0.9, 1.0, 1.3, 1.5, 1.6,
-    ];
+    const monthDistribution = [1.0, 0.9, 1.0, 1.0, 1.1, 1.2, 0.8, 0.9, 1.0, 1.3, 1.5, 1.6,];
 
     const threeYearsAgo = now - 3 * 365 * dayMs;
     const msPerMonth = (now - threeYearsAgo) / monthsIn3Years;
@@ -550,10 +548,8 @@ export const seed = internalMutation({
       const monthEnd = monthStart + msPerMonth;
 
       for (let i = 0; i < ordersThisMonth; i++) {
-        const customerId =
-          customerIds[Math.floor(Math.random() * customerIds.length)];
-        const addressId =
-          addressIds[Math.floor(Math.random() * addressIds.length)];
+        const customerId = customerIds[Math.floor(Math.random() * customerIds.length)];
+        const addressId = addressIds[Math.floor(Math.random() * addressIds.length)];
 
         const numItems = getRandomQuantity(1, 3);
         const orderItems: {

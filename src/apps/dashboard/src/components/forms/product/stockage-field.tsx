@@ -86,10 +86,7 @@ function ByVariantsForm({
     [variants, skus],
   );
 
-  const changeQuantity = (
-    id: string,
-    newQuantity: number,
-  ) => {
+  const changeQuantity = (id: string, newQuantity: number) => {
     const newSkus = generatedSKUs.map((sku) => {
       if (sku.tempId === id) return { ...sku, quantity: newQuantity };
       return sku;
@@ -98,42 +95,51 @@ function ByVariantsForm({
   };
 
   return (
-    <div className="flex flex-col space-y-0 border rounded-[16px]">
-      {generatedSKUs.length > 0 ? generatedSKUs.map((sku, idx) => (
-        <div key={sku.tempId}>
-          <div className="flex items-center py-3 px-4 gap-4 justify-between">
-            <div className="flex gap-4">
-              {sku.options.map((option, optIdx) => (
-                <div key={optIdx} className="">
-                  <LittleItem>{option.optionName}</LittleItem>
-                </div>
-              ))}
+    <div className="flex flex-col space-y-0 border">
+      {generatedSKUs.length > 0 ? (
+        generatedSKUs.map((sku, idx) => (
+          <div key={sku.tempId}>
+            <div className="flex items-center py-3 px-4 gap-4 justify-between">
+              <div className="flex gap-4">
+                {sku.options.map((option, optIdx) => (
+                  <div key={optIdx} className="">
+                    <LittleItem>{option.optionName}</LittleItem>
+                  </div>
+                ))}
+              </div>
+              <div className="w-24 mr-10">
+                <Input
+                  type="number"
+                  onChange={(e) =>
+                    changeQuantity(sku.tempId, Number(e.target.value))
+                  }
+                  placeholder="0"
+                  value={sku.quantity}
+                  className="text-[14px] py-1"
+                />
+              </div>
             </div>
-            <div className="w-24 mr-10">
-              <Input
-                type="number"
-                onChange={(e) => changeQuantity(sku.tempId, Number(e.target.value))}
-                placeholder="0"
-                value={sku.quantity}
-                className="text-[14px] py-1"
-              />
-            </div>
+            {idx < generatedSKUs.length - 1 && (
+              <div className="w-full flex-1 bg-border h-[1px]" />
+            )}
           </div>
-          {idx < generatedSKUs.length - 1 && (<div className="w-full flex-1 bg-border h-[1px]" />)}
-        </div>
-      ))
-        : <div className="rounded-2xl p-4">
+        ))
+      ) : (
+        <div className="p-4">
           <p className="italic text-[14px] text-neutral-500">
             Creez des variantes de produit pour configurer votre stock.
           </p>
         </div>
-      }
+      )}
     </div>
   );
 }
 
-function generateSKUs(variants: TypeDecodedVariant[], skus: TypeDecodedSKU[]): TypeDecodedSKU[] {
-  if (variants.length === 0) return []
+function generateSKUs(
+  variants: TypeDecodedVariant[],
+  skus: TypeDecodedSKU[],
+): TypeDecodedSKU[] {
+  if (variants.length === 0) return [];
   if (variants.length === 1) {
     return variants[0].options.map((option) => {
       const existingSku = skus.find(
@@ -187,5 +193,3 @@ function cartesian<T>(...arrays: T[][]): T[][] {
     [[]] as T[][],
   );
 }
-
-

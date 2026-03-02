@@ -126,7 +126,8 @@ export function DataTable<TData, TValue>({
       </div>
       <div className="flex items-center justify-end space-x-4 py-2">
         <span className="text-sm text-muted-foreground">
-          {table.getRowModel().rows.length} / {data.length} commandes affichées
+          {table.getRowModel().rows.length} /{" "}
+          {table.getFilteredRowModel().rows.length} commandes affichées
         </span>
         <div className="flex items-center space-x-2">
           <Button

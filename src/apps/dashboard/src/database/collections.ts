@@ -10,11 +10,17 @@ import { useAppStore } from "@/lib/store";
 
 export const collectionsCollection = createCollection(
   queryCollectionOptions({
-    queryKey: ["collections"],
+    queryKey: () => {
+      const storeId = useAppStore.getState().selectedStore?._id;
+      return ["collections", storeId];
+    },
     queryFn: async () => {
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
-      const collections = await convex.query(api.collections.listAllCollections, { storeId });
+      const collections = await convex.query(
+        api.collections.listAllCollections,
+        { storeId },
+      );
       idbRefresh("collections", collections);
       return collections;
     },

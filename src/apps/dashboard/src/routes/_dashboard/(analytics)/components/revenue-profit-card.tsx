@@ -48,19 +48,16 @@ export const formatBarValue = (value: number) => {
 
 export const formatAxisLabel = (
   timestamp: number,
-  granularity: "day" | "week" | "month",
+  granularity: "day" | "week" | "2weeks" | "month",
 ) => {
   const date = new Date(timestamp);
   if (granularity === "day") {
-    // E.g. "Mon", "Tue"
     return date.toLocaleDateString("en-US", { weekday: "short" });
   }
-  if (granularity === "week") {
-    // E.g. "Week 1" or keep it as date "Oct 12"
+  if (granularity === "week" || granularity === "2weeks") {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
   if (granularity === "month") {
-    // E.g. "Jan", "Feb"
     return date.toLocaleDateString("en-US", { month: "short" });
   }
   return date.toLocaleDateString("en-US");
@@ -79,15 +76,9 @@ export function RevenueProfitCard({
   const to = new Date(`${dateRange.to}T23:59:59+01:00`).getTime();
   const daysDiff = (to - from) / (1000 * 60 * 60 * 24);
 
-  let granularity: "day" | "week" | "month" = "day";
+  let granularity: "day" | "week" | "2weeks" | "month" = "day";
   if (preset === "thisYear" || preset === "lastYear" || daysDiff > 180) {
-    granularity = "month";
-  } else if (
-    preset === "thisMonth" ||
-    preset === "lastMonth" ||
-    daysDiff > 60
-  ) {
-    granularity = "week";
+    granularity = "2weeks";
   } else {
     granularity = "day";
   }

@@ -6,15 +6,17 @@ import { useLiveQuery } from "@tanstack/react-db";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 
-export const categoriesCollection = createCollection(
+export const expensesCollection = createCollection(
   queryCollectionOptions({
     queryKey: () => {
       const storeId = useAppStore.getState().selectedStore?._id;
-      return ["categories", storeId];
+      return ["expenses", storeId];
     },
     queryFn: async () => {
-      const categories = await convex.query(api.categories.listCategories);
-      return categories;
+      const expenses = await convex.query(api.expenses.listExpenses, {
+        storeId: "" as any,
+      });
+      return expenses;
     },
     queryClient,
     getKey: (item) => item._id,
@@ -22,12 +24,16 @@ export const categoriesCollection = createCollection(
   }),
 );
 
-export const useGetCategories = (storeId?: string) => {
+export const useGetExpenses = (storeId?: string) => {
   const currentStoreId = useAppStore((state) => state.selectedStore?._id);
   const effectiveStoreId = storeId ?? currentStoreId;
   return useLiveQuery((q) =>
     q
-      .from({ categories: categoriesCollection })
-      .where(({ categories }) => eq(categories.storeId, effectiveStoreId)),
+      .from({ expenses: expensesCollection })
+      .where(({ expenses }) => eq(expenses.storeId, effectiveStoreId)),
   );
 };
+
+export type ExpenseWithCategory = NonNullable<
+  ReturnType<typeof useGetExpenses>["data"]
+>[number];

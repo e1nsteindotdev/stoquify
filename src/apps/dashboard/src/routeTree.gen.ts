@@ -15,6 +15,7 @@ import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
 import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
 import { Route as DashboardEmployesIndexRouteImport } from './routes/_dashboard/employes/index'
+import { Route as DashboardDepensesIndexRouteImport } from './routes/_dashboard/depenses/index'
 import { Route as DashboardCommandesIndexRouteImport } from './routes/_dashboard/commandes/index'
 import { Route as DashboardClientsIndexRouteImport } from './routes/_dashboard/clients/index'
 import { Route as DashboardanalyticsIndexRouteImport } from './routes/_dashboard/(analytics)/index'
@@ -51,6 +52,11 @@ const DashboardParametresIndexRoute =
 const DashboardEmployesIndexRoute = DashboardEmployesIndexRouteImport.update({
   id: '/employes/',
   path: '/employes/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDepensesIndexRoute = DashboardDepensesIndexRouteImport.update({
+  id: '/depenses/',
+  path: '/depenses/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardCommandesIndexRoute = DashboardCommandesIndexRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof DashboardanalyticsIndexRoute
   '/clients': typeof DashboardClientsIndexRoute
   '/commandes': typeof DashboardCommandesIndexRoute
+  '/depenses': typeof DashboardDepensesIndexRoute
   '/employes': typeof DashboardEmployesIndexRoute
   '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/': typeof DashboardanalyticsIndexRoute
   '/clients': typeof DashboardClientsIndexRoute
   '/commandes': typeof DashboardCommandesIndexRoute
+  '/depenses': typeof DashboardDepensesIndexRoute
   '/employes': typeof DashboardEmployesIndexRoute
   '/parametres': typeof DashboardParametresIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/_dashboard/(analytics)/': typeof DashboardanalyticsIndexRoute
   '/_dashboard/clients/': typeof DashboardClientsIndexRoute
   '/_dashboard/commandes/': typeof DashboardCommandesIndexRoute
+  '/_dashboard/depenses/': typeof DashboardDepensesIndexRoute
   '/_dashboard/employes/': typeof DashboardEmployesIndexRoute
   '/_dashboard/parametres/': typeof DashboardParametresIndexRoute
   '/_dashboard/produits/': typeof DashboardProduitsIndexRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clients'
     | '/commandes'
+    | '/depenses'
     | '/employes'
     | '/parametres'
     | '/produits'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clients'
     | '/commandes'
+    | '/depenses'
     | '/employes'
     | '/parametres'
     | '/produits'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/_dashboard/(analytics)/'
     | '/_dashboard/clients/'
     | '/_dashboard/commandes/'
+    | '/_dashboard/depenses/'
     | '/_dashboard/employes/'
     | '/_dashboard/parametres/'
     | '/_dashboard/produits/'
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/employes'
       fullPath: '/employes'
       preLoaderRoute: typeof DashboardEmployesIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/depenses/': {
+      id: '/_dashboard/depenses/'
+      path: '/depenses'
+      fullPath: '/depenses'
+      preLoaderRoute: typeof DashboardDepensesIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/commandes/': {
@@ -289,6 +308,7 @@ interface DashboardRouteChildren {
   DashboardanalyticsIndexRoute: typeof DashboardanalyticsIndexRoute
   DashboardClientsIndexRoute: typeof DashboardClientsIndexRoute
   DashboardCommandesIndexRoute: typeof DashboardCommandesIndexRoute
+  DashboardDepensesIndexRoute: typeof DashboardDepensesIndexRoute
   DashboardEmployesIndexRoute: typeof DashboardEmployesIndexRoute
   DashboardParametresIndexRoute: typeof DashboardParametresIndexRoute
   DashboardProduitsIndexRoute: typeof DashboardProduitsIndexRoute
@@ -302,6 +322,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardanalyticsIndexRoute: DashboardanalyticsIndexRoute,
   DashboardClientsIndexRoute: DashboardClientsIndexRoute,
   DashboardCommandesIndexRoute: DashboardCommandesIndexRoute,
+  DashboardDepensesIndexRoute: DashboardDepensesIndexRoute,
   DashboardEmployesIndexRoute: DashboardEmployesIndexRoute,
   DashboardParametresIndexRoute: DashboardParametresIndexRoute,
   DashboardProduitsIndexRoute: DashboardProduitsIndexRoute,

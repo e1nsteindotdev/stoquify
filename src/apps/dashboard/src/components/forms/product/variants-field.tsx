@@ -185,7 +185,7 @@ export default function VariantsField() {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-input-border p-4">
+        <div className="border border-input-border p-4">
           <p className="italic text-[14px] text-neutral-500">
             Aucune variante n'existe encore pour ce produit.
           </p>

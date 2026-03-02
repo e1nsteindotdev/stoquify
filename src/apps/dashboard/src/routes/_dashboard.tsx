@@ -75,6 +75,7 @@ const getPathLabel = (path: string) => {
     create: "Nouveau produit",
     commandes: "Commandes",
     clients: "Clients",
+    depenses: "Dépenses",
     parametres: "Paramètres",
     pos: "POS",
     "": "Analytique",

@@ -8,7 +8,10 @@ import { useAppStore } from "@/lib/store";
 
 export const salesCollection = createCollection(
   queryCollectionOptions({
-    queryKey: ["sales"],
+    queryKey: () => {
+      const storeId = useAppStore.getState().selectedStore?._id;
+      return ["sales", storeId];
+    },
     queryFn: async (ctx) => {
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];

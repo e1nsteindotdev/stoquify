@@ -11,6 +11,19 @@ const toAlgeriaDayStart = (ts: number) => {
   return date.getTime();
 };
 
+export type ProductSkuOptions =
+  | Record<string, string>
+  | Array<
+      | string
+      | {
+          _id?: string;
+          name?: string;
+          optionName?: string;
+          order?: number;
+          variantId?: string;
+        }
+    >;
+
 export type ProductTableRow = {
   _id: string;
   title: string;
@@ -24,7 +37,7 @@ export type ProductTableRow = {
     quantity: number;
     cost?: number;
     creationTime?: number;
-    options?: Record<string, string>;
+    options?: ProductSkuOptions;
   }>;
 
   totalQuantity: number;

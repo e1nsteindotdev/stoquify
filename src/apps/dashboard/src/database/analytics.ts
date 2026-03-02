@@ -4,7 +4,7 @@ import { useGetOrders } from "./orders";
 import { useGetProducts } from "./products";
 import { useGetSales } from "./sales";
 
-export type AnalyticsGranularity = "day" | "week" | "month";
+export type AnalyticsGranularity = "day" | "week" | "2weeks" | "month";
 
 type AnalyticsFilters = {
   from: number;
@@ -126,7 +126,7 @@ const formatBucketKey = (
   if (granularity === "month") {
     return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
   }
-  if (granularity === "week") {
+  if (granularity === "week" || granularity === "2weeks") {
     const weekStart = getIsoWeekStart(date);
     const weekStartAdjusted = new Date(weekStart.getTime() + ALGERIA_OFFSET_MS);
     return weekStartAdjusted.toISOString().split("T")[0];
@@ -158,6 +158,18 @@ const createBuckets = (
         timestamp: current,
       });
       current = addDays(current, 7);
+    }
+    return buckets;
+  }
+
+  if (granularity === "2weeks") {
+    let current = getIsoWeekStart(new Date(start)).getTime();
+    while (current <= end) {
+      buckets.push({
+        key: formatBucketKey(current, granularity),
+        timestamp: current,
+      });
+      current = addDays(current, 14);
     }
     return buckets;
   }

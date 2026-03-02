@@ -14,18 +14,21 @@ export type ClientRow = {
 export const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: "name",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Nom" />
     ),
   },
   {
     accessorKey: "phoneNumber",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Téléphone" />
     ),
   },
   {
     accessorKey: "address",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Adresse" />
     ),

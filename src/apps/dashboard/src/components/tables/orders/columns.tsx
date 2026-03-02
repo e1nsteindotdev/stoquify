@@ -8,13 +8,16 @@ import {
   useConfirmOrder,
   useDenyOrder,
 } from "@/hooks/use-convex-queries";
-import { Trash2, ChevronDown } from "lucide-react";
+import { Trash2, ChevronDown, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ordersCollection } from "@/database/orders";
+import { salesCollection } from "@/database/sales";
+import { useState } from "react";
 
 export type OrderRow = {
   _id: string;
@@ -53,12 +56,14 @@ const statusLabels = {
 export const columns: ColumnDef<OrderRow>[] = [
   {
     accessorKey: "customerName",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Client" />
     ),
   },
   {
     accessorKey: "phoneNumber",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Téléphone" />
     ),
@@ -93,6 +98,7 @@ export const columns: ColumnDef<OrderRow>[] = [
   },
   {
     accessorKey: "status",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -112,12 +118,22 @@ export const columns: ColumnDef<OrderRow>[] = [
       const confirmOrder = useConfirmOrder();
       const denyOrder = useDenyOrder();
       const currentStatus = row.original.status;
+      const [isLoading, setIsLoading] = useState(false);
 
       const handleStatusChange = async (newStatus: "confirmed" | "denied") => {
-        if (newStatus === "confirmed") {
-          await confirmOrder.mutateAsync({ orderId: row.original._id as any });
-        } else {
-          await denyOrder.mutateAsync({ orderId: row.original._id as any });
+        setIsLoading(true);
+        try {
+          if (newStatus === "confirmed") {
+            await confirmOrder.mutateAsync({
+              orderId: row.original._id as any,
+            });
+            await salesCollection.preload();
+          } else {
+            await denyOrder.mutateAsync({ orderId: row.original._id as any });
+            await ordersCollection.preload();
+          }
+        } finally {
+          setIsLoading(false);
         }
       };
 
@@ -127,21 +143,27 @@ export const columns: ColumnDef<OrderRow>[] = [
             <Badge
               className={`${statusColors[currentStatus].base} ${statusColors[currentStatus].hover} cursor-pointer rounded-none border px-3 py-1 text-xs font-semibold transition-colors`}
             >
-              {statusLabels[currentStatus]}
-              <ChevronDown className="ml-1 h-3 w-3" />
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <>
+                  {statusLabels[currentStatus]}
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </>
+              )}
             </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem
               onClick={() => handleStatusChange("confirmed")}
-              disabled={currentStatus === "confirmed" || confirmOrder.isPending}
+              disabled={currentStatus === "confirmed" || isLoading}
             >
               <span className="text-green-600 mr-2">●</span>
               Confirmée
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleStatusChange("denied")}
-              disabled={currentStatus === "denied" || denyOrder.isPending}
+              disabled={currentStatus === "denied" || isLoading}
             >
               <span className="text-red-600 mr-2">●</span>
               Refusée
@@ -153,6 +175,7 @@ export const columns: ColumnDef<OrderRow>[] = [
   },
   {
     accessorKey: "source",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -178,6 +201,7 @@ export const columns: ColumnDef<OrderRow>[] = [
   },
   {
     accessorKey: "createdAt",
+    enableSorting: false,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date" />
     ),

@@ -17,7 +17,8 @@ export type DatePreset =
   | "lastMonth"
   | "lastYear"
   | "thisYear"
-  | "custom";
+  | "custom"
+  | "allTime";
 
 export interface DateRange {
   from: string;
@@ -39,6 +40,7 @@ const presetLabels: Record<DatePreset, string> = {
   lastYear: "Last Year",
   thisYear: "This Year",
   custom: "Custom",
+  allTime: "All Time",
 };
 
 function getPresetDates(preset: DatePreset): DateRange {
@@ -120,6 +122,8 @@ function getPresetDates(preset: DatePreset): DateRange {
         to: end.toISOString().split("T")[0],
       };
     }
+    case "allTime":
+      return { from: "1970-01-01", to: today };
     default:
       return { from: today, to: today };
   }
@@ -191,6 +195,9 @@ export function DateController({
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handlePresetChange("custom")}>
             Custom
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handlePresetChange("allTime")}>
+            All Time
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

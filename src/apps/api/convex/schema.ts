@@ -189,6 +189,23 @@ const schema = defineSchema({
     facebookLink: v.optional(v.string()),
     tiktokLink: v.optional(v.string()),
   }).index("by_store", ["storeId"]),
+
+  expenseCategories: defineTable({
+    name: v.string(),
+    storeId: v.id("stores"),
+  }).index("by_store", ["storeId"]),
+
+  expenses: defineTable({
+    storeId: v.id("stores"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    cost: v.number(),
+    date: v.number(),
+    categoryId: v.optional(v.id("expenseCategories")),
+  })
+    .index("by_store", ["storeId"])
+    .index("by_store_date", ["storeId", "date"])
+    .index("by_category", ["categoryId"]),
 });
 
 export default schema;

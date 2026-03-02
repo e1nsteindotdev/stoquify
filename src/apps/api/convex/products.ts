@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import {
   insertVariants,
   insertVariantsInventory,
@@ -419,3 +419,23 @@ export const updateProductMetaData = mutation({
     }
   },
 });
+
+
+export const salesPerProduct = internalQuery({
+  handler: async (ctx) => {
+    const products = await ctx.db.query('products').take(20)
+    const productIds = products.map(p => p._id)
+    const sales = await ctx.db.query('sales').collect()
+    const salesMap = new Map()
+    for (const productId of productIds) {
+      const salesPerProduct = sales.filter(sale => {
+        return sale.order.map(o => o.productId).includes(productId)
+      })
+      salesMap.set(productId, {
+        name: products.find(p => p._id === productId)?.title, size: salesPerProduct.length
+      })
+    }
+    console.log(salesMap)
+    return null;
+  }
+})

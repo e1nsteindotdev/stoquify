@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useFieldContext } from "@/hooks/form-context.tsx";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,28 +10,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-import { useGetCategories } from "@/database/categories";
+import {
+  useGetExpenseCategories,
+  expenseCategoriesCollection,
+} from "@/database/expense-categories";
 import { Id } from "api/data-model";
 import { useAppStore } from "@/lib/store";
 import { convex } from "@/lib/convex-query";
 import { api } from "api/convex";
-import { queryClient } from "@/lib/ts-query-client";
 
 type Props = {
   label?: string;
 };
 
-export default function CategoriesField({ label }: Props) {
-  const field = useFieldContext<Id<"categories">>();
+export default function ExpenseCategoryField({ label }: Props) {
+  const field = useFieldContext<Id<"expenseCategories"> | undefined>();
   const storeId = useAppStore((state) => state.selectedStore?._id);
-  const categoriesResult = useGetCategories(storeId);
+  const categoriesResult = useGetExpenseCategories(storeId);
   const categories = categoriesResult?.data ?? [];
 
   const [name, setName] = useState("");
@@ -43,13 +42,16 @@ export default function CategoriesField({ label }: Props) {
     setIsCreating(true);
     try {
       if (!storeId) throw Error("no storeId");
-      const id = await convex.mutation(api.categories.createCategory, {
-        name,
-        storeId,
-      });
+      const id = await convex.mutation(
+        api.expenseCategories.createExpenseCategory,
+        {
+          name,
+          storeId,
+        },
+      );
       console.log("new id :", id);
       if (!id) throw Error("failed at creating id");
-      await queryClient.refetchQueries({ queryKey: ["categories"] });
+      await expenseCategoriesCollection.preload();
       field.handleChange(id);
       setName("");
     } finally {
@@ -62,11 +64,11 @@ export default function CategoriesField({ label }: Props) {
       {label && <Label className="font-semibold pb-[12px]">{label}</Label>}
       <div className="space-y-1 border border-neutral-300 p-3">
         <Select
-          value={(field.state.value as Id<"categories">) ?? ""}
+          value={(field.state.value as Id<"expenseCategories">) ?? ""}
           onValueChange={(v) => field.handleChange(v as any)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Sélectionner une option" />
+            <SelectValue placeholder="Sélectionner une catégorie" />
           </SelectTrigger>
           <SelectContent className="bg-card">
             {categories.map((c) => (
@@ -88,7 +90,7 @@ export default function CategoriesField({ label }: Props) {
             <Button
               type="button"
               variant="ghost"
-              className="flex gap-1 justify-start pl-2 py-2 text-[15px] text-foreground/90 hover:text-foreground w-full border border-neutral-300 hover:bg-black/5"
+              className="flex gap-1 justify-start pl-2 py-0 text-[15px] text-foreground/90 hover:text-foreground w-fit"
             >
               <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
                 <AddIcon />
@@ -100,7 +102,7 @@ export default function CategoriesField({ label }: Props) {
             <div className="flex flex-col gap-2">
               <p className="text-[14px] font-medium">Nom de la catégorie :</p>
               <Input
-                placeholder="e.g. Pants"
+                placeholder="e.g. Loyer"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
