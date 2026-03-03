@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { authedQuery } from "./customeFunction";
 
 export const availableResources = [
   { key: "products", label: "Produits", description: "Gérer les produits" },
@@ -31,7 +31,10 @@ export const availableResources = [
   },
 ];
 
-export const list = query({
+export const list = authedQuery({
+  resource: "permissions",
+  action: "read",
+  args: {},
   handler: async () => {
     return availableResources;
   },

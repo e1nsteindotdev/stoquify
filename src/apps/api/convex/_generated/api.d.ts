@@ -30,6 +30,7 @@ import type * as products from "../products.js";
 import type * as sales from "../sales.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
+import type * as signInMagicLinks from "../signInMagicLinks.js";
 import type * as skus from "../skus.js";
 import type * as stores from "../stores.js";
 import type * as types_types from "../types/types.js";
@@ -65,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   sales: typeof sales;
   seed: typeof seed;
   settings: typeof settings;
+  signInMagicLinks: typeof signInMagicLinks;
   skus: typeof skus;
   stores: typeof stores;
   "types/types": typeof types_types;

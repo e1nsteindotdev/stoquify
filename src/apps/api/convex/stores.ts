@@ -1,7 +1,6 @@
 import { Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { authedMutation } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customeFunction";
 
 export const create = authedMutation({
   resource: "stores",
@@ -32,7 +31,9 @@ export const create = authedMutation({
 });
 
 // List stores by organization
-export const list = query({
+export const list = authedQuery({
+  resource: "stores",
+  action: "read",
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];

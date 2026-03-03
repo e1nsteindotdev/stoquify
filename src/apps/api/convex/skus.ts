@@ -1,7 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const getSkuQuantities = query({
+export const getSkuQuantities = authedQuery({
+  resource: "skus",
+  action: "read",
   args: { skuIds: v.array(v.id("skus")) },
   handler: async (ctx, { skuIds }) => {
     const results = await Promise.all(
@@ -14,7 +16,9 @@ export const getSkuQuantities = query({
   },
 });
 
-export const replaceSKUs = mutation({
+export const replaceSKUs = authedMutation({
+  resource: "skus",
+  action: "update",
   args: {
     productId: v.id("products"),
     skus: v.array(

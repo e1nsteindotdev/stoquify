@@ -25,7 +25,7 @@ export type OrderRow = {
   phoneNumber: number;
   totalCost: number;
   status: "pending" | "confirmed" | "denied";
-  createdAt: number;
+  createdAt: string | number;
   source?: "online" | "in_store";
   itemCount: number;
   profit: number;
@@ -34,16 +34,16 @@ export type OrderRow = {
 
 const statusColors = {
   pending: {
-    base: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    hover: "hover:bg-yellow-200 hover:text-yellow-900",
+    base: "bg-amber-200 text-amber-900 border-amber-300",
+    hover: "hover:bg-amber-300 hover:text-amber-950",
   },
   confirmed: {
-    base: "bg-green-100 text-green-800 border-green-200",
-    hover: "hover:bg-green-200 hover:text-green-900",
+    base: "bg-emerald-200 text-emerald-900 border-emerald-300",
+    hover: "hover:bg-emerald-300 hover:text-emerald-950",
   },
   denied: {
-    base: "bg-red-100 text-red-800 border-red-200",
-    hover: "hover:bg-red-200 hover:text-red-900",
+    base: "bg-rose-200 text-rose-900 border-rose-300",
+    hover: "hover:bg-rose-300 hover:text-rose-950",
   },
 };
 
@@ -191,12 +191,9 @@ export const columns: ColumnDef<OrderRow>[] = [
       return value.includes(row.getValue(id));
     },
     cell: ({ row }) => (
-      <Badge
-        variant={row.original.source === "online" ? "default" : "secondary"}
-        className="rounded-md"
-      >
-        {row.original.source === "online" ? "En ligne" : "En magasin"}
-      </Badge>
+      <span className="text-black uppercase">
+        {row.original.source === "online" ? "EN LIGNE" : "EN MAGASIN"}
+      </span>
     ),
   },
   {

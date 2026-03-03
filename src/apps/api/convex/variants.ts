@@ -1,7 +1,9 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { authedMutation } from "./customeFunction";
 
-export const handleVariantChanges = mutation({
+export const handleVariantChanges = authedMutation({
+  resource: "variants",
+  action: "update",
   args: {
     productId: v.id("products"),
     toDelete: v.array(v.id("variants")),
@@ -99,8 +101,10 @@ export const handleVariantChanges = mutation({
         .query("variants")
         .filter((e) => e.eq(e.field("productId"), args.productId))
         .collect();
-      const options = (await ctx.db.query('variantOptions').collect())
-        .filter(opt => newestVariants.map(variant => variant._id).includes(opt.variantId))
+      const options = (await ctx.db.query("variantOptions").collect()).filter(
+        (opt) =>
+          newestVariants.map((variant) => variant._id).includes(opt.variantId),
+      );
       return { ok: true, options };
     } catch (e) {
       return { ok: false, options: [] };

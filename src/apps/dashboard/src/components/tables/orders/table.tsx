@@ -32,7 +32,7 @@ export function OrdersTable() {
     phoneNumber: order.customer?.phoneNumber ?? 0,
     totalCost: order.subTotalCost + order.deliveryCost,
     status: order.status,
-    createdAt: order.createdAt,
+    createdAt: order.orderTime || order._creationTime,
     source: order.source,
     itemCount: order.itemCount || 0,
     profit: order.profit || 0,

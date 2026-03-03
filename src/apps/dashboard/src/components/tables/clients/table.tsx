@@ -30,6 +30,9 @@ export function ClientsTable() {
       ? `${client.address.address}, ${client.address.wilaya?.htmlName || ""}`
       : "N/A",
     orderCount: client.orderCount || 0,
+    lastOrderDate: client.lastOrderDate || null,
+    totalRevenue: client.totalRevenue || 0,
+    totalProfit: client.totalProfit || 0,
   }));
 
   const deferredQuery = useDeferredValue(debouncedQuery);

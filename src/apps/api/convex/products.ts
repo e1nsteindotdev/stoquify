@@ -1,12 +1,14 @@
 import { v } from "convex/values";
-import { internalQuery, mutation, query } from "./_generated/server";
+import { internalQuery } from "./_generated/server";
 import {
   insertVariants,
   insertVariantsInventory,
 } from "./actions/product_actions";
-import { authedMutation } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const listProducts = query({
+export const listProducts = authedQuery({
+  resource: "products",
+  action: "read",
   args: {
     storeId: v.id("stores"),
   },
@@ -59,7 +61,9 @@ export const listProducts = query({
   },
 });
 
-export const getCatalog = query({
+export const getCatalog = authedQuery({
+  resource: "products",
+  action: "read",
   args: {
     storeId: v.id("stores"),
   },
@@ -126,7 +130,9 @@ export const getCatalog = query({
   },
 });
 
-export const getProductById = query({
+export const getProductById = authedQuery({
+  resource: "products",
+  action: "read",
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
     const product = await ctx.db.get(id);
@@ -169,7 +175,9 @@ export const getProductById = query({
   },
 });
 
-export const deleteProduct = mutation({
+export const deleteProduct = authedMutation({
+  resource: "products",
+  action: "delete",
   args: {
     id: v.id("products"),
   },
@@ -214,7 +222,9 @@ export const deleteProduct = mutation({
   },
 });
 
-export const sendImage = mutation({
+export const sendImage = authedMutation({
+  resource: "products",
+  action: "update",
   args: {
     storageId: v.id("_storage"),
     productId: v.id("products"),
@@ -244,7 +254,9 @@ export const sendImage = mutation({
   },
 });
 
-export const getProductByCategory = query({
+export const getProductByCategory = authedQuery({
+  resource: "products",
+  action: "read",
   args: {
     categoryId: v.id("categories"),
   },
@@ -370,7 +382,9 @@ export const createProduct = authedMutation({
   },
 });
 
-export const updateProductMetaData = mutation({
+export const updateProductMetaData = authedMutation({
+  resource: "products",
+  action: "update",
   args: {
     productId: v.id("products"),
     title: v.optional(v.string()),
@@ -420,22 +434,22 @@ export const updateProductMetaData = mutation({
   },
 });
 
-
 export const salesPerProduct = internalQuery({
   handler: async (ctx) => {
-    const products = await ctx.db.query('products').take(20)
-    const productIds = products.map(p => p._id)
-    const sales = await ctx.db.query('sales').collect()
-    const salesMap = new Map()
+    const products = await ctx.db.query("products").take(20);
+    const productIds = products.map((p) => p._id);
+    const sales = await ctx.db.query("sales").collect();
+    const salesMap = new Map();
     for (const productId of productIds) {
-      const salesPerProduct = sales.filter(sale => {
-        return sale.order.map(o => o.productId).includes(productId)
-      })
+      const salesPerProduct = sales.filter((sale) => {
+        return sale.order.map((o) => o.productId).includes(productId);
+      });
       salesMap.set(productId, {
-        name: products.find(p => p._id === productId)?.title, size: salesPerProduct.length
-      })
+        name: products.find((p) => p._id === productId)?.title,
+        size: salesPerProduct.length,
+      });
     }
-    console.log(salesMap)
+    console.log(salesMap);
     return null;
-  }
-})
+  },
+});

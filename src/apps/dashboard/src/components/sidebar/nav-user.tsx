@@ -6,6 +6,8 @@ import {
   Store,
   Plus,
   Check,
+  Smartphone,
+  RefreshCw,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,6 +38,12 @@ import { useState } from "react";
 import { CreateStoreForm } from "@/components/forms/store/create-store-form";
 import { hasGlobalPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import QRCode from "react-qr-code";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "api/convex";
+import { convex } from "@/lib/convex-client";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export function NavUser({ avatar }: { avatar: string }) {
   const user = useAppStore((get) => get.user);
@@ -47,6 +55,56 @@ export function NavUser({ avatar }: { avatar: string }) {
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
   const [createStoreOpen, setCreateStoreOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Query for active sign-in magic link
+  const { data: activeLink, isLoading: isLoadingLink } = useQuery({
+    queryKey: ["signInMagicLink"],
+    queryFn: async () => {
+      return await convex.query(api.signInMagicLinks.getActiveForCurrentUser);
+    },
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+
+  // Mutation to create new sign-in link
+  const createLinkMutation = useMutation({
+    mutationFn: async () => {
+      return await convex.mutation(api.signInMagicLinks.create);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["signInMagicLink"] });
+    },
+  });
+
+  const handleGenerateLink = () => {
+    createLinkMutation.mutate();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-500";
+      case "used":
+        return "bg-red-500";
+      case "expired":
+        return "bg-orange-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "active":
+        return "Actif";
+      case "used":
+        return "Utilisé";
+      case "expired":
+        return "Expiré";
+      default:
+        return "Inconnu";
+    }
+  };
 
   const canCreateStore =
     hasGlobalPermission(user, "stores", "create") ||
@@ -68,6 +126,8 @@ export function NavUser({ avatar }: { avatar: string }) {
   const handleStoreSwitch = (selectedStore: (typeof stores)[0]) => {
     setStore(selectedStore);
   };
+
+  const base_url = import.meta.env.VITE_BASE_URL
 
   return (
     <>
@@ -134,6 +194,87 @@ export function NavUser({ avatar }: { avatar: string }) {
                   <Sparkles />
                   Upgrade to Pro
                 </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Smartphone className="mr-2 h-4 w-4" />
+                    Connexion mobile
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-64">
+                    <div className="p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          QR Code de connexion
+                        </span>
+                        {activeLink && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "text-white",
+                              getStatusColor(activeLink.status),
+                            )}
+                          >
+                            {getStatusText(activeLink.status)}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {activeLink?.status === "active" ? (
+                        <>
+                          <div className="mb-3 flex justify-center rounded-lg bg-white p-3">
+                            <QRCode
+                              value={`${base_url}/mobile-signin?token=${activeLink.token}`}
+                              size={160}
+                            />
+                          </div>
+                          <p className="mb-3 text-center text-xs text-muted-foreground">
+                            Scannez ce QR code avec un autre appareil pour vous
+                            connecter
+                          </p>
+                          {activeLink.expiresAt && (
+                            <p className="mb-3 text-center text-xs text-muted-foreground">
+                              Expire le{" "}
+                              {new Date(
+                                activeLink.expiresAt,
+                              ).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="mb-3 rounded-lg border border-dashed border-gray-300 p-6 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {activeLink?.status === "used"
+                              ? "Ce QR code a été utilisé"
+                              : activeLink?.status === "expired"
+                                ? "Ce QR code a expiré"
+                                : "Aucun QR code actif"}
+                          </p>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={handleGenerateLink}
+                        disabled={createLinkMutation.isPending}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {createLinkMutation.isPending ? (
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                        )}
+                        {activeLink ? "Régénérer" : "Générer"}
+                      </Button>
+                    </div>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>

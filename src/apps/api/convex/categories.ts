@@ -1,45 +1,62 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const listActiveCategories = query({
+export const listActiveCategories = authedQuery({
+  resource: "categories",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     const categories = await ctx.db.query("categories").collect();
-    const products = await ctx.db.query('products').collect()
-    return categories.filter(c => {
-      const ps = products.filter(p => p.categoryId == c._id && p.status === "active")
-      return ps.length !== 0
-    })
+    const products = await ctx.db.query("products").collect();
+    return categories.filter((c) => {
+      const ps = products.filter(
+        (p) => p.categoryId == c._id && p.status === "active",
+      );
+      return ps.length !== 0;
+    });
   },
 });
-export const listCategories = query({
+export const listCategories = authedQuery({
+  resource: "categories",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
-    const categories = await ctx.db.query("categories").collect()
-    return categories
-  }
-})
+    const categories = await ctx.db.query("categories").collect();
+    return categories;
+  },
+});
 
-export const createCategory = mutation({
+export const createCategory = authedMutation({
+  resource: "categories",
+  action: "create",
   args: {
-    storeId: v.id('stores'),
-    name: v.string()
+    storeId: v.id("stores"),
+    name: v.string(),
   },
   handler: async (ctx, args) => {
-    const categories = await ctx.db.query("categories").collect()
-    if (categories.filter(c => c.name === args.name).length > 0) return;
-    const id = await ctx.db.insert("categories", { name: args.name, storeId: args.storeId })
-    console.log('created cat :', id)
-    return id
+    const categories = await ctx.db.query("categories").collect();
+    if (categories.filter((c) => c.name === args.name).length > 0) return;
+    const id = await ctx.db.insert("categories", {
+      name: args.name,
+      storeId: args.storeId,
+    });
+    console.log("created cat :", id);
+    return id;
   },
 });
 
-export const getCategory = query({
+export const getCategory = authedQuery({
+  resource: "categories",
+  action: "read",
   args: {
-    categoryId: v.optional(v.string())
+    categoryId: v.optional(v.string()),
   },
   handler: async (ctx, { categoryId }) => {
     if (categoryId) {
-      return await ctx.db.query('categories').filter(e => e.eq(e.field('_id'), categoryId)).unique()
-    }
-    else return;
-  }
-})
+      return await ctx.db
+        .query("categories")
+        .filter((e) => e.eq(e.field("_id"), categoryId))
+        .unique();
+    } else return;
+  },
+});

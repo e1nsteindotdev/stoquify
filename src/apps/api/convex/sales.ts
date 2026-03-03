@@ -1,7 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const createSale = mutation({
+export const createSale = authedMutation({
+  resource: "sales",
+  action: "create",
   args: {
     order: v.array(
       v.object({
@@ -36,7 +38,10 @@ export const createSale = mutation({
   },
 });
 
-export const listSales = query({
+export const listSales = authedQuery({
+  resource: "sales",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     return await ctx.db.query("sales").order("desc").collect();
   },

@@ -13,8 +13,10 @@ export const expensesCollection = createCollection(
       return ["expenses", storeId];
     },
     queryFn: async () => {
+      const storeId = useAppStore.getState().selectedStore?._id;
+      if (!storeId) return [];
       const expenses = await convex.query(api.expenses.listExpenses, {
-        storeId: "" as any,
+        storeId,
       });
       return expenses;
     },

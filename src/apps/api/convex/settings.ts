@@ -1,8 +1,11 @@
-import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { authedMutation, authedQuery } from "./customeFunction";
 
 // Get FAQs
-export const getFAQs = query({
+export const getFAQs = authedQuery({
+  resource: "settings",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     const faqs = await ctx.db.query("faqs").collect();
     return faqs.sort((a, b) => a.order - b.order);
@@ -10,7 +13,9 @@ export const getFAQs = query({
 });
 
 // Create FAQ
-export const createFAQ = mutation({
+export const createFAQ = authedMutation({
+  resource: "settings",
+  action: "create",
   args: {
     question: v.string(),
     answer: v.string(),
@@ -26,7 +31,9 @@ export const createFAQ = mutation({
 });
 
 // Update FAQ
-export const updateFAQ = mutation({
+export const updateFAQ = authedMutation({
+  resource: "settings",
+  action: "update",
   args: {
     id: v.id("faqs"),
     question: v.optional(v.string()),
@@ -40,7 +47,9 @@ export const updateFAQ = mutation({
 });
 
 // Delete FAQ
-export const deleteFAQ = mutation({
+export const deleteFAQ = authedMutation({
+  resource: "settings",
+  action: "delete",
   args: {
     id: v.id("faqs"),
   },
@@ -50,7 +59,10 @@ export const deleteFAQ = mutation({
 });
 
 // Get settings for the default store
-export const getSettings = query({
+export const getSettings = authedQuery({
+  resource: "settings",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     const storeId = (await ctx.db.query("stores").first())?._id;
     if (!storeId) return null;
@@ -77,7 +89,9 @@ export const getSettings = query({
 });
 
 // Update settings for the default store
-export const updateSettings = mutation({
+export const updateSettings = authedMutation({
+  resource: "settings",
+  action: "update",
   args: {
     locationLink: v.optional(v.string()),
     instagramLink: v.optional(v.string()),

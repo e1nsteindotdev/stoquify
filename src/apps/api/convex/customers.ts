@@ -1,7 +1,10 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { authedQuery } from "./customeFunction";
 
-export const listCustomers = query({
+export const listCustomers = authedQuery({
+  resource: "customers",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     const customers = await ctx.db.query("customers").collect();
 
@@ -10,28 +13,53 @@ export const listCustomers = query({
         const address = await ctx.db.get(customer.lastestAdressId);
         const wilaya = address ? await ctx.db.get(address.wilayaId) : null;
 
-        // Get order count
+        // Get orders for this customer
         const orders = await ctx.db
           .query("orders")
           .withIndex("by_customer", (q) => q.eq("customerId", customer._id))
           .collect();
 
+        const sortedOrders = orders.sort(
+          (a, b) => (b._creationTime || 0) - (a._creationTime || 0),
+        );
+
+        const lastOrderDate =
+          sortedOrders.length > 0 ? sortedOrders[0].orderTime : null;
+
+        let totalRevenue = 0;
+        let totalProfit = 0;
+
+        for (const order of orders) {
+          for (const item of order.order) {
+            totalRevenue += item.price * item.quantity;
+            if (item.cost !== undefined) {
+              totalProfit += (item.price - item.cost) * item.quantity;
+            }
+          }
+          totalRevenue += order.deliveryCost;
+        }
+
         return {
           ...customer,
           address: address
             ? {
-              ...address,
-              wilaya,
-            }
+                ...address,
+                wilaya,
+              }
             : null,
           orderCount: orders.length,
+          lastOrderDate,
+          totalRevenue,
+          totalProfit,
         };
       }),
     );
   },
 });
 
-export const getCustomer = query({
+export const getCustomer = authedQuery({
+  resource: "customers",
+  action: "read",
   args: { customerId: v.id("customers") },
   handler: async (ctx, { customerId }) => {
     const customer = await ctx.db.get(customerId);
@@ -61,9 +89,9 @@ export const getCustomer = query({
           ...order,
           address: orderAddress
             ? {
-              ...orderAddress,
-              wilaya: orderWilaya,
-            }
+                ...orderAddress,
+                wilaya: orderWilaya,
+              }
             : null,
         };
       }),
@@ -73,16 +101,18 @@ export const getCustomer = query({
       ...customer,
       address: address
         ? {
-          ...address,
-          wilaya,
-        }
+            ...address,
+            wilaya,
+          }
         : null,
       orders: ordersWithDetails,
     };
   },
 });
 
-export const getCustomerByPhone = query({
+export const getCustomerByPhone = authedQuery({
+  resource: "customers",
+  action: "read",
   args: { phoneNumber: v.number() },
   handler: async (ctx, { phoneNumber }) => {
     const customer = await ctx.db
@@ -99,9 +129,9 @@ export const getCustomerByPhone = query({
       ...customer,
       address: address
         ? {
-          ...address,
-          wilaya,
-        }
+            ...address,
+            wilaya,
+          }
         : null,
     };
   },

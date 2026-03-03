@@ -2,6 +2,7 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { nanoid } from "nanoid";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 const permissions = v.array(
   v.object({
@@ -45,15 +46,18 @@ export const invite = mutation({
 
 export const getPendingByOrganization = query({
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const userId = await getAuthUserId(ctx);
+
+    if (!userId) return [];
 
     const user = await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email!))
+      .filter((e) => e.eq(e.field("_id"), userId))
       .unique();
 
-    if (!user?.organizationId) return [];
+    const orgId = user?.organizationId;
+
+    if (!orgId) return [];
 
     const hasPermission = user.permissions?.some(
       (p) =>
@@ -95,6 +99,37 @@ export const getById = query({
     }
 
     return magicLink;
+  },
+});
+
+export const update = mutation({
+  args: {
+    invitationId: v.id("magicLinks"),
+    permissions,
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const user = await ctx.db.get(userId);
+    if (!user?.organizationId || !user.role || user.role === "staff") {
+      throw new Error("Not authorized");
+    }
+
+    const invite = await ctx.db.get(args.invitationId);
+    if (!invite || invite.organizationId !== user.organizationId) {
+      throw new Error("Invitation not found");
+    }
+
+    if (invite.usedAt) {
+      throw new Error("Cannot update used invitation");
+    }
+
+    await ctx.db.patch(args.invitationId, {
+      permissions: args.permissions,
+    });
+
+    return { _id: args.invitationId };
   },
 });
 

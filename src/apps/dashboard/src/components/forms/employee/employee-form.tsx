@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query";
 import { api } from "api/convex";
 import { useAppForm } from "@/hooks/form";
 import { Effect } from "effect";
 import { effectRuntime } from "@/lib/effect-runtime";
 import { convex } from "@/lib/convex-client";
+import type { Id } from "api/data-model";
 
 import {
   Dialog,
@@ -17,20 +18,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ClipLoader } from "react-spinners";
-import { CheckIcon, CopyIcon, QrCode, Trash2 } from "lucide-react";
+import { CopyIcon, QrCode, ChevronDown } from "lucide-react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
-type Role = "founder" | "admin" | "staff";
+export type Role = "founder" | "admin" | "staff";
 
 interface Permission {
   storeId?: string;
@@ -41,53 +39,100 @@ interface Permission {
 interface EmployeeFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultRole?: Role;
+  inviteId?: Id<"magicLinks"> | null;
 }
 
-export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
+export function EmployeeForm({
+  open,
+  onOpenChange,
+  defaultRole = "staff",
+  inviteId,
+}: EmployeeFormProps) {
   const stores = useAppStore((state) => state.stores);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
-  const user = useAppStore(state => state.user)
+  const user = useAppStore((state) => state.user);
 
-  // const availablePermissions = await convex.query(api.permissions.list)
-  const defaultPermissions: Permission[] = [];
+  const isNew = !inviteId;
+
+  const { data: existingInvite } = useQuery({
+    queryKey: ["invite", inviteId],
+    queryFn: () =>
+      convex.query(api.magicLinks.getById, { magicLinkId: inviteId! }),
+    enabled: !!inviteId,
+  });
+
+  const defaultPermissions = useMemo(() => {
+    if (existingInvite && existingInvite.permissions) {
+      return existingInvite.permissions.map((p: any) => ({
+        storeId: p.storeId,
+        resource: p.resource,
+        action: p.action,
+      }));
+    }
+    return [];
+  }, [existingInvite]);
+
+  const defaultValues = useMemo(
+    () => ({
+      role: existingInvite?.role ?? defaultRole,
+      permissions: defaultPermissions,
+    }),
+    [existingInvite, defaultRole, defaultPermissions],
+  );
 
   const form = useAppForm({
-    defaultValues: {
-      role: "staff" as Role,
-      email: "",
-      allAccess: false,
-      permissions: defaultPermissions,
-    },
+    defaultValues,
     onSubmit: async ({ value }) => {
-      const orgId = user?.organization._id
-      if (!orgId) throw new Error('no org id')
-      const permissions = value.allAccess
-        ? [{ resource: "*", action: "*" as const }]
-        : value.permissions.map((p) => ({
-          storeId: p.storeId ? (p.storeId as any) : undefined,
-          resource: p.resource,
-          action: p.action,
-        }));
+      const orgId = user?.organization._id;
+      if (!orgId) throw new Error("no org id");
+      const permissions = value.permissions.map((p) => ({
+        storeId: p.storeId ? (p.storeId as any) : undefined,
+        resource: p.resource,
+        action: p.action,
+      }));
 
-      const program = Effect.gen(function*() {
-        const result = yield* Effect.promise(() => convex.mutation(api.magicLinks.invite, {
-          email: value.email || undefined,
-          role: value.role,
-          permissions,
-          organizationId: orgId
-        })
-        );
-        const link = `${window.location.origin}/magic-link?magicLinkId=${result._id}`;
-        return link;
+      const program = Effect.gen(function* () {
+        if (isNew) {
+          const result = yield* Effect.promise(() =>
+            convex.mutation(api.magicLinks.invite, {
+              role: value.role,
+              permissions,
+              organizationId: orgId,
+            }),
+          );
+          const link = `${window.location.origin}/magic-link?magicLinkId=${result._id}`;
+          return link;
+        } else {
+          yield* Effect.promise(() =>
+            convex.mutation(api.magicLinks.update, {
+              invitationId: inviteId!,
+              permissions,
+            }),
+          );
+          return null;
+        }
       });
 
       const link = await effectRuntime.runPromise(program);
-      setGeneratedLink(link);
+
+      if (isNew && link) {
+        setGeneratedLink(link);
+      }
+
       onOpenChange(false);
-      toast.success("Invitation créée avec succès");
+      toast.success(
+        isNew ? "Invitation créée avec succès" : "Invitation mise à jour",
+      );
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(defaultValues);
+    }
+  }, [open, defaultValues]);
 
   const handleCopyLink = () => {
     if (generatedLink) {
@@ -100,7 +145,12 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
     return (
       <Dialog
         open={!!generatedLink}
-        onOpenChange={(o) => !o && setGeneratedLink(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setGeneratedLink(null);
+            onOpenChange(false);
+          }
+        }}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -122,7 +172,7 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
             <Button
               variant="outline"
               onClick={handleCopyLink}
-              className="flex-1"
+              className="flex-1 rounded-none"
             >
               <CopyIcon className="w-4 h-4 mr-2" />
               Copier le lien
@@ -130,12 +180,20 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
             <Button
               variant="outline"
               onClick={() => setShowQR(true)}
-              className="flex-1"
+              className="flex-1 rounded-none"
             >
               <QrCode className="w-4 h-4 mr-2" />
               Afficher QR
             </Button>
-            <Button onClick={() => setGeneratedLink(null)}>Fermer</Button>
+            <Button
+              onClick={() => {
+                setGeneratedLink(null);
+                onOpenChange(false);
+              }}
+              className="rounded-none"
+            >
+              Fermer
+            </Button>
           </DialogFooter>
 
           <Dialog open={showQR} onOpenChange={setShowQR}>
@@ -157,10 +215,13 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Ajouter un employé</DialogTitle>
+          <DialogTitle>
+            {isNew ? "Ajouter un employé" : "Modifier l'invitation"}
+          </DialogTitle>
           <DialogDescription>
-            Créez une invitation pour ajouter un nouvel employé à votre
-            organisation.
+            {isNew
+              ? "Créez une invitation pour ajouter un nouvel employé à votre organisation."
+              : "Modifiez les permissions de cette invitation."}
           </DialogDescription>
         </DialogHeader>
 
@@ -173,71 +234,8 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
           className="space-y-6"
         >
           <div className="space-y-4">
-            <div>
-              <Label>Rôle</Label>
-              <form.AppField
-                name="role"
-                children={(field) => (
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(v) => field.handleChange(v as Role)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un rôle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="founder">Fondateur</SelectItem>
-                      <SelectItem value="admin">Administrateur</SelectItem>
-                      <SelectItem value="staff">Staff</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div>
-              <Label>Email (optionnel)</Label>
-              <form.AppField
-                name="email"
-                children={(field) => (
-                  <input
-                    type="email"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="employé@exemple.com"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <form.AppField
-                name="allAccess"
-                children={(field) => (
-                  <Checkbox
-                    id="allAccess"
-                    checked={field.state.value}
-                    onCheckedChange={(checked) => field.handleChange(!!checked)}
-                  />
-                )}
-              />
-              <Label htmlFor="allAccess" className="text-sm font-medium">
-                Tous les accès
-              </Label>
-            </div>
-
-            {!form.getFieldValue("allAccess") && (
-              <div className="space-y-4 border rounded-lg p-4">
-                <Label className="text-sm font-medium">Permissions</Label>
-                <PermissionBuilder
-                  stores={stores}
-                  form={form}
-                />
-              </div>
-            )}
+            <Label className="text-sm font-medium">Permissions</Label>
+            <PermissionBuilder stores={stores} form={form} />
           </div>
 
           <DialogFooter>
@@ -245,17 +243,24 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="rounded-none"
             >
               Annuler
             </Button>
             <form.Subscribe
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-none"
+                >
                   {isSubmitting ? (
                     <ClipLoader size={16} />
-                  ) : (
+                  ) : isNew ? (
                     "Créer l'invitation"
+                  ) : (
+                    "Mettre à jour"
                   )}
                 </Button>
               )}
@@ -267,161 +272,145 @@ export function EmployeeForm({ open, onOpenChange }: EmployeeFormProps) {
   );
 }
 
-function PermissionBuilder({
-  stores,
-  form,
-}: {
-  stores: any[];
-  form: any;
-}) {
-  const [selectedResources, setSelectedResources] = useState<string[]>([]);
+function PermissionBuilder({ stores, form }: { stores: any[]; form: any }) {
+  const [expandedStores, setExpandedStores] = useState<string[]>(() => {
+    return stores.length > 0 ? [stores[0]._id] : [];
+  });
+  const { isLoading, data: availablePermissions } = useQuery({
+    queryKey: ["availablePermissions"],
+    queryFn: async () => await convex.query(api.permissions.list),
+  });
 
-  const toggleResource = (resource: string) => {
-    setSelectedResources((prev) =>
-      prev.includes(resource)
-        ? prev.filter((r) => r !== resource)
-        : [...prev, resource],
+  if (isLoading) return <p>Loading...</p>;
+  if (!availablePermissions) return <p>error</p>;
+
+  const toggleStore = (storeId: string) => {
+    setExpandedStores((prev) =>
+      prev.includes(storeId)
+        ? prev.filter((id) => id !== storeId)
+        : [...prev, storeId],
     );
   };
-  const { isLoading, data: availablePermissions } = useQuery({
-    queryKey: ['availablePermissions'],
-    queryFn: async () => await convex.query(api.permissions.list)
-  })
-  if (isLoading) return <p>Loading...</p>
-  if (!availablePermissions) return <p>error</p>
+
+  const getPermission = (storeId: string, resource: string) => {
+    const perms = form.getFieldValue("permissions") || [];
+    return perms.find(
+      (p: Permission) => p.storeId === storeId && p.resource === resource,
+    )?.action;
+  };
+
+  const setPermission = (
+    storeId: string,
+    resource: string,
+    action: "read" | "write" | "update" | "delete" | "create" | "*" | "none",
+  ) => {
+    const currentPerms = form.getFieldValue("permissions") || [];
+    const filtered = currentPerms.filter(
+      (p: Permission) => !(p.storeId === storeId && p.resource === resource),
+    );
+    if (action === "none") {
+      form.setFieldValue("permissions", filtered);
+    } else {
+      form.setFieldValue("permissions", [
+        ...filtered,
+        { storeId, resource, action },
+      ]);
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {availablePermissions.map((perm) => (
-          <label
-            key={perm.key}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md border cursor-pointer transition-colors ${selectedResources.includes(perm.key)
-              ? "bg-primary/10 border-primary"
-              : "hover:bg-accent"
-              }`}
-          >
-            <Checkbox
-              checked={selectedResources.includes(perm.key)}
-              onCheckedChange={() => toggleResource(perm.key)}
-            />
-            <span className="text-sm">{perm.label}</span>
-          </label>
-        ))}
-      </div>
+    <div className="space-y-3">
+      {stores.map((store) => (
+        <Collapsible
+          key={store._id}
+          open={expandedStores.includes(store._id)}
+          onOpenChange={() => toggleStore(store._id)}
+        >
+          <div className="border overflow-hidden">
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
+                <span className="font-medium">{store.name}</span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    expandedStores.includes(store._id) ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="border-t bg-accent/20">
+                <table className="w-full">
+                  <tbody>
+                    {availablePermissions.map((perm: any) => {
+                      return (
+                        <tr key={perm.key} className="border-b last:border-b-0">
+                          <td className="px-4 py-3">
+                            <div className="text-sm font-medium uppercase">
+                              {perm.label}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <form.Subscribe
+                              selector={(state) => state.values.permissions}
+                              children={(permissions: Permission[]) => {
+                                const currentPerm = permissions?.find(
+                                  (p) =>
+                                    p.storeId === store._id &&
+                                    p.resource === perm.key,
+                                )?.action;
 
-      {selectedResources.map((resource) => (
-        <div key={resource} className="border rounded-lg p-3 space-y-3">
-          <Label className="font-medium">
-            {availablePermissions.find((p) => p.key === resource)?.label}
-          </Label>
+                                return (
+                                  <div className="flex gap-1 overflow-hidden border inline-flex">
+                                    {["none", "read", "write"].map((action) => {
+                                      const actionValue = action as
+                                        | "none"
+                                        | "read"
+                                        | "write";
+                                      const isSelected =
+                                        actionValue === "none"
+                                          ? !currentPerm
+                                          : currentPerm === actionValue;
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Boutique</Label>
-              <form.Subscribe
-                selector={(state) => state.values.permissions}
-                children={(perms: Permission[]) => {
-                  const perm = perms?.find((p) => p.resource === resource);
-                  return (
-                    <Select
-                      value={perm?.storeId || "all"}
-                      onValueChange={(storeId) => {
-                        const currentPerms =
-                          form.getFieldValue("permissions") || [];
-                        const filtered = currentPerms.filter(
-                          (p: Permission) => p.resource !== resource,
-                        );
-                        if (storeId === "all") {
-                          form.setFieldValue("permissions", [
-                            ...filtered,
-                            { resource, action: "read" },
-                          ]);
-                        } else {
-                          form.setFieldValue("permissions", [
-                            ...filtered,
-                            { resource, action: "read", storeId },
-                          ]);
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Toutes les boutiques" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">
-                          Toutes les boutiques
-                        </SelectItem>
-                        {stores.map((store) => (
-                          <SelectItem key={store._id} value={store._id}>
-                            {store.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                }}
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs text-muted-foreground">Action</Label>
-              <form.Subscribe
-                selector={(state) => state.values.permissions}
-                children={(perms: Permission[]) => {
-                  const perm = perms?.find((p) => p.resource === resource);
-                  return (
-                    <Select
-                      value={perm?.action || "read"}
-                      onValueChange={(action) => {
-                        const currentPerms =
-                          form.getFieldValue("permissions") || [];
-                        const existingIdx = currentPerms.findIndex(
-                          (p: Permission) => p.resource === resource,
-                        );
-                        if (existingIdx >= 0) {
-                          const updated = [...currentPerms];
-                          updated[existingIdx] = {
-                            ...updated[existingIdx],
-                            action: action as Permission["action"],
-                          };
-                          form.setFieldValue("permissions", updated);
-                        } else {
-                          form.setFieldValue("permissions", [
-                            ...currentPerms,
-                            {
-                              resource,
-                              action: action as Permission["action"],
-                            },
-                          ]);
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="read">Lire</SelectItem>
-                        <SelectItem value="write">Écrire</SelectItem>
-                        <SelectItem value="create">Créer</SelectItem>
-                        <SelectItem value="update">Modifier</SelectItem>
-                        <SelectItem value="delete">Supprimer</SelectItem>
-                        <SelectItem value="*">Tous</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  );
-                }}
-              />
-            </div>
+                                      return (
+                                        <button
+                                          key={action}
+                                          type="button"
+                                          onClick={() =>
+                                            setPermission(
+                                              store._id,
+                                              perm.key,
+                                              actionValue,
+                                            )
+                                          }
+                                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                            isSelected
+                                              ? "bg-primary text-primary-foreground"
+                                              : "bg-background hover:bg-primary/20"
+                                          }`}
+                                        >
+                                          {action === "none"
+                                            ? "Aucun"
+                                            : action === "read"
+                                              ? "Lecteur"
+                                              : "Éditeur"}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
       ))}
-
-      {selectedResources.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Sélectionnez une ressource pour configurer les permissions
-        </p>
-      )}
     </div>
   );
 }

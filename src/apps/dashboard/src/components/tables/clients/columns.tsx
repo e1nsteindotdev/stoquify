@@ -9,6 +9,9 @@ export type ClientRow = {
   phoneNumber: number;
   address: string;
   orderCount: number;
+  lastOrderDate: string | null;
+  totalRevenue: number;
+  totalProfit: number;
 };
 
 export const columns: ColumnDef<ClientRow>[] = [
@@ -38,6 +41,36 @@ export const columns: ColumnDef<ClientRow>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Commandes" />
     ),
+  },
+  {
+    accessorKey: "lastOrderDate",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Dernière commande" />
+    ),
+    cell: ({ row }) => {
+      const date = row.original.lastOrderDate;
+      return date ? new Date(date).toLocaleDateString("fr-FR") : "-";
+    },
+  },
+  {
+    accessorKey: "totalRevenue",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Revenu" />
+    ),
+    cell: ({ row }) => {
+      const revenue = row.original.totalRevenue;
+      return `${revenue.toLocaleString("fr-FR")} DA`;
+    },
+  },
+  {
+    accessorKey: "totalProfit",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Bénéfice" />
+    ),
+    cell: ({ row }) => {
+      const profit = row.original.totalProfit;
+      return `${profit.toLocaleString("fr-FR")} DA`;
+    },
   },
   {
     id: "actions",

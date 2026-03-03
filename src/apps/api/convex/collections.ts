@@ -1,7 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const listCollections = query({
+export const listCollections = authedQuery({
+  resource: "collections",
+  action: "read",
   args: {
     productId: v.optional(v.id("products")),
   },
@@ -19,7 +21,9 @@ export const listCollections = query({
   },
 });
 
-export const listAllCollections = query({
+export const listAllCollections = authedQuery({
+  resource: "collections",
+  action: "read",
   args: {
     storeId: v.id("stores"),
   },
@@ -31,7 +35,9 @@ export const listAllCollections = query({
   },
 });
 
-export const listSelectedCollectionsIds = query({
+export const listSelectedCollectionsIds = authedQuery({
+  resource: "collections",
+  action: "read",
   args: {
     productId: v.optional(v.id("products")),
   },
@@ -52,7 +58,9 @@ export const listSelectedCollectionsIds = query({
   },
 });
 
-export const createCollection = mutation({
+export const createCollection = authedMutation({
+  resource: "collections",
+  action: "create",
   args: {
     storeId: v.id("stores"),
     title: v.string(),

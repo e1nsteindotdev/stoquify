@@ -1,7 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const listExpenses = query({
+export const listExpenses = authedQuery({
+  resource: "expenses",
+  action: "read",
   args: {
     storeId: v.id("stores"),
   },
@@ -28,7 +30,9 @@ export const listExpenses = query({
   },
 });
 
-export const createExpense = mutation({
+export const createExpense = authedMutation({
+  resource: "expenses",
+  action: "create",
   args: {
     storeId: v.id("stores"),
     title: v.string(),
@@ -50,7 +54,9 @@ export const createExpense = mutation({
   },
 });
 
-export const updateExpense = mutation({
+export const updateExpense = authedMutation({
+  resource: "expenses",
+  action: "update",
   args: {
     id: v.id("expenses"),
     title: v.optional(v.string()),
@@ -65,7 +71,9 @@ export const updateExpense = mutation({
   },
 });
 
-export const deleteExpense = mutation({
+export const deleteExpense = authedMutation({
+  resource: "expenses",
+  action: "delete",
   args: {
     id: v.id("expenses"),
   },

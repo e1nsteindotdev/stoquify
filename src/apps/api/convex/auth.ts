@@ -17,6 +17,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           }),
           ...(params.role && { role: params.role }),
           ...(params.magicLinkId && { magicLinkId: params.magicLinkId }),
+          ...(params.signInMagicLinkToken && {
+            signInMagicLinkToken: params.signInMagicLinkToken,
+          }),
         };
       },
     }),
@@ -100,6 +103,30 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         await ctx.db.patch(magicLinkId as any, { usedAt: Date.now() });
 
         return user._id;
+      }
+
+      // Sign-in with magic link token (QR code)
+      const signInMagicLinkToken = (args.profile as any).signInMagicLinkToken;
+      if (signInMagicLinkToken) {
+        const link = await ctx.db
+          .query("signInMagicLinks")
+          .unique();
+
+        if (!link) {
+          throw new ConvexError("Invalid sign-in link");
+        }
+        if (link.usedAt) {
+          throw new ConvexError("Sign-in link already used");
+        }
+        if (Date.now() > link.expiresAt) {
+          throw new ConvexError("Sign-in link expired");
+        }
+
+        // Mark the link as used
+        await ctx.db.patch(link._id, { usedAt: Date.now() });
+
+        // Return the user ID to establish the session
+        return link.userId;
       }
 
       // Regular user - existing user updating profile

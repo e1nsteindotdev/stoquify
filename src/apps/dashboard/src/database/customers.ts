@@ -27,10 +27,11 @@ export const useGetCustomers = () => {
 
 export const useGetCustomerById = (customerId: Id<"customers"> | undefined) => {
   return useQuery({
-    ...convexQuery(
-      api.customers.getCustomer,
-      customerId ? { customerId } : "skip",
-    ),
+    queryKey: ["customer", customerId],
+    queryFn: async () => {
+      if (!customerId) return null;
+      return await convex.query(api.customers.getCustomer, { customerId });
+    },
     enabled: !!customerId,
   });
 };

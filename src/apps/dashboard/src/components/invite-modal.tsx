@@ -2,17 +2,22 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "api/convex";
 import QRCode from "react-qr-code";
+import { useAppStore } from "@/lib/store";
 
 export function InviteStaffModal() {
+  const base_url = import.meta.env.VITE_BASE_URL
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "staff">("staff");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
+  const user = useAppStore((state) => state.user);
   const invite = useMutation(api.magicLinks.invite);
   const availablePermissions = useQuery(api.permissions?.list || null);
 
   const handleGenerateLink = async () => {
+    if (!user?.organization?._id) return;
+
     const permissions = selectedPermissions.map((perm) => ({
       resource: perm,
       action: "*" as const,
@@ -22,9 +27,10 @@ export function InviteStaffModal() {
       email,
       role,
       permissions,
+      organizationId: user.organization._id,
     });
 
-    const link = `${window.location.origin}/magic-link?magicLinkId=${result._id}`;
+    const link = `${base_url}/magic-link?magicLinkId=${result._id}`;
     setGeneratedLink(link);
   };
 

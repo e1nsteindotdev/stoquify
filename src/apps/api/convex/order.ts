@@ -1,7 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const placeOrder = mutation({
+export const placeOrder = authedMutation({
+  resource: "orders",
+  action: "create",
   args: v.object({
     address: v.string(),
     firstName: v.string(),
@@ -98,13 +100,19 @@ export const placeOrder = mutation({
   },
 });
 
-export const getWilayat = query({
+export const getWilayat = authedQuery({
+  resource: "orders",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     return await ctx.db.query("wilayat").collect();
   },
 });
 
-export const listOrders = query({
+export const listOrders = authedQuery({
+  resource: "orders",
+  action: "read",
+  args: {},
   handler: async (ctx) => {
     const orders = await ctx.db.query("orders").collect();
 
@@ -157,7 +165,9 @@ export const listOrders = query({
   },
 });
 
-export const getOrder = query({
+export const getOrder = authedQuery({
+  resource: "orders",
+  action: "read",
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }) => {
     const order = await ctx.db.get(orderId);
@@ -201,7 +211,9 @@ export const getOrder = query({
   },
 });
 
-export const confirmOrder = mutation({
+export const confirmOrder = authedMutation({
+  resource: "orders",
+  action: "update",
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }) => {
     const order = await ctx.db.get(orderId);
@@ -245,7 +257,9 @@ export const confirmOrder = mutation({
   },
 });
 
-export const denyOrder = mutation({
+export const denyOrder = authedMutation({
+  resource: "orders",
+  action: "update",
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }) => {
     await ctx.db.patch(orderId, { status: "denied" });
@@ -253,7 +267,9 @@ export const denyOrder = mutation({
   },
 });
 
-export const deleteOrder = mutation({
+export const deleteOrder = authedMutation({
+  resource: "orders",
+  action: "delete",
   args: { orderId: v.id("orders") },
   handler: async (ctx, { orderId }) => {
     await ctx.db.delete(orderId);

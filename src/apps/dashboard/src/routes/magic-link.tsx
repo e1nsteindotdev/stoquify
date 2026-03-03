@@ -57,17 +57,17 @@ export const Route = createFileRoute("/magic-link")({
 
 type MagicLinkData =
   | {
-    magicLink: {
-      _id: string;
-      role: string;
-      permissions: any[];
-      organizationId: string;
-    };
-  }
+      magicLink: {
+        _id: string;
+        role: string;
+        permissions: any[];
+        organizationId: string;
+      };
+    }
   | {
-    error: string;
-    message: string;
-  };
+      error: string;
+      message: string;
+    };
 
 function MagicLinkPage() {
   const loaderData = Route.useLoaderData() as MagicLinkData;
@@ -107,7 +107,7 @@ function MagicLinkPage() {
         ...(email ? { email } : {}),
         password,
         magicLinkId: magicLink._id,
-        flow: "signUp"
+        flow: "signUp",
       });
 
       const stores = await convex.query(api.stores.list);
@@ -126,7 +126,7 @@ function MagicLinkPage() {
   };
 
   const roleLabels: Record<string, string> = {
-    founder: "Fondateur",
+    founder: "Patron",
     admin: "Administrateur",
     staff: "Staff",
   };

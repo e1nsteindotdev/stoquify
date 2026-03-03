@@ -61,6 +61,17 @@ const schema = defineSchema({
     .index("by_token", ["token"])
     .index("by_organization", ["organizationId"]),
 
+  // Sign-in magic links for mobile QR code sign-in
+  signInMagicLinks: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_user", ["userId"]),
+
   categories: defineTable({
     name: v.string(),
     storeId: v.id("stores"),

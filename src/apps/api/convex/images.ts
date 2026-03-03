@@ -1,13 +1,18 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { authedMutation, authedQuery } from "./customeFunction";
 
-export const generateUploadUrl = mutation({
+export const generateUploadUrl = authedMutation({
+  resource: "images",
+  action: "create",
+  args: {},
   handler: async (ctx) => {
     return await ctx.storage.generateUploadUrl();
   },
 });
 
-export const getUrl = query({
+export const getUrl = authedQuery({
+  resource: "images",
+  action: "read",
   args: {
     storageId: v.id("_storage"),
   },
@@ -16,7 +21,9 @@ export const getUrl = query({
   },
 });
 
-export const createImage = mutation({
+export const createImage = authedMutation({
+  resource: "images",
+  action: "create",
   args: {
     productId: v.id("products"),
     url: v.string(),
@@ -35,7 +42,9 @@ export const createImage = mutation({
   },
 });
 
-export const updateImage = mutation({
+export const updateImage = authedMutation({
+  resource: "images",
+  action: "update",
   args: {
     imageId: v.id("images"),
     url: v.optional(v.string()),
@@ -49,7 +58,9 @@ export const updateImage = mutation({
   },
 });
 
-export const deleteImage = mutation({
+export const deleteImage = authedMutation({
+  resource: "images",
+  action: "delete",
   args: {
     imageId: v.id("images"),
   },
@@ -58,7 +69,9 @@ export const deleteImage = mutation({
   },
 });
 
-export const handleImageChanges = mutation({
+export const handleImageChanges = authedMutation({
+  resource: "images",
+  action: "update",
   args: {
     productId: v.id("products"),
     toCreate: v.array(
@@ -96,8 +109,8 @@ export const handleImageChanges = mutation({
           url: image.url,
           order: image.order,
           hidden: image.hidden,
-          indexedDBId: image.indexedDBId
-        })
+          indexedDBId: image.indexedDBId,
+        });
         await ctx.db.insert("images", {
           productId: args.productId,
           url: image.url,
@@ -106,9 +119,9 @@ export const handleImageChanges = mutation({
           indexedDBId: image.indexedDBId,
         });
       }
-      return { ok: true }
+      return { ok: true };
     } catch (e) {
-      return { ok: false }
+      return { ok: false };
     }
   },
 });
