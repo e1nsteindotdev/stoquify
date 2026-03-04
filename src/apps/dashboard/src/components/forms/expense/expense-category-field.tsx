@@ -83,7 +83,7 @@ export default function ExpenseCategoryField({ label }: Props) {
           </SelectContent>
         </Select>
 
-        <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
+        <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3 mb-3" />
 
         <Popover>
           <PopoverTrigger asChild>

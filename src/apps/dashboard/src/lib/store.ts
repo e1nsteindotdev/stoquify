@@ -6,12 +6,14 @@ interface StoreState {
   user: TypeUser | null;
   stores: TypeStore[];
   selectedStore: TypeStore | null;
+  isInitialized: boolean;
 }
 
 interface StoreActions {
   setStores: (stores: TypeStore[]) => void;
   setStore: (store: TypeStore) => void;
   setUser: (user: TypeUser | null) => void;
+  setInitialized: (isInitialized: boolean) => void;
 }
 
 type AppStore = StoreState & StoreActions;
@@ -20,6 +22,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   user: null,
   stores: [],
   selectedStore: null,
+  isInitialized: false,
 
   setStores: (stores) => {
     set({ stores });
@@ -33,5 +36,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setUser: (user) => {
     set({ user });
     idbRefresh("user", user);
+  },
+
+  setInitialized: (isInitialized) => {
+    set({ isInitialized });
   },
 }));

@@ -130,6 +130,7 @@ export const useInitApp = () => {
 
     setUser(normalizedUser);
     setAuthResolved(true);
+    useAppStore.getState().setInitialized(true);
   }, [isPending]);
 
   return {

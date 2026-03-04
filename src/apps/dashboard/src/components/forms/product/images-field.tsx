@@ -81,7 +81,7 @@ export default function ImageField({
                           ...img,
                           url: base64,
                           compressedFile: file,
-                          originalFile: undefined,
+                          originalFile: null,
                         }
                       : img,
                   ),
@@ -105,15 +105,15 @@ export default function ImageField({
   const handleReorder = useCallback(
     (image: TypeDecodedImage, direction: "up" | "down") => {
       field.setValue((prev) => {
-        const sorted = [...(prev || [])].sort((a, b) => a.order - b.order);
-        const idx = sorted.findIndex((img) => img.tempId === image.tempId);
+        const items = [...(prev || [])];
+        const idx = items.findIndex((img) => img.tempId === image.tempId);
         if (idx === -1) return prev;
         if (direction === "up" && idx > 0) {
-          [sorted[idx - 1], sorted[idx]] = [sorted[idx], sorted[idx - 1]];
-        } else if (direction === "down" && idx < sorted.length - 1) {
-          [sorted[idx], sorted[idx + 1]] = [sorted[idx + 1], sorted[idx]];
+          [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]];
+        } else if (direction === "down" && idx < items.length - 1) {
+          [items[idx], items[idx + 1]] = [items[idx + 1], items[idx]];
         }
-        return sorted.map((img, i) => ({
+        return items.map((img, i) => ({
           ...img,
           order: i + 1,
         }));
@@ -167,7 +167,7 @@ export default function ImageField({
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 border border-neutral-300 rounded-[15px] p-3">
+        <div className="flex flex-col gap-3 border border-neutral-300 rounded-none p-3">
           <div className="flex flex-col gap-3">
             {images.map((image, index) => {
               return (
@@ -187,7 +187,7 @@ export default function ImageField({
             <Button
               type="button"
               onClick={handleClick}
-              className="w-[200px] border-priamry/15 py-4 text-[14px] rounded-xl border-1  bg-primary/10 text-primary hover:bg-primary/10 shadow-none"
+              className="w-[200px] border-priamry/15 py-4 text-[14px] rounded-none border-1  bg-primary/10 text-primary hover:bg-primary/10 shadow-none"
             >
               Ajouter plus de photos
             </Button>

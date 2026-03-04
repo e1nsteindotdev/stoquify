@@ -1,10 +1,10 @@
 import type { TypeVariant, TypeSKU, TypeImage } from "api/types";
 
 export type TypeDecodedVariant = {
-  tempId: string,
+  tempId: string;
   name: string;
   order: number;
-  options: { tempId: string, order: number; name: string }[];
+  options: { tempId: string; order: number; name: string }[];
 };
 
 export const decodeVariants = (
@@ -12,34 +12,42 @@ export const decodeVariants = (
 ): TypeDecodedVariant[] => {
   if (!variants) return [];
 
-  return variants.map((variant) => ({
-    tempId: variant._id,
-    name: variant.name,
-    order: variant.order,
-    options: variant.options.map((option) => ({
-      tempId: option._id,
-      order: option.order,
-      name: option.name,
-    })),
-  }));
+  return variants
+    .sort((a, b) => a.order - b.order)
+    .map((variant) => ({
+      tempId: variant._id,
+      name: variant.name,
+      order: variant.order,
+      options: variant.options
+        .sort((a, b) => a.order - b.order)
+        .map((option) => ({
+          tempId: option._id,
+          order: option.order,
+          name: option.name,
+        })),
+    }));
 };
 
 export type TypeDecodedSKU = {
-  tempId: string,
+  tempId: string;
   quantity: number;
-  options: { tempId: string, order: number; optionName: string }[];
+  options: { tempId: string; order: number; optionName: string }[];
 };
 
-export const decodeSKUs = (skus: TypeSKU[] | undefined | null): TypeDecodedSKU[] => {
+export const decodeSKUs = (
+  skus: TypeSKU[] | undefined | null,
+): TypeDecodedSKU[] => {
   if (!skus) return [];
   return skus.map((sku) => ({
     tempId: sku._id,
     quantity: sku.quantity,
-    options: sku.options.map((option) => ({
-      tempId: option._id,
-      order: option.order,
-      optionName: option.name,
-    })),
+    options: sku.options
+      .sort((a, b) => a.order - b.order)
+      .map((option) => ({
+        tempId: option._id,
+        order: option.order,
+        optionName: option.name,
+      })),
   }));
 };
 
@@ -49,10 +57,12 @@ export type TypeDecodedImage = {
   order: number;
   hidden: boolean;
   url: string;
-  originalFile: File | undefined | null,
-  compressedFile: File | undefined | null,
-}
-export const decodeImages = (images: TypeImage[] | undefined | null): TypeDecodedImage[] => {
+  originalFile: File | undefined | null;
+  compressedFile: File | undefined | null;
+};
+export const decodeImages = (
+  images: TypeImage[] | undefined | null,
+): TypeDecodedImage[] => {
   if (!images) return [];
   return images.map((image) => ({
     tempId: image._id,
@@ -64,5 +74,3 @@ export const decodeImages = (images: TypeImage[] | undefined | null): TypeDecode
     url: image.url,
   }));
 };
-
-

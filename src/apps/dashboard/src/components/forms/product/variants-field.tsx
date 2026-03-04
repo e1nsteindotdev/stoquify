@@ -83,7 +83,7 @@ function VariantItem({
   );
 
   return (
-    <div className="bg-neutral-200 rounded-2xl border border-input-border  p-4">
+    <div className="bg-neutral-200 rounded-none border border-input-border  p-4">
       <div className="flex  items-center gap-4">
         <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600">
           {" "}
@@ -185,7 +185,7 @@ export default function VariantsField() {
           ))}
         </div>
       ) : (
-        <div className="border border-input-border p-4">
+        <div className="border border-input-border p-4 rounded-none">
           <p className="italic text-[14px] text-neutral-500">
             Aucune variante n'existe encore pour ce produit.
           </p>

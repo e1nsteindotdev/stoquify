@@ -81,16 +81,16 @@ export default function CategoriesField({ label }: Props) {
           </SelectContent>
         </Select>
 
-        <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
+        <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3 mb-3" />
 
         <Popover>
           <PopoverTrigger asChild>
             <Button
               type="button"
               variant="ghost"
-              className="flex gap-1 justify-start pl-2 py-2 text-[15px] text-foreground/90 hover:text-foreground w-full border border-neutral-300 hover:bg-black/5"
+              className="flex gap-1 justify-start pl-2 py-2 text-[15px] text-foreground/90 hover:text-foreground w-full border border-neutral-300 hover:bg-black/5 rounded-none"
             >
-              <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
+              <div className="rounded-none scale-60 border-[1.5px] border-black center p-[4px]">
                 <AddIcon />
               </div>
               <p className="text-[14px]">Ajouter une autre catégorie</p>

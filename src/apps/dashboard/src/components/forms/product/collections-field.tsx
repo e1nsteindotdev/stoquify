@@ -28,9 +28,9 @@ import { useAppStore } from "@/lib/store";
 export default function CollectionsField({
   selectedCollections,
 }: {
-  selectedCollections: Set<Id<"collections">>;
+  selectedCollections: Id<"collections">[];
 }) {
-  const field = useFieldContext<Set<string>>();
+  const field = useFieldContext<Id<"collections">[]>();
   const collectionsResult = useGetCollections();
   const collections = collectionsResult?.data;
 
@@ -62,6 +62,9 @@ export default function CollectionsField({
     }
   }
 
+  const isSelected = (id: Id<"collections">) =>
+    selectedCollections.includes(id);
+
   return (
     <div>
       <Card className="gap-2 border-white">
@@ -76,7 +79,7 @@ export default function CollectionsField({
         <CardContent>
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent">
+              <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent rounded-none">
                 <PlusIcon />
                 Ajouter à une nouvelle collection
               </Button>
@@ -89,14 +92,13 @@ export default function CollectionsField({
                     className="flex gap-2 items-center uppercase"
                   >
                     <Checkbox
-                      checked={selectedCollections.has(c._id)}
+                      checked={isSelected(c._id)}
                       onCheckedChange={(checked) => {
                         return checked
-                          ? field.setValue((prev) => prev.add(c._id))
-                          : field.setValue((prev) => {
-                              prev.delete(c._id);
-                              return prev;
-                            });
+                          ? field.setValue((prev) => [...prev, c._id])
+                          : field.setValue((prev) =>
+                              prev.filter((id) => id !== c._id),
+                            );
                       }}
                     />
                     <p className="text-[12px]">{c.title}</p>
@@ -111,44 +113,42 @@ export default function CollectionsField({
             </PopoverContent>
           </Popover>
 
-          {selectedCollections.size === 0 ? (
+          {selectedCollections.length === 0 ? (
             <div className="pt-3 text-black/50 italic text-[12px] uppercase">
               Le produit n'est ajouté à aucune collection
             </div>
           ) : (
             <div className="flex flex-col gap-2 pt-3">
-              {Array.from(selectedCollections).map((c) => (
+              {selectedCollections.map((c) => (
                 <div
                   key={c}
                   className="px-4 flex w-full justify-between items-center py-2 rounded-[12px] bg-[#E4E4E4]"
                 >
                   <p className="text-[12px]">
-                    {collections?.filter((i) => i._id === c)?.[0].title}
+                    {collections?.find((i) => i._id === c)?.title}
                   </p>
                   <CircleX
                     color="red"
                     size={20}
+                    className="cursor-pointer"
                     onClick={() => {
-                      field.setValue((prev) => {
-                        prev.delete(c);
-                        return prev;
-                      });
+                      field.setValue((prev) => prev.filter((id) => id !== c));
                     }}
                   />
                 </div>
               ))}
             </div>
           )}
-          <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3" />
+          <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3 mb-3" />
 
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 type="button"
                 variant="ghost"
-                className="flex gap-1 justify-start pl-2 py-2 text-[15px] text-foreground/90 hover:text-foreground w-full border border-neutral-300 hover:bg-black/5"
+                className="flex gap-1 justify-start pl-2 py-2 text-[15px] text-foreground/90 hover:text-foreground w-full border border-neutral-300 hover:bg-black/5 rounded-none"
               >
-                <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
+                <div className="rounded-none scale-60 border-[1.5px] border-black center p-[4px]">
                   <AddIcon />
                 </div>
                 <p className="text-[14px]">Créer une nouvelle collection</p>

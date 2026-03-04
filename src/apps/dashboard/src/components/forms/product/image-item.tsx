@@ -28,9 +28,8 @@ export function ImageItem({
     ? (useGetIndexedDBImg(image.indexedDBId) ?? image.url)
     : image.url;
 
-
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
+    <div className="flex items-center justify-between rounded-none bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
       <div className="flex items-center gap-2.5">
         <div className="relative size-12 h-[60px] overflow-hidden rounded-lg bg-black/10">
           <img
@@ -72,8 +71,9 @@ export function ImageItem({
             type="button"
             size="icon"
             variant="outline"
-            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${image.hidden ? "bg-black/20" : "bg-[#DADADA]"
-              }`}
+            className={`border-transparent w-11 h-11 shadow-none hover:bg-black/10 ${
+              image.hidden ? "bg-black/20" : "bg-[#DADADA]"
+            }`}
             onClick={onHide}
           >
             <EyeOff className={`size-5 ${image.hidden ? "opacity-70" : ""}`} />

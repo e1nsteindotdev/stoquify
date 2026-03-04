@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { type AnyFieldApi } from "@tanstack/react-form";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,6 +38,92 @@ import { queryClient } from "@/lib/ts-query-client";
 import { AnimatedButton } from "@/components/ui/animated-button";
 import { CheckIcon } from "lucide-react";
 import { ClipLoader } from "react-spinners";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+
+export function ProductFormSkeleton() {
+  return (
+    <div className="w-full flex items-start justify-center p-6 pb-20">
+      <div className="w-full max-w-6xl space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div className="space-y-6">
+            <div className="flex flex-col gap-3">
+              <InputsTitle>
+                <Skeleton className="h-8 w-64" />
+              </InputsTitle>
+              <InputsContainer>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-40 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+              </InputsContainer>
+            </div>
+            <div className="flex flex-col gap-3">
+              <InputsTitle>
+                <Skeleton className="h-6 w-24" />
+              </InputsTitle>
+              <InputsContainer>
+                <Skeleton className="h-40 w-full" />
+              </InputsContainer>
+            </div>
+            <div className="flex flex-col gap-3">
+              <InputsTitle>
+                <Skeleton className="h-6 w-24" />
+              </InputsTitle>
+              <InputsContainer>
+                <Skeleton className="h-40 w-full" />
+              </InputsContainer>
+            </div>
+          </div>
+          <div className="flex flex-col justify-start gap-y-12 items-between pt-11.5">
+            <div className="space-y-4">
+              <Card className="gap-2 border-white">
+                <CardHeader>
+                  <CardTitle>
+                    <Skeleton className="h-6 w-16" />
+                  </CardTitle>
+                  <CardDescription>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+              <InputsContainer>
+                <Skeleton className="h-10 w-full" />
+              </InputsContainer>
+            </div>
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const isNew = !slug || slug === "new";
@@ -46,9 +132,24 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
   const selectedStore = useAppStore((state) => state.selectedStore);
 
-  const defaultImages = decodeImages(product?.images);
-  const defaultVariants = decodeVariants(product?.variants);
-  const defaultSKUs = decodeSKUs(product?.skus);
+  const [isReady, setIsReady] = useState(false);
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    startTransition(() => {
+      setIsReady(true);
+    });
+  }, []);
+
+  const defaultImages = useMemo(
+    () => decodeImages(product?.images),
+    [product?.images],
+  );
+  const defaultVariants = useMemo(
+    () => decodeVariants(product?.variants),
+    [product?.variants],
+  );
+  const defaultSKUs = useMemo(() => decodeSKUs(product?.skus), [product?.skus]);
 
   const defaultValues = useMemo(
     () => ({
@@ -64,9 +165,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       images: defaultImages,
       variants: defaultVariants,
       skus: defaultSKUs,
-      collections: new Set(product?.collections.map((col) => col._id) ?? []),
+      collections: product?.collections.map((col) => col._id) ?? [],
     }),
-    [product],
+    [product, defaultImages, defaultVariants, defaultSKUs],
   );
 
   const form = useAppForm({
@@ -263,12 +364,26 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         Effect.ensuring(Effect.promise(() => productsCollection.preload())),
       );
 
-      const submitResult = await effectRuntime.runPromise(program);
+      const submitResult = await effectRuntime.runPromise(program).catch(() => {
+        toast.error("Erreur lors de l'enregistrement");
+        return null;
+      });
+
+      try {
+        await productsCollection.preload();
+      } catch (e) {
+        toast.error(
+          "Mode hors-ligne: Les données seront synchronisées plus tard",
+        );
+      }
+
       if (submitResult?.productId && isNew) {
         router.navigate({
           to: "/produits/$slug",
           params: { slug: submitResult.productId },
         });
+      } else if (submitResult?.productId) {
+        form.reset(value);
       }
     },
   });
@@ -277,6 +392,25 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   useEffect(() => {
     form.reset(defaultValues);
   }, [defaultValues]);
+
+  // Auto-activate status when product becomes complete
+  useEffect(() => {
+    const { categoryId, title, price, images, status } = form.state.values;
+    const isComplete = !!(categoryId && title && price && images?.length);
+    if (isComplete && status === "incomplete") {
+      form.setFieldValue("status", "active");
+    }
+  }, [
+    form.state.values.categoryId,
+    form.state.values.title,
+    form.state.values.price,
+    form.state.values.images,
+    form.state.values.status,
+  ]);
+
+  if (!isReady || (!isNew && !product)) {
+    return <ProductFormSkeleton />;
+  }
 
   const isCompleted =
     form.getFieldValue("images") &&
@@ -421,30 +555,20 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                       state.values.price,
                       state.values.title,
                       state.values.images,
-                      state.values.status,
                     ]}
-                    children={([
-                      categoryId,
-                      title,
-                      price,
-                      images,
-                      currentStatus,
-                    ]) => {
+                    children={([categoryId, price, title, images]) => {
                       const isComplete = !!(
                         categoryId &&
                         title &&
                         price &&
-                        images
+                        (images as any)?.length
                       );
-                      if (isComplete && currentStatus === "incomplete") {
-                        form.setFieldValue("status", "active");
-                      }
                       return (
                         <form.Field
                           name="status"
                           children={(field) => (
                             <Select
-                              value={field.state.value}
+                              value={field.state.value as string}
                               onValueChange={(v) =>
                                 field.handleChange(v as any)
                               }
@@ -458,13 +582,13 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                                 </SelectItem>
                                 <SelectItem
                                   value="hidden"
-                                  disabled={!isCompleted}
+                                  disabled={!isComplete}
                                 >
                                   caché
                                 </SelectItem>
                                 <SelectItem
                                   value="active"
-                                  disabled={!isCompleted}
+                                  disabled={!isComplete}
                                 >
                                   actif
                                 </SelectItem>

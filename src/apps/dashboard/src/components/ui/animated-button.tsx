@@ -44,12 +44,13 @@ export function AnimatedButton({
   }, [loading]);
 
   const isLoading = stage === "loading";
+  const effectiveDisabled = stage === "neutral" ? disabled : isLoading;
 
   return (
     <motion.button
       className={cn(className, "overflow-clip")}
-      disabled={disabled || isLoading}
-      animate={{ opacity: isLoading ? 0.7 : 1 }}
+      disabled={effectiveDisabled}
+      animate={{ opacity: effectiveDisabled ? 0.7 : 1 }}
       transition={{ duration: 0.3 }}
       {...props}
     >

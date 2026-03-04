@@ -17,11 +17,20 @@ import { useAppStore } from "@/lib/store";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
+import { Loader2 } from "lucide-react";
 
-export function SignInForm({ step, setStep, className, ...props }: { step: string, setStep: Dispatch<SetStateAction<string>> } & React.ComponentProps<"div">) {
+export function SignInForm({
+  step,
+  setStep,
+  className,
+  ...props
+}: {
+  step: string;
+  setStep: Dispatch<SetStateAction<string>>;
+} & React.ComponentProps<"div">) {
   const { signIn } = useAuthActions();
-  const setStores = useAppStore(state => state.setStores)
-  const setUser = useAppStore(state => state.setUser)
+  const setStores = useAppStore((state) => state.setStores);
+  const setUser = useAppStore((state) => state.setUser);
 
   const form = useForm({
     defaultValues: {
@@ -30,19 +39,19 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
     },
     onSubmit: async ({ value }) => {
       try {
-        console.log("going to sign in")
+        console.log("going to sign in");
         const signInResult = await signIn("phone", {
           phone: value.phone,
           password: value.password,
-          flow: "signIn"
+          flow: "signIn",
         });
-        console.log('signIn Result', signInResult)
+        console.log("signIn Result", signInResult);
         // const stores = await convex.query(api.stores.list);
         // const user = await convex.query(api.users.getUserData);
         // setStores(stores)
         // setUser(user)
       } catch (error) {
-        console.error("error while trying to sign in :", error)
+        console.error("error while trying to sign in :", error);
       }
     },
   });
@@ -80,7 +89,9 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                     children={(field) => {
                       return (
                         <div className="grid gap-3">
-                          <Label htmlFor={field.name}>Numéro de téléphone</Label>
+                          <Label htmlFor={field.name}>
+                            Numéro de téléphone
+                          </Label>
                           <Input
                             id={field.name}
                             name={field.name}
@@ -129,14 +140,32 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
                     />
                   </div>
                   <div className="flex flex-col gap-3">
-                    <Button type="submit" className="w-full">
-                      Se connecter
-                    </Button>
+                    <form.Subscribe
+                      selector={(state) => [
+                        state.canSubmit,
+                        state.isSubmitting,
+                      ]}
+                      children={([canSubmit, isSubmitting]) => (
+                        <Button
+                          type="submit"
+                          className="w-full"
+                          disabled={!canSubmit || isSubmitting}
+                        >
+                          {isSubmitting && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Se connecter
+                        </Button>
+                      )}
+                    />
                   </div>
                 </div>
                 <div className="mt-4 text-center text-sm">
                   Vous n&apos;avez pas de compte ?{" "}
-                  <button onClick={() => setStep("signUp")} className="underline underline-offset-4">
+                  <button
+                    onClick={() => setStep("signUp")}
+                    className="underline underline-offset-4"
+                  >
                     S&apos;inscrire
                   </button>
                 </div>

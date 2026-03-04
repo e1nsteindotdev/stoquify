@@ -17,6 +17,7 @@ import { useAppStore } from "@/lib/store";
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
+import { Loader2 } from "lucide-react";
 
 export function SignUpForm({
   step,
@@ -219,9 +220,24 @@ export function SignUpForm({
                     />
                   </div>
                   <div className="flex flex-col gap-3">
-                    <Button type="submit" className="w-full">
-                      S&apos;inscrire
-                    </Button>
+                    <form.Subscribe
+                      selector={(state) => [
+                        state.canSubmit,
+                        state.isSubmitting,
+                      ]}
+                      children={([canSubmit, isSubmitting]) => (
+                        <Button
+                          type="submit"
+                          className="w-full"
+                          disabled={!canSubmit || isSubmitting}
+                        >
+                          {isSubmitting && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          S&apos;inscrire
+                        </Button>
+                      )}
+                    />
                   </div>
                 </div>
                 <div className="mt-4 text-center text-sm">

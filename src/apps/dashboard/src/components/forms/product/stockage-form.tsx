@@ -1,8 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { LittleItem } from "@/components/ui/little-item";
-import {
-  type VariantElement as TVariant,
-} from "@/hooks/use-variant-actions";
+import { type VariantElement as TVariant } from "@/hooks/use-variant-actions";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
@@ -13,16 +11,17 @@ export function StockageForm({
   variants: TVariant[];
   strat: string;
 }) {
-  const orderedVariants = useMemo(() => variants.sort((a, b) => a.order - b.order), [variants],);
+  const orderedVariants = useMemo(
+    () => variants.sort((a, b) => a.order - b.order),
+    [variants],
+  );
   switch (strat) {
     case "by_variants":
-      return (
-        <ByVariantForm variants={orderedVariants} />
-      );
+      return <ByVariantForm variants={orderedVariants} />;
   }
 }
 
-function ByVariantForm({ variants, }: { variants: TVariant[]; }) {
+function ByVariantForm({ variants }: { variants: TVariant[] }) {
   let data: string[][] = [];
 
   function nest(result: string[], depth: number) {
@@ -38,7 +37,7 @@ function ByVariantForm({ variants, }: { variants: TVariant[]; }) {
 
   if (!variants) {
     return (
-      <div className="rounded-2xl border border-input-border p-4">
+      <div className="rounded-none border border-input-border p-4">
         <p className="italic text-[14px] text-neutral-500">
           No variants exist for this product yet.
         </p>
@@ -56,10 +55,7 @@ function ByVariantForm({ variants, }: { variants: TVariant[]; }) {
     return (
       <div className="space-y-3 ">
         {data.map((i, j) => (
-          <div
-            className="flex flex-col  space-y-0 border rounded-[16px]"
-            key={j}
-          >
+          <div className="flex flex-col  space-y-0 border rounded-none" key={j}>
             {i.map((p, q) => (
               <div>
                 <div

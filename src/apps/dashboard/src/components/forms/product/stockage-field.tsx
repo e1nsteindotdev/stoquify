@@ -29,7 +29,7 @@ function ByNumberForm({ inventoryVariants, field }: any) {
   };
 
   return (
-    <div className="rounded-2xl border border-input-border p-4 bg-muted/50">
+    <div className="rounded-none border border-input-border p-4 bg-muted/50">
       <div className="flex items-center justify-between">
         <div>
           <p className="font-semibold text-[14px]">Stock global</p>
@@ -61,7 +61,7 @@ function ByDemandForm({ field }: any) {
   }
 
   return (
-    <div className="rounded-2xl border border-input-border p-4 bg-muted/50 flex flex-col gap-1">
+    <div className="rounded-none border border-input-border p-4 bg-muted/50 flex flex-col gap-1">
       <p className="font-semibold text-[14px]">Sur commande</p>
       <p className="text-[13px] text-neutral-500 leading-relaxed">
         Ce produit n'a pas de stock limité. Chaque commande sera traitée à la
@@ -145,12 +145,13 @@ function generateSKUs(
         (sku) =>
           sku.options.length === 1 && sku.options[0].optionName == option.name,
       );
+      const existingOpt = existingSku?.options[0];
       return {
         tempId: existingSku?.tempId ?? crypto.randomUUID(),
         quantity: existingSku?.quantity ?? 0,
         options: [
           {
-            tempId: crypto.randomUUID(),
+            tempId: existingOpt?.tempId ?? crypto.randomUUID(),
             optionName: option.name,
             order: option.order,
           },
@@ -164,11 +165,16 @@ function generateSKUs(
   const combinations = cartesian(...optionLists);
 
   return combinations.map((opts) => {
-    const options = opts.map((opt, idx) => ({
-      tempId: crypto.randomUUID(),
-      optionName: opt.name,
-      order: sortedVariants[idx].order,
-    }));
+    const options = opts.map((opt, idx) => {
+      const existingOpt = skus
+        .flatMap((s) => s.options)
+        .find((o) => o.optionName === opt.name);
+      return {
+        tempId: existingOpt?.tempId ?? crypto.randomUUID(),
+        optionName: opt.name,
+        order: sortedVariants[idx].order,
+      };
+    });
 
     const existingSku = skus.find(
       (sku) =>

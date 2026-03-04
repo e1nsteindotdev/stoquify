@@ -75,7 +75,7 @@ export function NewVariantForm({
         <p className="font-semibold text-[18px]">
           Ajouter une nouvelle variante
         </p>
-        <div className="grid gap-4 border border-neutral-300 rounded-[15px] p-4">
+        <div className="grid gap-4 border border-neutral-300 rounded-none p-4">
           <div className="grid gap-3">
             <Label className="font-semibold">Nom de la variante</Label>
             <Input
@@ -147,7 +147,7 @@ export function NewVariantForm({
             setIsModifying(true);
           }}
         >
-          <div className="rounded-full scale-60 border-[1.5px] border-black center p-[4px]">
+          <div className="rounded-none scale-60 border-[1.5px] border-black center p-[4px]">
             <AddIcon />
           </div>
           <p className="text-[14px]">Ajouter une nouvelle variante</p>
