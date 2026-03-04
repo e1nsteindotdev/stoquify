@@ -1,20 +1,10 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetAnalytics } from "@/database/analytics";
-import {
-  DateController,
-  getPresetDates,
-  type DateRange,
-} from "@/components/analytics/date-controller";
 import { formatMoney } from "../utils";
 
 export function DeadStockCard() {
-  const [dateRange, setDateRange] = useState<DateRange>(() =>
-    getPresetDates("thisMonth"),
-  );
-
-  const from = new Date(`${dateRange.from}T00:00:00+01:00`).getTime();
-  const to = new Date(`${dateRange.to}T23:59:59+01:00`).getTime();
+  const from = new Date(`2000-01-01T00:00:00+01:00`).getTime();
+  const to = new Date().getTime();
 
   const analytics = useGetAnalytics({ from, to, granularity: "day" });
 
@@ -25,10 +15,6 @@ export function DeadStockCard() {
           <div>
             <CardTitle className="text-lg">Stock Dormant</CardTitle>
           </div>
-          <DateController
-            defaultPreset="thisMonth"
-            onChange={(range) => setDateRange(range)}
-          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 min-h-0">

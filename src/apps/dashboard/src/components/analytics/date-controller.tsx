@@ -27,6 +27,7 @@ export interface DateRange {
 
 interface DateControllerProps {
   defaultPreset?: DatePreset;
+  excludePresets?: DatePreset[];
   className?: string;
   onChange?: (range: DateRange, preset: DatePreset) => void;
 }
@@ -131,6 +132,7 @@ function getPresetDates(preset: DatePreset): DateRange {
 
 export function DateController({
   defaultPreset = "thisMonth",
+  excludePresets = [],
   className,
   onChange,
 }: DateControllerProps) {
@@ -161,6 +163,18 @@ export function DateController({
     onChange?.(newRange, "custom");
   };
 
+  const presets: DatePreset[] = [
+    "today",
+    "thisWeek",
+    "thisMonth",
+    "lastWeek",
+    "lastMonth",
+    "thisYear",
+    "lastYear",
+    "custom",
+    "allTime",
+  ];
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <DropdownMenu>
@@ -172,33 +186,13 @@ export function DateController({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handlePresetChange("today")}>
-            Today
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("thisWeek")}>
-            This Week
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("thisMonth")}>
-            This Month
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("lastWeek")}>
-            Last Week
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("lastMonth")}>
-            Last Month
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("thisYear")}>
-            This Year
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("lastYear")}>
-            Last Year
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("custom")}>
-            Custom
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handlePresetChange("allTime")}>
-            All Time
-          </DropdownMenuItem>
+          {presets
+            .filter((p) => !excludePresets.includes(p))
+            .map((p) => (
+              <DropdownMenuItem key={p} onClick={() => handlePresetChange(p)}>
+                {presetLabels[p]}
+              </DropdownMenuItem>
+            ))}
         </DropdownMenuContent>
       </DropdownMenu>
 

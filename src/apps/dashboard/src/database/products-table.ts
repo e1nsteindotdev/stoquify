@@ -27,6 +27,12 @@ export type ProductSkuOptions =
 export type ProductTableRow = {
   _id: string;
   title: string;
+  desc?: string;
+  status?: "active" | "hidden" | "incomplete";
+  categoryId?: string;
+  category?: { _id: string; name: string };
+  collections?: Array<any>;
+  images?: Array<any>;
   price: number;
   cost: number;
   imageUrl?: string;
@@ -126,7 +132,7 @@ export const useGetProductTableData = (
       const saleTime = new Date(sale.saleTime).getTime();
       if (saleTime < fromTime || saleTime > toTime) continue;
 
-      for (const item of sale.items ?? []) {
+      for (const item of sale.order ?? []) {
         const pid = String(item.productId);
         const existing = productSales.get(pid) || {
           unitsSold: 0,
@@ -225,6 +231,12 @@ export const useGetProductTableData = (
       return {
         _id: product._id,
         title: product.title,
+        desc: product.desc,
+        status: product.status,
+        categoryId: product.categoryId,
+        category: product.category,
+        collections: product.collections ?? [],
+        images: product.images ?? [],
         price: product.price,
         cost: product.cost ?? 0,
         imageUrl: firstImage?.url,

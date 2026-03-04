@@ -1,5 +1,5 @@
 import { useState, useMemo, useDeferredValue } from "react";
-import { columns, renderExpandedRow } from "./columns";
+import { columns } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -238,12 +238,7 @@ export function ProductsTable() {
           )}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filteredProducts}
-          getRowCanExpand={() => true}
-          renderSubComponent={renderExpandedRow as any}
-        />
+        <DataTable columns={columns} data={filteredProducts} />
       )}
     </div>
   );

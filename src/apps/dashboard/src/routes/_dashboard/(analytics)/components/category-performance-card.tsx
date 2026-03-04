@@ -51,6 +51,7 @@ export function CategoryPerformanceCard() {
           </div>
           <DateController
             defaultPreset="thisMonth"
+            excludePresets={["today"]}
             onChange={(range) => setDateRange(range)}
           />
         </div>

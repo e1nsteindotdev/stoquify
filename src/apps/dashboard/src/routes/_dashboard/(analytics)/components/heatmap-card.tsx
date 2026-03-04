@@ -15,7 +15,7 @@ import {
 
 export function HeatmapCard() {
   const [dateRange, setDateRange] = useState<DateRange>(() =>
-    getPresetDates("thisMonth"),
+    getPresetDates("lastMonth"),
   );
 
   const from = new Date(`${dateRange.from}T00:00:00+01:00`).getTime();
@@ -38,7 +38,7 @@ export function HeatmapCard() {
             </CardTitle>
           </div>
           <DateController
-            defaultPreset="thisMonth"
+            defaultPreset="lastMonth"
             onChange={(range) => setDateRange(range)}
           />
         </div>

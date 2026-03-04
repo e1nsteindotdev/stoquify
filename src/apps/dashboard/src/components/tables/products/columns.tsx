@@ -92,13 +92,13 @@ const SkuOptionBadges = ({
       {values.map((value, index) => (
         <span
           key={`${value}-${index}`}
-          className="inline-flex items-center px-1.5 py-0.5 text-xs rounded border border-primary bg-primary/10 text-primary"
+          className="inline-flex items-center justify-center min-w-[32px] h-8 px-2 text-sm border border-border text-foreground rounded-md"
         >
           {value}
         </span>
       ))}
       {showQuantity && (
-        <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded border border-primary bg-primary/10 text-primary">
+        <span className="inline-flex items-center justify-center h-8 px-2 text-sm font-semibold border border-border text-foreground ml-2 rounded-md">
           Qté: {quantity}
         </span>
       )}
@@ -113,31 +113,6 @@ const getDaysOfCoverColor = (days: number) => {
 };
 
 export const columns: ColumnDef<ProductTableRow>[] = [
-  {
-    id: "expander",
-    header: "",
-    enableSorting: false,
-    cell: ({ row }) => {
-      if (!row.original.skus.length) return null;
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="p-1 h-6 w-6"
-          onClick={(e) => {
-            e.stopPropagation();
-            row.toggleExpanded();
-          }}
-        >
-          {row.getIsExpanded() ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </Button>
-      );
-    },
-  },
   {
     id: "product",
     header: "Produit",
@@ -311,10 +286,10 @@ export const columns: ColumnDef<ProductTableRow>[] = [
       const value = row.original.sellThrough;
       return (
         <div className="flex items-center gap-2">
-          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+          <div className="w-16 h-2 bg-muted overflow-hidden">
             <div
               className={cn(
-                "h-full rounded-full",
+                "h-full",
                 value > 70
                   ? "bg-green-500"
                   : value > 30
@@ -392,42 +367,3 @@ export const columns: ColumnDef<ProductTableRow>[] = [
     ),
   },
 ];
-
-export const renderExpandedRow = ({ row }: { row: any }) => {
-  const product = row.original;
-  if (!product.skus.length) return null;
-
-  return (
-    <div className="p-4 bg-muted/30">
-      <div className="font-medium mb-3">Détail des SKUs</div>
-      <div className="grid gap-2">
-        {product.skus.map((sku: any) => (
-          <div
-            key={sku._id}
-            className="flex flex-col gap-2 bg-background p-3 rounded border"
-          >
-            <SkuOptionBadges options={sku.options} quantity={sku.quantity} />
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              {sku.creationTime && (
-                <div className="text-right">
-                  <div className="text-muted-foreground">Créé le</div>
-                  <div className="font-medium">
-                    {new Date(sku.creationTime).toLocaleDateString("fr-FR")}
-                  </div>
-                </div>
-              )}
-              {sku.cost !== undefined && (
-                <div className="text-right">
-                  <div className="text-muted-foreground">Coût</div>
-                  <div className="font-medium">
-                    {formatMoney(sku.cost * sku.quantity)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};

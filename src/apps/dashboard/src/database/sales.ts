@@ -17,9 +17,7 @@ export const salesCollection = createCollection(
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
       try {
-        const sales = await convex.query((api.sales as any).listSales, {
-          storeId,
-        });
+        const sales = await convex.query((api.sales as any).listSales);
         idbRefresh("sales", sales);
         return sales;
       } catch (e) {

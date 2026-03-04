@@ -28,9 +28,15 @@ export const listProducts = authedQuery({
       .filter((e) => e.eq(e.field("storeId"), storeId))
       .collect();
 
+    const categories = await ctx.db
+      .query("categories")
+      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .collect();
+
     return products.map((product) => {
       return {
         ...product,
+        category: categories.find((c) => c._id === product.categoryId),
         images: images
           .filter((img) => img.productId === product._id)
           .sort((a, b) => a.order - b.order),
@@ -436,7 +442,7 @@ export const updateProductMetaData = authedMutation({
 
 export const salesPerProduct = internalQuery({
   handler: async (ctx) => {
-    const products = await ctx.db.query("products").take(20);
+    const products = await ctx.db.query("products").collect();
     const productIds = products.map((p) => p._id);
     const sales = await ctx.db.query("sales").collect();
     const salesMap = new Map();

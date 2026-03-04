@@ -64,7 +64,7 @@ export const formatAxisLabel = (
 };
 
 export function RevenueProfitCard({
-  defaultPreset = "thisMonth",
+  defaultPreset = "lastMonth",
 }: RevenueProfitCardProps) {
   const [dateRange, setDateRange] = useState<DateRange>(() =>
     getPresetDates(defaultPreset),
@@ -176,6 +176,7 @@ export function RevenueProfitCard({
             </div>
             <DateController
               defaultPreset={defaultPreset}
+              excludePresets={["allTime", "today"]}
               onChange={(range, newPreset) => {
                 setDateRange(range);
                 setPreset(newPreset);
@@ -188,9 +189,9 @@ export function RevenueProfitCard({
       <CardContent className="relative z-10 pb-6 pt-2">
         {/* Chart Area */}
         {chartSeries.length > 0 ? (
-          <div className="h-[280px] w-full flex mt-4 group">
+          <div className="h-[280px] w-full flex mt-4 group overflow-x-auto relative">
             {/* Y Axis */}
-            <div className="flex flex-col justify-between pr-4 pb-6 text-sm text-muted-foreground w-14 flex-shrink-0">
+            <div className="sticky left-0 z-20 flex flex-col justify-between pr-4 pb-6 text-sm text-muted-foreground w-14 flex-shrink-0 bg-card/90 backdrop-blur-sm">
               {yAxisTicks.map((tick, i) => (
                 <div
                   key={i}
@@ -199,14 +200,25 @@ export function RevenueProfitCard({
                   <span className="absolute -translate-y-1/2 bg-card px-1 z-10">
                     {formatYAxisValue(tick)}
                   </span>
-                  {/* Horizontal grid lines */}
-                  <div className="absolute left-full w-[calc(100vw-6rem)] border-b border-dashed border-border/50" />
                 </div>
               ))}
             </div>
 
             {/* Bars Area */}
-            <div className="flex-1 flex items-end justify-between gap-1 pb-6 relative">
+            <div
+              className={`flex-1 flex items-end justify-between gap-1 pb-6 relative h-full ${preset === "allTime" ? "min-w-max pr-4" : "w-full"}`}
+            >
+              {/* Horizontal grid lines - moved here to stay fixed relative to bars if needed, or we can keep them in Y axis */}
+              <div className="absolute inset-0 pointer-events-none pr-4">
+                {yAxisTicks.map((_, i) => (
+                  <div
+                    key={i}
+                    className="border-b border-dashed border-border/50 absolute left-0 right-0"
+                    style={{ top: `${(i * 100) / (yAxisTicks.length - 1)}%` }}
+                  />
+                ))}
+              </div>
+
               {chartSeries.map((d, i) => {
                 const revPercent =
                   maxValue > 0 ? (d.revenue / maxValue) * 100 : 0;
@@ -217,7 +229,9 @@ export function RevenueProfitCard({
                 return (
                   <div
                     key={i}
-                    className="relative flex-1 flex items-end justify-center group/bar h-full gap-1"
+                    className={`relative flex-1 flex items-end justify-center group/bar h-full gap-1 ${
+                      preset === "allTime" ? "min-w-[60px]" : ""
+                    }`}
                   >
                     {/* Revenue Bar */}
                     {(isBoth || viewMode === "revenue") && (
@@ -276,7 +290,11 @@ export function RevenueProfitCard({
 
                     {/* X Axis Label */}
                     <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      {chartSeries.length > 14 && i % 2 !== 0 ? "" : d.label}
+                      {chartSeries.length > 14 &&
+                      i % 2 !== 0 &&
+                      preset !== "allTime"
+                        ? ""
+                        : d.label}
                     </div>
                   </div>
                 );
