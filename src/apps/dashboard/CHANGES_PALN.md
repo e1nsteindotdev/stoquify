@@ -23,9 +23,9 @@
     [ ] - in top 10 products there is 4 "Produit inconnue", investigate where the problem is, it could be in the analyitcs ui logics and that would be very bad, or it could from the wrong seed data
 
 ### LES COMMANDES TABLE
-    [ ] - The EN MAGASINE | EN LIGNE field shouldn't be in a tag, just make it a black text with no background all uppercase.
-    [ ] - the date shows invalid date probably of the type mistmatch, investigate why and fix it
-    [ ] - make the green, red and yellow colors have more hue and less saturated to match the serious brand of the sofwtare
+    [X] - The EN MAGASINE | EN LIGNE field shouldn't be in a tag, just make it a black text with no background all uppercase.
+    [X] - the date shows invalid date probably of the type mistmatch, investigate why and fix it
+    [X] - make the green, red and yellow colors have more hue and less saturated to match the serious brand of the sofwtare
     
 ### CLIENTS TABLE
     [X] - in the clients tabel add a column that shows the last date the client has ordered in, and two columns one for the revenue and one for the pure profit generated only from this customer
@@ -35,21 +35,15 @@
     [X] - fix the ugly design of the employees page to be similar to the other parts of the app.
     [X] - rebrand the founder word into let say "Patron" only in the ui (what the user sees)
     [X] - the wild card * should be reformated to "touts" instead
-    [ ] - the founders, staff and admins should be places by column where we would have three columns (for mobile they would represent rows), and each clumn should have its own create new employee button, example in the staff column, besides it there is add a new staff member button and so on. when there is no staff for example we show the staff column and we show it empty, aslo we append the pending invitations on the end of the stack on the right column where you can delete or view its qr code.
-    [ ] - change the create new employee form to be like this, first remove the optional email field, also remove the role field because it would have been already determined by which button was clicked, and only show a permissions page buildling ui. This ui should be like this, we should a collapsable per store, when you expand a collapsable of that store you get all the ressources stacked in a column and then in the second column you get an options field where you can choose the permissions on that resource, the options would be write, read, none, and the they all default ot none. Make sure everything is rounded in this ui.
+    [X] - the founders, staff and admins should be places by column where we would have three columns (for mobile they would represent rows), and each clumn should have its own create new employee button, example in the staff column, besides it there is add a new staff member button and so on. when there is no staff for example we show the staff column and we show it empty, aslo we append the pending invitations on the end of the stack on the right column where you can delete or view its qr code.
+    [X] - change the create new employee form to be like this, first remove the optional email field, also remove the role field because it would have been already determined by which button was clicked, and only show a permissions page buildling ui. This ui should be like this, we should a collapsable per store, when you expand a collapsable of that store you get all the ressources stacked in a column and then in the second column you get an options field where you can choose the permissions on that resource, the options would be write, read, none, and the they all default ot none. Make sure everything is rounded in this ui.
 
-### LES FACTURES PAGES
-    [ ] - create new tab in the dashboard name "factures", the feature has the purpose only to easily print and document pdfs/imgs same events that happen within the dashboard, so mostly you can create a facture out of  sale, out of a "depense" and so, so do a feature planning for this.
-
-### RAPOPRTS
 
 ### AUTH 
     [ ]  - in the account dropmenu in the buttom of the sidebar of the dashboard, we add an option to generate a QR code and the account owner scans it to sign-in, the generated qr code should have its status shown in the ui if it has been used or not, and if it has been used you can't use it again, but there should a be re-generate button to create another magic link and show its qr code 
     [ ] - add granular permissions to show or not show the tabs, like if a user doens't have products permission, he wouldn't be able to see the products tab, if he doesn't write permission, he wouldn't be able to go to the product form page, if he only has write permission, he see the add new product button and thats it, if he doens't have the delete permission he shouldn't see the delete button on the products table actions and so on, like plan a generate logic mapping of permission, and then apply to all the resources, also update the resources list to have to have all the resources hard coded, and for now simply the permissions to only be read write, remove the detailed ones like delete, create and update (they all fall under write)
     [ ] - just like how I used the custom auth function on createProduct convex mutation, do the same for all the other functions, add the resource and the action arguments to the function calls.
 
-
-### AUTH BUTTON
 
 ### GENERALE
     [X] - reduce the letter spacing for all the text in the whole dashboard app, it is a bit too much.
@@ -59,5 +53,7 @@
     [X] - make the new category, new collection buttons, have bordres all around them not only on the top and make the hover change the bg of the hole bordered box.
 
 
+### LES FACTURES PAGES
+    [ ] - create new tab in the dashboard name "factures", the feature has the purpose only to easily print and document pdfs/imgs same events that happen within the dashboard, so mostly you can create a facture out of  sale, out of a "depense" and so, so do a feature planning for this.
 
-
+### RAPOPRTS

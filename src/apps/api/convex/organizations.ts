@@ -10,18 +10,10 @@ export const create = authedMutation({
     storeName: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
-    if (!identity.email) throw new Error("Email required");
+    // Get user document
+    const user = await ctx.db.get(ctx.userId);
 
-    // Get or create user document
-    let user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email!))
-      .unique();
-
-    let finalUser = user;
-    if (!finalUser) {
+    if (!user) {
       throw new Error(
         "User must exist before creating organization. Use signup flow instead.",
       );
@@ -30,7 +22,7 @@ export const create = authedMutation({
     // Create organization
     const org = await ctx.db.insert("organizations", {
       name: args.organizationName,
-      owner: finalUser._id,
+      owner: user._id,
     });
 
     // Create first store
@@ -40,7 +32,7 @@ export const create = authedMutation({
     });
 
     // Update user with org
-    await ctx.db.patch(finalUser._id, {
+    await ctx.db.patch(user._id, {
       organizationId: org,
     });
 
@@ -54,13 +46,7 @@ export const getMyOrganization = authedQuery({
   action: "read",
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await ctx.db.get(ctx.userId);
 
     if (!user?.organizationId) return null;
 
@@ -75,13 +61,7 @@ export const getMyRole = authedQuery({
   action: "read",
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await ctx.db.get(ctx.userId);
 
     return user?.role || null;
   },

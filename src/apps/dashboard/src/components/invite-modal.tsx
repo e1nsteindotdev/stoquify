@@ -5,7 +5,7 @@ import QRCode from "react-qr-code";
 import { useAppStore } from "@/lib/store";
 
 export function InviteStaffModal() {
-  const base_url = import.meta.env.VITE_BASE_URL
+  const base_url = import.meta.env.VITE_BASE_URL?.replace(/\/$/, "");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "staff">("staff");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);

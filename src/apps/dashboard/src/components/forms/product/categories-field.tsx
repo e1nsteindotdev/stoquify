@@ -21,7 +21,7 @@ import {
 import { useGetCategories } from "@/database/categories";
 import { Id } from "api/data-model";
 import { useAppStore } from "@/lib/store";
-import { convex } from "@/lib/convex-query";
+import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { queryClient } from "@/lib/ts-query-client";
 

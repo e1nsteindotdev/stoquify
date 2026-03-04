@@ -11,11 +11,11 @@ type AuthOption = { resource: string; action: string };
 
 async function ensureAuthenticated(ctx: any, opts?: AuthOption) {
   const userId = await getAuthUserId(ctx);
+  console.log('[CONVEX] auth success', userId)
   if (userId === null) {
     throw new ConvexError("Not authenticated");
   }
-
-  if (!opts) return {};
+  if (!opts) return userId;
 
   const { resource, action } = opts;
   const user = await ctx.db.get(userId);
@@ -24,19 +24,16 @@ async function ensureAuthenticated(ctx: any, opts?: AuthOption) {
       (perm.resource === "*" || perm.resource === resource) &&
       (perm.action === action || perm.action === "*"),
   );
-  if (!hasPermission)
-    throw new ConvexError(
-      "User does not have permission to perform this action.",
-    );
 
-  return {};
+  if (!hasPermission) throw new ConvexError("User does not have permission to perform this action.",);
+  return userId;
 }
 
 export const authedQuery = customQuery(query, {
   args: {},
   input: async (ctx, args, opts?: Record<string, any>) => {
-    await ensureAuthenticated(ctx, opts as AuthOption | undefined);
-    return { ctx, args };
+    const userId = await ensureAuthenticated(ctx, opts as AuthOption | undefined);
+    return { ctx: { userId }, args };
   },
 });
 
@@ -44,15 +41,15 @@ export const authedMutation = customMutation(mutation, {
   args: {},
 
   input: async (ctx, args, opts?: Record<string, any>) => {
-    await ensureAuthenticated(ctx, opts as AuthOption | undefined);
-    return { ctx, args };
+    const userId = await ensureAuthenticated(ctx, opts as AuthOption | undefined);
+    return { ctx: { userId }, args };
   },
 });
 
 export const authedAction = customAction(action, {
   args: {},
   input: async (ctx, args, opts?: Record<string, any>) => {
-    await ensureAuthenticated(ctx, opts as AuthOption | undefined);
-    return { ctx, args };
+    const userId = await ensureAuthenticated(ctx, opts as AuthOption | undefined);
+    return { ctx: { userId }, args };
   },
 });

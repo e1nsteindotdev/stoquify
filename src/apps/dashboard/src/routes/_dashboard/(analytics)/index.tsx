@@ -1,4 +1,4 @@
-import { useMemo, useTransition, useEffect, useState } from "react";
+import { useTransition, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { KPISection } from "./components/kpi-section";
 import { RevenueProfitCard } from "./components/revenue-profit-card";
@@ -7,18 +7,14 @@ import { DeadStockCard } from "./components/dead-stock-card";
 import { CategoryPerformanceCard } from "./components/category-performance-card";
 import { HeatmapCard } from "./components/heatmap-card";
 import { StockCoverCard } from "./components/stock-cover-card";
-import { productsCollection } from "@/database/products";
 import { ordersCollection } from "@/database/orders";
 import { salesCollection } from "@/database/sales";
-import { categoriesCollection } from "@/database/categories";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_dashboard/(analytics)/")({
   loader: () => {
-    productsCollection.preload();
-    ordersCollection.preload();
-    salesCollection.preload();
-    categoriesCollection.preload();
+    // ordersCollection.preload();
+    // salesCollection.preload();
   },
   component: Page,
 });

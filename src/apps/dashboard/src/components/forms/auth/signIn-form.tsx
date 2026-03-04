@@ -30,15 +30,17 @@ export function SignInForm({ step, setStep, className, ...props }: { step: strin
     },
     onSubmit: async ({ value }) => {
       try {
-        await signIn("phone", {
+        console.log("going to sign in")
+        const signInResult = await signIn("phone", {
           phone: value.phone,
           password: value.password,
           flow: "signIn"
         });
-        const stores = await convex.query(api.stores.list);
-        const user = await convex.query(api.users.getUserData);
-        setStores(stores)
-        setUser(user)
+        console.log('signIn Result', signInResult)
+        // const stores = await convex.query(api.stores.list);
+        // const user = await convex.query(api.users.getUserData);
+        // setStores(stores)
+        // setUser(user)
       } catch (error) {
         console.error("error while trying to sign in :", error)
       }

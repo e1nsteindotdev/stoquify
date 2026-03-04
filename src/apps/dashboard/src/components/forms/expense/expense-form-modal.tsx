@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAppForm } from "@/hooks/form";
 import { useAppStore } from "@/lib/store";
-import { convex } from "@/lib/convex-query";
+import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { expensesCollection } from "@/database/expenses";
 import { Id } from "api/data-model";

@@ -34,7 +34,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useAppStore } from "@/lib/store";
 import { clearIDB } from "@/lib/idb";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreateStoreForm } from "@/components/forms/store/create-store-form";
 import { hasGlobalPermission } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export function NavUser({ avatar }: { avatar: string }) {
+
   const user = useAppStore((get) => get.user);
   const stores = useAppStore((state) => state.stores);
   const store = useAppStore((state) => state.selectedStore);
@@ -56,6 +57,11 @@ export function NavUser({ avatar }: { avatar: string }) {
   const { signOut } = useAuthActions();
   const [createStoreOpen, setCreateStoreOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!store && stores.length != 0)
+      setStore(stores[0]);
+  }, [])
 
   // Query for active sign-in magic link
   const { data: activeLink, isLoading: isLoadingLink } = useQuery({
@@ -111,11 +117,17 @@ export function NavUser({ avatar }: { avatar: string }) {
     hasGlobalPermission(user, "stores", "write") ||
     hasGlobalPermission(user, "*", "*");
 
-  if (!store) setStore(stores[0]);
+  useEffect(() => {
+    if (!store && stores.length != 0)
+      setStore(stores[0]);
+  }, [])
+
   if (!user) {
-    void signOut();
+    console.log('[NAV-USER] no user')
+    // void signOut();
     return null;
   }
+  console.log('[NAV-USER] user')
 
   const handleSignOut = async () => {
     await clearIDB();
@@ -127,7 +139,8 @@ export function NavUser({ avatar }: { avatar: string }) {
     setStore(selectedStore);
   };
 
-  const base_url = import.meta.env.VITE_BASE_URL
+
+  const base_url = import.meta.env.VITE_BASE_URL?.replace(/\/$/, "");
 
   return (
     <>

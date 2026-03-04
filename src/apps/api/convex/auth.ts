@@ -110,6 +110,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       if (signInMagicLinkToken) {
         const link = await ctx.db
           .query("signInMagicLinks")
+          .filter((q) => q.eq(q.field("token"), signInMagicLinkToken))
           .unique();
 
         if (!link) {

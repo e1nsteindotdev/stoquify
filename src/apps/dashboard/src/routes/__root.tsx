@@ -18,10 +18,9 @@ const PUBLIC_ROUTES = ["/mobile-signin", "/magic-link"];
 export const Route = createRootRoute({
   component: () => {
     const routerState = useRouterState();
-    const currentPath = routerState.location.pathname;
-    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-      currentPath.startsWith(route),
-    );
+    // Normalize path to remove double slashes
+    const currentPath = routerState.location.pathname.replace(/\/+/g, "/");
+    const isPublicRoute = PUBLIC_ROUTES.some((route) => currentPath.startsWith(route),);
 
     return (
       <>
@@ -31,12 +30,8 @@ export const Route = createRootRoute({
               // Public routes: render directly without auth checks
               <Outlet />
             ) : (
-              // Protected routes: require authentication
               <>
-                <AuthLoading>
-                  {" "}
-                  <p>loading...</p>{" "}
-                </AuthLoading>
+                <AuthLoading><p>loading...</p></AuthLoading>
                 <Unauthenticated>
                   <AuthForm />
                 </Unauthenticated>

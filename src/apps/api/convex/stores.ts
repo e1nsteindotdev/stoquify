@@ -1,6 +1,7 @@
-import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./customeFunction";
+import { query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const create = authedMutation({
   resource: "stores",
@@ -9,13 +10,7 @@ export const create = authedMutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await ctx.db.get(ctx.userId);
 
     if (!user?.organizationId) {
       throw new Error("No organization found");
@@ -30,15 +25,12 @@ export const create = authedMutation({
   },
 });
 
-// List stores by organization
 export const list = authedQuery({
   resource: "stores",
   action: "read",
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-    const [userId] = identity.subject.split("|");
-    const user = await ctx.db.get(userId as Id<"users">);
+    console.log("hi from stores list")
+    const user = await ctx.db.get(ctx.userId);
     if (!user?.organizationId) return [];
 
     console.log(user?.organizationId);
@@ -50,3 +42,4 @@ export const list = authedQuery({
       .collect();
   },
 });
+

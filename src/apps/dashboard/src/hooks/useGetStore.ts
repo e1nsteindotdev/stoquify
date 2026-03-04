@@ -1,4 +1,4 @@
-import { convex } from '@/lib/convex-query';
+import { convex } from '@/lib/convex-client';
 import { useAppStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
 import { api } from 'api/convex';

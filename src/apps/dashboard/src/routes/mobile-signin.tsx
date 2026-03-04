@@ -58,27 +58,50 @@ export const Route = createFileRoute("/mobile-signin")({
     };
   },
   component: MobileSigninPage,
+  pendingComponent: () => (
+    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <ClipLoader size={40} color="#22c55e" />
+    </div>
+  ),
+  errorComponent: ({ error }) => {
+    console.error("Mobile sign-in route error:", error);
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-gray-100">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center text-red-600">
+            <XCircle className="mx-auto mb-4 h-12 w-12" />
+            <CardTitle>Une erreur est survenue</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Impossible de charger la page de connexion. Veuillez réessayer.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  },
 });
 
 type LoaderData =
   | {
-    valid: true;
-    token: string;
-    user: {
-      _id: string;
-      name: string;
-      email?: string;
-      phone: string;
-      organizationId: string;
-      role: string;
-    };
-  }
+      valid: true;
+      token: string;
+      user: {
+        _id: string;
+        name: string;
+        email?: string;
+        phone: string;
+        organizationId: string;
+        role: string;
+      };
+    }
   | {
-    error: string;
-    message: string;
-    usedAt?: number;
-    expiresAt?: number;
-  };
+      error: string;
+      message: string;
+      usedAt?: number;
+      expiresAt?: number;
+    };
 
 function MobileSigninPage() {
   const loaderData = Route.useLoaderData() as LoaderData;

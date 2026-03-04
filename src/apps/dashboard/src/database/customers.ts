@@ -3,7 +3,6 @@ import { queryCollectionOptions } from "@tanstack/query-db-collection";
 import { api } from "api/convex";
 import { createCollection } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
-import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/ts-query-client";
 import type { Id } from "api/data-model";

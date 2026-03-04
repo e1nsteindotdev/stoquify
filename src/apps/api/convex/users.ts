@@ -1,19 +1,11 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
-import { Id } from "./_generated/dataModel";
 import { authedQuery } from "./customeFunction";
 
 export const get = authedQuery({
   resource: "users",
   action: "read",
   args: {},
-  handler: async ({ auth, db }) => {
-    const userId = await getAuthUserId({ auth });
-    if (!userId) return null;
-
-    const user = await db
-      .query("users")
-      .filter((q) => q.eq(q.field("_id"), userId))
-      .unique();
+  handler: async (ctx) => {
+    const user = await ctx.db.get(ctx.userId);
     return user;
   },
 });
@@ -22,19 +14,12 @@ export const getUserData = authedQuery({
   resource: "users",
   action: "read",
   args: {},
-  handler: async ({ auth, db }) => {
-    console.log("[CONVEX] running getUser Data");
-    const userId = await getAuthUserId({ auth });
-    if (!userId) return null;
-
-    const user = await db
-      .query("users")
-      .filter((q) => q.eq(q.field("_id"), userId))
-      .unique();
+  handler: async (ctx) => {
+    const user = await ctx.db.get(ctx.userId);
 
     if (!user) return null;
 
-    const organization = await db
+    const organization = await ctx.db
       .query("organizations")
       .filter((q) => q.eq(q.field("_id"), user?.organizationId))
       .unique();
@@ -57,18 +42,12 @@ export const getOrganizationUsers = authedQuery({
   resource: "users",
   action: "read",
   args: {},
-  handler: async ({ auth, db }) => {
-    const userId = await getAuthUserId({ auth });
-    if (!userId) return [];
-
-    const currentUser = await db
-      .query("users")
-      .filter((q) => q.eq(q.field("_id"), userId))
-      .unique();
+  handler: async (ctx) => {
+    const currentUser = await ctx.db.get(ctx.userId);
 
     if (!currentUser) return [];
 
-    const users = await db
+    const users = await ctx.db
       .query("users")
       .filter((q) =>
         q.eq(q.field("organizationId"), currentUser.organizationId),
