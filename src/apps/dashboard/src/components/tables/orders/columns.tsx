@@ -18,6 +18,7 @@ import {
 import { ordersCollection } from "@/database/orders";
 import { salesCollection } from "@/database/sales";
 import { useState } from "react";
+import { PermissionGuard } from "@/components/permission-guard";
 
 export type OrderRow = {
   _id: string;
@@ -138,38 +139,50 @@ export const columns: ColumnDef<OrderRow>[] = [
       };
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <PermissionGuard
+          resource="orders"
+          action="write"
+          fallback={
             <Badge
-              className={`${statusColors[currentStatus].base} ${statusColors[currentStatus].hover} cursor-pointer rounded-none border px-3 py-1 text-xs font-semibold transition-colors`}
+              className={`${statusColors[currentStatus].base} rounded-none border px-3 py-1 text-xs font-semibold`}
             >
-              {isLoading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <>
-                  {statusLabels[currentStatus]}
-                  <ChevronDown className="ml-1 h-3 w-3" />
-                </>
-              )}
+              {statusLabels[currentStatus]}
             </Badge>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              onClick={() => handleStatusChange("confirmed")}
-              disabled={currentStatus === "confirmed" || isLoading}
-            >
-              <span className="text-green-600 mr-2">●</span>
-              Confirmée
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleStatusChange("denied")}
-              disabled={currentStatus === "denied" || isLoading}
-            >
-              <span className="text-red-600 mr-2">●</span>
-              Refusée
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          }
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Badge
+                className={`${statusColors[currentStatus].base} ${statusColors[currentStatus].hover} cursor-pointer rounded-none border px-3 py-1 text-xs font-semibold transition-colors`}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    {statusLabels[currentStatus]}
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </>
+                )}
+              </Badge>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => handleStatusChange("confirmed")}
+                disabled={currentStatus === "confirmed" || isLoading}
+              >
+                <span className="text-green-600 mr-2">●</span>
+                Confirmée
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleStatusChange("denied")}
+                disabled={currentStatus === "denied" || isLoading}
+              >
+                <span className="text-red-600 mr-2">●</span>
+                Refusée
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </PermissionGuard>
       );
     },
   },
@@ -230,15 +243,17 @@ export const columns: ColumnDef<OrderRow>[] = [
               Voir
             </Button>
           </Link>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={deleteOrder.isPending}
-            className="rounded-none"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <PermissionGuard resource="orders" action="write">
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteOrder.isPending}
+              className="rounded-none"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </PermissionGuard>
         </div>
       );
     },

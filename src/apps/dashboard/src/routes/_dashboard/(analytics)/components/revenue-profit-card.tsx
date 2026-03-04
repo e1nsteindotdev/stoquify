@@ -33,7 +33,7 @@ export const formatYAxisValue = (value: number) => {
   if (value >= 1000) {
     return `${(value / 1000).toFixed(0)}k`;
   }
-  return value.toString();
+  return Math.round(value).toString();
 };
 
 export const formatBarValue = (value: number) => {
@@ -43,7 +43,7 @@ export const formatBarValue = (value: number) => {
   if (value >= 1000) {
     return `${(value / 1000).toFixed(1)}k`;
   }
-  return value.toString();
+  return Math.round(value).toString();
 };
 
 export const formatAxisLabel = (

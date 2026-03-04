@@ -7,8 +7,6 @@ import { DeadStockCard } from "./components/dead-stock-card";
 import { CategoryPerformanceCard } from "./components/category-performance-card";
 import { HeatmapCard } from "./components/heatmap-card";
 import { StockCoverCard } from "./components/stock-cover-card";
-import { ordersCollection } from "@/database/orders";
-import { salesCollection } from "@/database/sales";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_dashboard/(analytics)/")({

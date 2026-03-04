@@ -52,40 +52,35 @@
 
 @font-face {
   font-family: "SF Compact";
-  src: url("/fonts/San Francisco Compact Text/SFCompactDisplay-Light.otf")
-    format("opentype");
+  src: url("/fonts/San Francisco Compact Text/SFCompactDisplay-Light.otf") format("opentype");
   font-weight: 300;
   font-style: normal;
 }
 
 @font-face {
   font-family: "SF Compact";
-  src: url("/fonts/San Francisco Compact Text/SFCompactText-Regular.otf")
-    format("opentype");
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
 }
 
 @font-face {
   font-family: "SF Compact";
-  src: url("/fonts/San Francisco Compact Text/SFCompactText-Medium.otf")
-    format("opentype");
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
   font-family: "SF Compact";
-  src: url("/fonts/San Francisco Compact Text/SFCompactText-Semibold.otf")
-    format("opentype");
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Semibold.otf") format("opentype");
   font-weight: 600;
   font-style: normal;
 }
 
 @font-face {
   font-family: "SF Compact";
-  src: url("/fonts/San Francisco Compact Text/SFCompactText-Bold.otf")
-    format("opentype");
+  src: url("/fonts/San Francisco Compact Text/SFCompactText-Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
 }
@@ -160,7 +155,7 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: #F3F3F3;
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);

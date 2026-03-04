@@ -113,7 +113,6 @@ export function NavUser({ avatar }: { avatar: string }) {
   };
 
   const canCreateStore =
-    hasGlobalPermission(user, "stores", "create") ||
     hasGlobalPermission(user, "stores", "write") ||
     hasGlobalPermission(user, "*", "*");
 
@@ -122,14 +121,14 @@ export function NavUser({ avatar }: { avatar: string }) {
   }, []);
 
   if (!user) {
-    console.log('[USER-NAV] signing out user')
+    console.log("[USER-NAV] signing out user");
     signOut();
     return null;
   }
 
   const handleSignOut = async () => {
     await clearIDB();
-    console.log('[USER-NAV] signing out user')
+    console.log("[USER-NAV] signing out user");
     await signOut();
     navigate({ to: "/" });
   };

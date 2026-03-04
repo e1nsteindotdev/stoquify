@@ -64,8 +64,16 @@ export type AnalyticsData = {
     margin: number;
   }>;
   deadStock: {
-    buckets: Array<{ label: string; count: number; value: number }>;
-    totalValue: number;
+    buckets: Array<{
+      label: string;
+      skus: Array<{
+        productName: string;
+        skuName: string;
+        quantity: number;
+        value: number;
+        profitability: number;
+      }>;
+    }>;
   };
   categoryPerformance: Array<{
     name: string;
@@ -567,30 +575,123 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       return sum + quantity * price;
     }, 0);
 
+    const historicalProductStats = new Map<
+      string,
+      { unitsSold: number; revenue: number }
+    >();
+    for (const transaction of allTransactions) {
+      for (const item of transaction.items) {
+        const productId = String(item.productId);
+        const stats = historicalProductStats.get(productId) ?? {
+          unitsSold: 0,
+          revenue: 0,
+        };
+        stats.unitsSold += item.quantity;
+        stats.revenue += item.price * item.quantity;
+        historicalProductStats.set(productId, stats);
+      }
+    }
+
     const deadStockBuckets = {
-      "30+": { label: "30+ jours", count: 0, value: 0 },
-      "60+": { label: "60+ jours", count: 0, value: 0 },
-      "90+": { label: "90+ jours", count: 0, value: 0 },
+      "30+": {
+        label: "+30 Jours",
+        skus: [] as Array<{
+          productName: string;
+          skuName: string;
+          quantity: number;
+          value: number;
+          profitability: number;
+        }>,
+      },
+      "60+": {
+        label: "+60 Jours",
+        skus: [] as Array<{
+          productName: string;
+          skuName: string;
+          quantity: number;
+          value: number;
+          profitability: number;
+        }>,
+      },
+      "90+": {
+        label: "+90 Jours",
+        skus: [] as Array<{
+          productName: string;
+          skuName: string;
+          quantity: number;
+          value: number;
+          profitability: number;
+        }>,
+      },
     };
 
-    for (const product of products as any[]) {
+    for (const product of Array.from(productMap.values()) as any[]) {
       const quantity = getProductInventoryQuantity(product);
       if (quantity <= 0) continue;
 
-      const lastMovement = movementMap.get(String(product._id)) ?? 0;
+      const productId = String(product._id);
+      const lastMovement = movementMap.get(productId) ?? 0;
       const ageInDays =
         lastMovement === 0 ? 9999 : Math.floor((now - lastMovement) / DAY_MS);
-      const value = quantity * (product.cost ?? product.price ?? 0);
 
-      if (ageInDays >= 90) {
-        deadStockBuckets["90+"].count += 1;
-        deadStockBuckets["90+"].value += value;
-      } else if (ageInDays >= 60) {
-        deadStockBuckets["60+"].count += 1;
-        deadStockBuckets["60+"].value += value;
-      } else if (ageInDays >= 30) {
-        deadStockBuckets["30+"].count += 1;
-        deadStockBuckets["30+"].value += value;
+      if (ageInDays < 30) continue;
+
+      const productName = product.title ?? "Produit inconnu";
+      const productCost = product.cost ?? product.price ?? 0;
+
+      const historicalStats = historicalProductStats.get(productId) ?? {
+        unitsSold: 0,
+        revenue: 0,
+      };
+      const initialInventory = quantity + historicalStats.unitsSold;
+      const totalCost = initialInventory * productCost;
+      const profitability = Math.round(historicalStats.revenue - totalCost);
+
+      const stockingStrategy = product.stockingStrategy ?? "by_variants";
+      const bucketKey =
+        ageInDays >= 90 ? "90+" : ageInDays >= 60 ? "60+" : "30+";
+
+      const addSkuToBucket = (skuName: string, skuQuantity: number) => {
+        const bucket = deadStockBuckets[bucketKey];
+        const existing = bucket.skus.find(
+          (s) => s.productName === productName && s.skuName === skuName,
+        );
+        if (existing) {
+          existing.quantity += skuQuantity;
+          existing.value += Math.round(skuQuantity * productCost);
+        } else {
+          bucket.skus.push({
+            productName,
+            skuName,
+            quantity: skuQuantity,
+            value: Math.round(skuQuantity * productCost),
+            profitability,
+          });
+        }
+      };
+
+      if (stockingStrategy === "by_variants") {
+        const skus = product.skus;
+        const variants = product.variants || [];
+        const variantMap = new Map(variants.map((v: any) => [v._id, v.name]));
+
+        if (Array.isArray(skus) && skus.length > 0) {
+          for (const sku of skus) {
+            const skuQuantity = sku.quantity ?? 0;
+            if (skuQuantity <= 0) continue;
+
+            const skuName =
+              sku.options
+                ?.map((o: any) => {
+                  const variantName = variantMap.get(o.variantId) || "";
+                  return variantName ? `${variantName}: ${o.name}` : o.name;
+                })
+                .join(" / ") ?? "Default";
+            addSkuToBucket(skuName, skuQuantity);
+          }
+        }
+      } else {
+        addSkuToBucket("Default", quantity);
       }
     }
 
@@ -598,11 +699,7 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       deadStockBuckets["30+"],
       deadStockBuckets["60+"],
       deadStockBuckets["90+"],
-    ].map((bucket) => ({
-      label: bucket.label,
-      count: bucket.count,
-      value: Math.round(bucket.value),
-    }));
+    ];
 
     let runningInventory = inventoryNow;
     const reverseInventoryTrend = [...buckets].reverse().map((bucket) => {
@@ -845,10 +942,6 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       topProducts,
       deadStock: {
         buckets: deadStockList,
-        totalValue: deadStockList.reduce(
-          (sum, bucket) => sum + bucket.value,
-          0,
-        ),
       },
       categoryPerformance,
       inventoryTrend,

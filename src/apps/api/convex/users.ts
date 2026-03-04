@@ -16,7 +16,6 @@ export const getUserData = authedQuery({
   args: {},
   handler: async (ctx) => {
     const user = await ctx.db.get(ctx.userId);
-    console.log("user :", user)
 
     if (!user) return null;
 

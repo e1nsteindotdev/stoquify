@@ -8,14 +8,7 @@ const permissions = v.array(
   v.object({
     storeId: v.optional(v.id("stores")),
     resource: v.string(),
-    action: v.union(
-      v.literal("write"),
-      v.literal("read"),
-      v.literal("update"),
-      v.literal("delete"),
-      v.literal("create"),
-      v.literal("*"),
-    ),
+    action: v.union(v.literal("write"), v.literal("read"), v.literal("*")),
   }),
 );
 

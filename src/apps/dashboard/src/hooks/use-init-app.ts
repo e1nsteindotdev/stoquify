@@ -26,7 +26,6 @@ export const useInitApp = () => {
   const { signOut } = useAuthActions();
   const setUser = useAppStore((state) => state.setUser);
   const { isPending, data: user } = useGetUser();
-  console.log("[INIT-APP] user:", user, isPending)
 
   useEffect(() => {
     if (hasBootstrapped) return;
@@ -123,7 +122,6 @@ export const useInitApp = () => {
 
     const normalizedUser = normalizeUser(user);
     if (!normalizedUser) {
-      console.log('[INIT-APP-EFFECT] signing out user :', user)
       setUser(null);
       signOut();
       setAuthResolved(true);

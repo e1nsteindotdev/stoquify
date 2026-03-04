@@ -34,10 +34,56 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { title: "Produits", url: "/produits", icon: IconPackage },
-  { title: "Commandes", url: "/commandes", icon: IconShoppingBag },
-  { title: "Clients", url: "/clients", icon: IconUsers },
-  { title: "Dépenses", url: "/depenses", icon: IconReceipt2 },
+  {
+    title: "Analytique",
+    url: "/",
+    icon: IconChartBar,
+    requiredPermission: {
+      resource: "analytics",
+      action: "read",
+      scope: "store",
+    },
+  },
+  {
+    title: "Produits",
+    url: "/produits",
+    icon: IconPackage,
+    requiredPermission: {
+      resource: "products",
+      action: "read",
+      scope: "store",
+    },
+  },
+  {
+    title: "Commandes",
+    url: "/commandes",
+    icon: IconShoppingBag,
+    requiredPermission: {
+      resource: "orders",
+      action: "read",
+      scope: "store",
+    },
+  },
+  {
+    title: "Clients",
+    url: "/clients",
+    icon: IconUsers,
+    requiredPermission: {
+      resource: "customers",
+      action: "read",
+      scope: "store",
+    },
+  },
+  {
+    title: "Dépenses",
+    url: "/depenses",
+    icon: IconReceipt2,
+    requiredPermission: {
+      resource: "expenses",
+      action: "read",
+      scope: "store",
+    },
+  },
   {
     title: "Employés",
     url: "/employes",
@@ -80,21 +126,6 @@ export function NavMain() {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Analytique"
-              isActive={isActive("/")}
-            >
-              <Link to="/">
-                <IconChartBar />
-                <span>Analytique</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
         <SidebarMenu>
           {visibleItems.map((item) => (
             <SidebarMenuItem key={item.title}>

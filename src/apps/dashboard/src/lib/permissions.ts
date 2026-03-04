@@ -1,12 +1,38 @@
 import { TypeUser } from "api/types";
 
-export type PermissionAction =
-  | "read"
-  | "write"
-  | "create"
-  | "update"
-  | "delete"
-  | "*";
+export type PermissionAction = "read" | "write" | "*";
+
+export const availableResources = [
+  { key: "products", label: "Produits", description: "Gérer les produits" },
+  {
+    key: "orders",
+    label: "Commandes",
+    description: "Voir et gérer les commandes",
+  },
+  { key: "customers", label: "Clients", description: "Voir les clients" },
+  { key: "employees", label: "Employés", description: "Gérer les employés" },
+  {
+    key: "analytics",
+    label: "Analytiques",
+    description: "Voir les statistiques",
+  },
+  {
+    key: "settings",
+    label: "Paramètres",
+    description: "Modifier les paramètres",
+  },
+  {
+    key: "categories",
+    label: "Catégories",
+    description: "Gérer les catégories",
+  },
+  {
+    key: "collections",
+    label: "Collections",
+    description: "Gérer les collections",
+  },
+  { key: "expenses", label: "Dépenses", description: "Gérer les dépenses" },
+];
 
 export function hasStorePermission(
   user: TypeUser | null,

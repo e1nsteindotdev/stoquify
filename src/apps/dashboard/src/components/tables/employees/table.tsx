@@ -4,6 +4,7 @@ import { ClipLoader } from "react-spinners";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, CopyIcon, QrCode, Trash2, Settings } from "lucide-react";
 import { useState } from "react";
+import { PermissionGuard } from "@/components/permission-guard";
 import { EmployeeForm } from "@/components/forms/employee/employee-form";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -128,15 +129,21 @@ export function EmployeesTable() {
                   <h2 className="text-lg font-semibold">{roleLabels[role]}</h2>
                   <Badge variant="secondary">{allItems.length}</Badge>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    setFormState({ open: true, role, inviteId: null })
-                  }
+                <PermissionGuard
+                  resource="employees"
+                  action="write"
+                  scope="global"
                 >
-                  <PlusIcon className="w-4 h-4 mr-2" />
-                  Ajouter
-                </Button>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      setFormState({ open: true, role, inviteId: null })
+                    }
+                  >
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Ajouter
+                  </Button>
+                </PermissionGuard>
               </div>
 
               <div className="flex-1 p-4 space-y-3">
@@ -206,30 +213,36 @@ export function EmployeesTable() {
                             >
                               <QrCode className="w-3.5 h-3.5" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() => {
-                                setFormState({
-                                  open: true,
-                                  role: invite.role as Role,
-                                  inviteId: invite._id,
-                                });
-                              }}
-                              title="Permissions"
+                            <PermissionGuard
+                              resource="employees"
+                              action="write"
+                              scope="global"
                             >
-                              <Settings className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 w-7 p-0 border-red-600 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRevoke(invite._id)}
-                              title="Supprimer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => {
+                                  setFormState({
+                                    open: true,
+                                    role: invite.role as Role,
+                                    inviteId: invite._id,
+                                  });
+                                }}
+                                title="Permissions"
+                              >
+                                <Settings className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 w-7 p-0 border-red-600 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleRevoke(invite._id)}
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </PermissionGuard>
                           </div>
                         </div>
                       );

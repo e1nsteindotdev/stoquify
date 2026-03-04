@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Fuse from "fuse.js";
 import { useDebounce } from "use-debounce";
+import { PermissionGuard } from "@/components/permission-guard";
 
 const filterChipConfig: {
   id: FilterChip;
@@ -133,9 +134,11 @@ export function ProductsTable() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/produits/create">
-            <Button variant="default">Nouveau produit</Button>
-          </Link>
+          <PermissionGuard resource="products" action="write">
+            <Link to="/produits/create">
+              <Button variant="default">Nouveau produit</Button>
+            </Link>
+          </PermissionGuard>
         </div>
       </div>
 

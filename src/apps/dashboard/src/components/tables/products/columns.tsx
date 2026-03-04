@@ -12,6 +12,7 @@ import {
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import type { ProductTableRow } from "@/database/products-table";
 import { DataTableColumnHeader } from "../data-table-column-header";
+import { PermissionGuard } from "@/components/permission-guard";
 
 const formatMoney = (value: number) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -373,18 +374,20 @@ export const columns: ColumnDef<ProductTableRow>[] = [
     enableSorting: false,
     cell: ({ row }) => (
       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-        <Link to="/produits/$slug" params={{ slug: row.original._id }}>
-          <Button size="sm" variant="outline">
-            Modifier
+        <PermissionGuard resource="products" action="write">
+          <Link to="/produits/$slug" params={{ slug: row.original._id }}>
+            <Button size="sm" variant="outline">
+              Modifier
+            </Button>
+          </Link>
+          <Button
+            size="sm"
+            variant="destructive"
+            data-product-id={row.original._id}
+          >
+            Supprimer
           </Button>
-        </Link>
-        <Button
-          size="sm"
-          variant="destructive"
-          data-product-id={row.original._id}
-        >
-          Supprimer
-        </Button>
+        </PermissionGuard>
       </div>
     ),
   },

@@ -12,6 +12,7 @@ import { ExpenseFormModal } from "@/components/forms/expense/expense-form-modal"
 import { Search, X, Loader2, Plus } from "lucide-react";
 import Fuse from "fuse.js";
 import { useDebounce } from "use-debounce";
+import { PermissionGuard } from "@/components/permission-guard";
 
 export function ExpensesTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,10 +79,12 @@ export function ExpensesTable() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="default" onClick={() => setIsModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-1" />
-            Nouvelle dépense
-          </Button>
+          <PermissionGuard resource="expenses" action="write">
+            <Button variant="default" onClick={() => setIsModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Nouvelle dépense
+            </Button>
+          </PermissionGuard>
         </div>
       </div>
 
@@ -136,10 +139,12 @@ export function ExpensesTable() {
               Effacer la recherche
             </Button>
           ) : (
-            <Button onClick={() => setIsModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-1" />
-              Ajouter une dépense
-            </Button>
+            <PermissionGuard resource="expenses" action="write">
+              <Button onClick={() => setIsModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                Ajouter une dépense
+              </Button>
+            </PermissionGuard>
           )}
         </div>
       ) : (

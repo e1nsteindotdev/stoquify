@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DataTableColumnHeader } from "../data-table-column-header";
 import type { ExpenseWithCategory } from "@/database/expenses";
+import { PermissionGuard } from "@/components/permission-guard";
 
 const formatMoney = (value: number) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -85,13 +86,15 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
     enableSorting: false,
     cell: ({ row }) => (
       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-        <Button
-          size="sm"
-          variant="destructive"
-          data-expense-id={row.original._id}
-        >
-          Supprimer
-        </Button>
+        <PermissionGuard resource="expenses" action="write">
+          <Button
+            size="sm"
+            variant="destructive"
+            data-expense-id={row.original._id}
+          >
+            Supprimer
+          </Button>
+        </PermissionGuard>
       </div>
     ),
   },

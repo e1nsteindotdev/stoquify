@@ -10,7 +10,6 @@ export function useGetStores() {
     queryKey: ['stores'],
     queryFn: async () => {
       const stores = await convex.query(api.stores.list);
-      console.log('queryFn of useGetStores')
       setStores(stores);
       return stores;
     },

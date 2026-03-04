@@ -22,6 +22,7 @@ import { ClipLoader } from "react-spinners";
 import { CopyIcon, QrCode, ChevronDown } from "lucide-react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
+import { availableResources } from "@/lib/permissions";
 import {
   Collapsible,
   CollapsibleContent,
@@ -33,7 +34,7 @@ export type Role = "founder" | "admin" | "staff";
 interface Permission {
   storeId?: string;
   resource: string;
-  action: "read" | "write" | "update" | "delete" | "create" | "*";
+  action: "read" | "write" | "*";
 }
 
 interface EmployeeFormProps {
@@ -276,13 +277,6 @@ function PermissionBuilder({ stores, form }: { stores: any[]; form: any }) {
   const [expandedStores, setExpandedStores] = useState<string[]>(() => {
     return stores.length > 0 ? [stores[0]._id] : [];
   });
-  const { isLoading, data: availablePermissions } = useQuery({
-    queryKey: ["availablePermissions"],
-    queryFn: async () => await convex.query(api.permissions.list),
-  });
-
-  if (isLoading) return <p>Loading...</p>;
-  if (!availablePermissions) return <p>error</p>;
 
   const toggleStore = (storeId: string) => {
     setExpandedStores((prev) =>
@@ -302,7 +296,7 @@ function PermissionBuilder({ stores, form }: { stores: any[]; form: any }) {
   const setPermission = (
     storeId: string,
     resource: string,
-    action: "read" | "write" | "update" | "delete" | "create" | "*" | "none",
+    action: "read" | "write" | "*" | "none",
   ) => {
     const currentPerms = form.getFieldValue("permissions") || [];
     const filtered = currentPerms.filter(
@@ -341,7 +335,7 @@ function PermissionBuilder({ stores, form }: { stores: any[]; form: any }) {
               <div className="border-t bg-accent/20">
                 <table className="w-full">
                   <tbody>
-                    {availablePermissions.map((perm: any) => {
+                    {availableResources.map((perm: any) => {
                       return (
                         <tr key={perm.key} className="border-b last:border-b-0">
                           <td className="px-4 py-3">
