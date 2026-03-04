@@ -42,7 +42,7 @@
 ### AUTH 
     [X]  - in the account dropmenu in the buttom of the sidebar of the dashboard, we add an option to generate a QR code and the account owner scans it to sign-in, the generated qr code should have its status shown in the ui if it has been used or not, and if it has been used you can't use it again, but there should a be re-generate button to create another magic link and show its qr code 
     [ ] - add granular permissions to show or not show the tabs, like if a user doens't have products permission, he wouldn't be able to see the products tab, if he doesn't write permission, he wouldn't be able to go to the product form page, if he only has write permission, he see the add new product button and thats it, if he doens't have the delete permission he shouldn't see the delete button on the products table actions and so on, like plan a generate logic mapping of permission, and then apply to all the resources, also update the resources list to have to have all the resources hard coded, and for now simply the permissions to only be read write, remove the detailed ones like delete, create and update (they all fall under write)
-    [X] - just like how I used the custom auth function on createProduct convex mutation, do the same for all the other functions, add the resource and the action arguments to the function calls.
+    [ ] - just like how I used the custom auth function on createProduct convex mutation, do the same for all the other functions, add the resource and the action arguments to the function calls.
 
 
 ### GENERALE

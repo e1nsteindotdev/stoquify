@@ -1,7 +1,5 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./customeFunction";
-import { query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const create = authedMutation({
   resource: "stores",
@@ -29,11 +27,9 @@ export const list = authedQuery({
   resource: "stores",
   action: "read",
   handler: async (ctx) => {
-    console.log("hi from stores list")
     const user = await ctx.db.get(ctx.userId);
     if (!user?.organizationId) return [];
 
-    console.log(user?.organizationId);
     return await ctx.db
       .query("stores")
       .withIndex("by_organization", (q) =>

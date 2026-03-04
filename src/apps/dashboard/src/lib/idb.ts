@@ -70,9 +70,11 @@ export async function idbRefresh(store: string, data: any) {
 }
 
 export async function clearIDB() {
-  STORES.forEach(async (store) => {
-    try {
-      await idbClear(store);
-    } catch (e) {}
-  });
+  await Promise.all(
+    STORES.map(async (store) => {
+      try {
+        await idbClear(store);
+      } catch (e) {}
+    }),
+  );
 }

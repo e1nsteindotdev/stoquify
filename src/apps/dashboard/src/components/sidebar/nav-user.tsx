@@ -8,6 +8,7 @@ import {
   Check,
   Smartphone,
   RefreshCw,
+  Copy,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -44,9 +45,9 @@ import { api } from "api/convex";
 import { convex } from "@/lib/convex-client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export function NavUser({ avatar }: { avatar: string }) {
-
   const user = useAppStore((get) => get.user);
   const stores = useAppStore((state) => state.stores);
   const store = useAppStore((state) => state.selectedStore);
@@ -59,9 +60,8 @@ export function NavUser({ avatar }: { avatar: string }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!store && stores.length != 0)
-      setStore(stores[0]);
-  }, [])
+    if (!store && stores.length != 0) setStore(stores[0]);
+  }, []);
 
   // Query for active sign-in magic link
   const { data: activeLink, isLoading: isLoadingLink } = useQuery({
@@ -118,17 +118,18 @@ export function NavUser({ avatar }: { avatar: string }) {
     hasGlobalPermission(user, "*", "*");
 
   useEffect(() => {
-    if (!store && stores.length != 0)
-      setStore(stores[0]);
-  }, [])
+    if (!store && stores.length != 0) setStore(stores[0]);
+  }, []);
 
   if (!user) {
+    console.log('[USER-NAV] signing out user')
     signOut();
     return null;
   }
 
   const handleSignOut = async () => {
     await clearIDB();
+    console.log('[USER-NAV] signing out user')
     await signOut();
     navigate({ to: "/" });
   };
@@ -136,7 +137,6 @@ export function NavUser({ avatar }: { avatar: string }) {
   const handleStoreSwitch = (selectedStore: (typeof stores)[0]) => {
     setStore(selectedStore);
   };
-
 
   const base_url = import.meta.env.VITE_BASE_URL?.replace(/\/$/, "");
 
@@ -270,19 +270,36 @@ export function NavUser({ avatar }: { avatar: string }) {
                         </div>
                       )}
 
-                      <Button
-                        onClick={handleGenerateLink}
-                        disabled={createLinkMutation.isPending}
-                        className="w-full"
-                        size="sm"
-                      >
-                        {createLinkMutation.isPending ? (
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="mr-2 h-4 w-4" />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleGenerateLink}
+                          disabled={createLinkMutation.isPending}
+                          className="flex-1"
+                          size="sm"
+                        >
+                          {createLinkMutation.isPending ? (
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                          )}
+                          {activeLink ? "Régénérer" : "Générer"}
+                        </Button>
+                        {activeLink?.status === "active" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="px-2"
+                            title="Copier le lien"
+                            onClick={() => {
+                              const url = `http://localhost:3000/mobile-signin?token=${activeLink.token}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success("Lien copié");
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
                         )}
-                        {activeLink ? "Régénérer" : "Générer"}
-                      </Button>
+                      </div>
                     </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>

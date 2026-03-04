@@ -33,12 +33,12 @@ export function setCollectionsData({
 }) {
   const storeScopedKeys = selectedStoreId
     ? [
-        ["products", selectedStoreId],
-        ["categories", selectedStoreId],
-        ["collections", selectedStoreId],
-        ["sales", selectedStoreId],
-        ["expenses", selectedStoreId],
-      ]
+      ["products", selectedStoreId],
+      ["categories", selectedStoreId],
+      ["collections", selectedStoreId],
+      ["sales", selectedStoreId],
+      ["expenses", selectedStoreId],
+    ]
     : [];
 
   queryClient.setQueryData(["analytics"], analytics);
@@ -51,7 +51,6 @@ export function setCollectionsData({
   queryClient.setQueryData(["products"], products);
   queryClient.setQueryData(["sales"], sales);
   queryClient.setQueryData(["settings"], settings);
-  queryClient.setQueryData(["user"], user);
   queryClient.setQueryData(["users"], users);
   queryClient.setQueryData(["stores"], stores);
 

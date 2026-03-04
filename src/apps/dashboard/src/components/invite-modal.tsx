@@ -30,7 +30,8 @@ export function InviteStaffModal() {
       organizationId: user.organization._id,
     });
 
-    const link = `${base_url}/magic-link?magicLinkId=${result._id}`;
+    // const link = `${base_url}/magic-link?magicLinkId=${result._id}`;
+    const link = `http://localhost:3000/magic-link?magicLinkId=${result._id}`;
     setGeneratedLink(link);
   };
 

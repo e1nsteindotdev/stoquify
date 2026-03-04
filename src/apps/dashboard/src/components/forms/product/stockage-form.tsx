@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { LittleItem } from "@/components/ui/little-item";
 import {
   type VariantElement as TVariant,
-} from "@/hooks/useVariantActions";
+} from "@/hooks/use-variant-actions";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 

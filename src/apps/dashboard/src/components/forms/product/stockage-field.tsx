@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { LittleItem } from "@/components/ui/little-item";
-import { generateVIFingerPrint } from "@/hooks/useVariantActions";
 import { TypeDecodedSKU, TypeDecodedVariant } from "../types";
 
 export default function StockageField({ field, variants, strat }) {

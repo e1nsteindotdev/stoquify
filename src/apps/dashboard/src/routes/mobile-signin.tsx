@@ -3,6 +3,7 @@ import { api } from "api/convex";
 import { convex } from "@/lib/convex-client";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useAppStore } from "@/lib/store";
+import { clearIDB } from "@/lib/idb";
 import {
   Card,
   CardContent,
@@ -19,11 +20,9 @@ export const Route = createFileRoute("/mobile-signin")({
   loader: async () => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
-
     if (!token) {
       return { error: "invalid", message: "Token manquant" };
     }
-
     const result = await convex.query(api.signInMagicLinks.getByToken, {
       token,
     });
@@ -85,31 +84,27 @@ export const Route = createFileRoute("/mobile-signin")({
 
 type LoaderData =
   | {
-      valid: true;
-      token: string;
-      user: {
-        _id: string;
-        name: string;
-        email?: string;
-        phone: string;
-        organizationId: string;
-        role: string;
-      };
-    }
-  | {
-      error: string;
-      message: string;
-      usedAt?: number;
-      expiresAt?: number;
+    valid: true;
+    token: string;
+    user: {
+      _id: string;
+      name: string;
+      email?: string;
+      phone: string;
+      organizationId: string;
+      role: string;
     };
+  }
+  | {
+    error: string;
+    message: string;
+    usedAt?: number;
+    expiresAt?: number;
+  };
 
 function MobileSigninPage() {
   const loaderData = Route.useLoaderData() as LoaderData;
   const { signIn } = useAuthActions();
-  const setStores = useAppStore((state) => state.setStores);
-  const setUser = useAppStore((state) => state.setUser);
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Auto-sign in if token is valid
@@ -121,32 +116,21 @@ function MobileSigninPage() {
   const handleSignIn = async () => {
     if (!("valid" in loaderData) || !loaderData.valid) return;
 
-    setIsLoading(true);
-
     try {
-      // Use a custom flow to sign in with the magic link token
-      // We'll use the phone provider with a special parameter
-      await signIn("phone", {
-        phone: loaderData.user.phone,
-        signInMagicLinkToken: loaderData.token,
-        flow: "signIn",
+      // Use the dedicated mobile-magic-link provider
+      const signinResult = await signIn("mobile-magic-link", {
+        token: loaderData.token,
       });
-
-      // The token will be consumed during the sign-in process
-      // Fetch user data and stores
-      const stores = await convex.query(api.stores.list);
-      const user = await convex.query(api.users.getUserData);
-      setStores(stores);
-      setUser(user);
+      console.log('signIn result : ', signinResult)
+      // Clear local storage to avoid stale data from a previous user
+      await clearIDB();
 
       toast.success("Connexion réussie");
-
-      // Redirect to dashboard
-      navigate({ to: "/" });
+      // Force a full application reload to reset stores and query cache
+      window.location.href = "/";
     } catch (error) {
       console.error("Sign-in error:", error);
       toast.error("Erreur lors de la connexion");
-      setIsLoading(false);
     }
   };
 

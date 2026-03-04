@@ -1,6 +1,8 @@
 import { Password } from "@convex-dev/auth/providers/Password";
+import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
 import { convexAuth } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
@@ -17,10 +19,30 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           }),
           ...(params.role && { role: params.role }),
           ...(params.magicLinkId && { magicLinkId: params.magicLinkId }),
-          ...(params.signInMagicLinkToken && {
-            signInMagicLinkToken: params.signInMagicLinkToken,
-          }),
         };
+      },
+    }),
+    ConvexCredentials({
+      id: "mobile-magic-link",
+      authorize: async (params, ctx) => {
+        const { token } = params;
+        if (!token || typeof token !== "string") {
+          throw new ConvexError("Token is required");
+        }
+
+        try {
+          const result = await ctx.runMutation(
+            internal.signInMagicLinks.consume,
+            {
+              token,
+            },
+          );
+          return { userId: result.userId };
+        } catch (error) {
+          throw new ConvexError(
+            error instanceof Error ? error.message : "Invalid token",
+          );
+        }
       },
     }),
   ],
@@ -103,31 +125,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         await ctx.db.patch(magicLinkId as any, { usedAt: Date.now() });
 
         return user._id;
-      }
-
-      // Sign-in with magic link token (QR code)
-      const signInMagicLinkToken = (args.profile as any).signInMagicLinkToken;
-      if (signInMagicLinkToken) {
-        const link = await ctx.db
-          .query("signInMagicLinks")
-          .filter((q) => q.eq(q.field("token"), signInMagicLinkToken))
-          .unique();
-
-        if (!link) {
-          throw new ConvexError("Invalid sign-in link");
-        }
-        if (link.usedAt) {
-          throw new ConvexError("Sign-in link already used");
-        }
-        if (Date.now() > link.expiresAt) {
-          throw new ConvexError("Sign-in link expired");
-        }
-
-        // Mark the link as used
-        await ctx.db.patch(link._id, { usedAt: Date.now() });
-
-        // Return the user ID to establish the session
-        return link.userId;
       }
 
       // Regular user - existing user updating profile
