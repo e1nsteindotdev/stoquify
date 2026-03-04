@@ -2,16 +2,25 @@ import { convex } from "@/lib/convex-client";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 import { api } from "api/convex";
 import { createCollection } from "@tanstack/db";
-import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/ts-query-client";
+import { idbGet, idbRefresh } from "@/lib/idb";
 
 export const settingsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["settings"],
-    queryFn: async (ctx) => {
-      const settings = await convex.query(api.settings.getSettings);
-      return Array.isArray(settings) ? settings : [settings];
+    queryFn: async (): Promise<any[]> => {
+      try {
+        const settings = await convex.query(api.settings.getSettings);
+        const normalizedSettings = Array.isArray(settings)
+          ? settings
+          : [settings];
+        idbRefresh("settings", normalizedSettings);
+        return normalizedSettings;
+      } catch (e) {
+        const cachedSettings = await idbGet("settings");
+        return Array.isArray(cachedSettings) ? cachedSettings : [];
+      }
     },
     queryClient: queryClient,
     getKey: (item) => item._id,
@@ -20,5 +29,20 @@ export const settingsCollection = createCollection(
 );
 
 export const useGetSettings = () => {
-  return useQuery(convexQuery(api.settings.getSettings, {}));
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      try {
+        const settings = await convex.query(api.settings.getSettings);
+        idbRefresh("settings", settings);
+        return settings;
+      } catch (e) {
+        const cachedSettings = await idbGet("settings");
+        if (Array.isArray(cachedSettings)) {
+          return cachedSettings[0] ?? null;
+        }
+        return cachedSettings ?? null;
+      }
+    },
+  });
 };

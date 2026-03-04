@@ -11,7 +11,6 @@ type AuthOption = { resource: string; action: string };
 
 async function ensureAuthenticated(ctx: any, opts?: AuthOption) {
   const userId = await getAuthUserId(ctx);
-  console.log('[CONVEX] auth success', userId)
   if (userId === null) {
     throw new ConvexError("Not authenticated");
   }

@@ -14,6 +14,8 @@ const STORES = [
   "settings",
   "analytics",
   "customers",
+  "expenses",
+  "expenseCategories",
   "todos",
   "stores",
 ];

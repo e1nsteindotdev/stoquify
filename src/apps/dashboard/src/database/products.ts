@@ -4,9 +4,15 @@ import { api } from "api/convex";
 import { createCollection, eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import type { Id } from "api/data-model";
-import { idbRefresh } from "@/lib/idb";
+import { idbGet, idbRefresh } from "@/lib/idb";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
+import type { TypeProduct } from "api/types";
+
+type CachedProduct = TypeProduct;
+type ProductForForm = Omit<TypeProduct, "collections"> & {
+  collections: { _id: Id<"collections"> }[];
+};
 
 export const productsCollection = createCollection(
   queryCollectionOptions({
@@ -14,14 +20,21 @@ export const productsCollection = createCollection(
       const storeId = useAppStore.getState().selectedStore?._id;
       return ["products", storeId];
     },
-    queryFn: async () => {
+    queryFn: async (): Promise<any[]> => {
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
-      const products = await convex.query(api.products.listProducts, {
-        storeId,
-      });
-      idbRefresh("products", products);
-      return products;
+      try {
+        const products = await convex.query(api.products.listProducts, {
+          storeId,
+        });
+        idbRefresh("products", products);
+        return products;
+      } catch (e) {
+        const cachedProducts = await idbGet("products");
+        return Array.isArray(cachedProducts)
+          ? (cachedProducts as CachedProduct[])
+          : [];
+      }
     },
     queryClient,
     getKey: (item) => item._id,
@@ -40,5 +53,5 @@ export const useGetProductById = (id: Id<"products">) => {
       .where(({ products }) => eq(products._id, id))
       .findOne(),
   );
-  return product;
+  return product as ProductForForm | undefined;
 };

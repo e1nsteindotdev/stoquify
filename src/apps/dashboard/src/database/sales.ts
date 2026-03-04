@@ -5,6 +5,7 @@ import { createCollection } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
+import { idbGet, idbRefresh } from "@/lib/idb";
 
 export const salesCollection = createCollection(
   queryCollectionOptions({
@@ -12,13 +13,19 @@ export const salesCollection = createCollection(
       const storeId = useAppStore.getState().selectedStore?._id;
       return ["sales", storeId];
     },
-    queryFn: async (ctx) => {
+    queryFn: async (): Promise<any[]> => {
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
-      const sales = await convex.query((api.sales as any).listSales, {
-        storeId,
-      });
-      return sales;
+      try {
+        const sales = await convex.query((api.sales as any).listSales, {
+          storeId,
+        });
+        idbRefresh("sales", sales);
+        return sales;
+      } catch (e) {
+        const cachedSales = await idbGet("sales");
+        return Array.isArray(cachedSales) ? cachedSales : [];
+      }
     },
     queryClient: queryClient,
     getKey: (item: any) => item._id,

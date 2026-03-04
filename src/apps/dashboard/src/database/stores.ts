@@ -4,16 +4,21 @@ import { api } from "api/convex";
 import { createCollection } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import type { Id } from "api/data-model";
-import { idbRefresh } from "@/lib/idb";
+import { idbGet, idbRefresh } from "@/lib/idb";
 import { queryClient } from "@/lib/ts-query-client";
 
 export const storesCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["stores"],
-    queryFn: async () => {
-      const stores = await convex.query(api.stores.list);
-      idbRefresh("stores", stores);
-      return stores;
+    queryFn: async (): Promise<any[]> => {
+      try {
+        const stores = await convex.query(api.stores.list);
+        idbRefresh("stores", stores);
+        return stores;
+      } catch (e) {
+        const cachedStores = await idbGet("stores");
+        return Array.isArray(cachedStores) ? cachedStores : [];
+      }
     },
     queryClient,
     getKey: (item) => item._id,

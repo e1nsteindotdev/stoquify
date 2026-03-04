@@ -123,11 +123,9 @@ export function NavUser({ avatar }: { avatar: string }) {
   }, [])
 
   if (!user) {
-    console.log('[NAV-USER] no user')
-    // void signOut();
+    signOut();
     return null;
   }
-  console.log('[NAV-USER] user')
 
   const handleSignOut = async () => {
     await clearIDB();

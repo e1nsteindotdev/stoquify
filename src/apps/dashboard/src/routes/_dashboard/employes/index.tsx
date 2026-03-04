@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/_dashboard/employes/")({
   loader: () => {
     const user = useAppStore.getState().user;
-
     if (!hasGlobalPermission(user, "employees", "read")) {
       throw redirect({ to: "/" });
     }
