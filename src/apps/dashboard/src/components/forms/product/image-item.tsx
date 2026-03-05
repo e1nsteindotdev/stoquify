@@ -29,9 +29,9 @@ export function ImageItem({
     : image.url;
 
   return (
-    <div className="flex items-center justify-between rounded-none bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between rounded-none bg-neutral-200 border border-black/8 bg-muted/30 px-2 py-2 gap-2">
       <div className="flex items-center gap-2.5">
-        <div className="relative size-12 h-[60px] overflow-hidden rounded-lg bg-black/10">
+        <div className="relative size-12 h-[60px] overflow-hidden rounded-none bg-black/10">
           <img
             src={url}
             className="size-full object-contain"
@@ -44,7 +44,7 @@ export function ImageItem({
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 border-black/5 pt-2 sm:pt-0">
         <div className="flex items-center gap-2 rounded-xl p-1">
           <Button
             type="button"
@@ -65,7 +65,7 @@ export function ImageItem({
             <UpArrow />
           </Button>
         </div>
-        <span className="mx-1 h-6 w-px bg-black/10" />
+        <span className="hidden sm:block mx-1 h-6 w-px bg-black/10" />
         <div className="flex items-center gap-2 rounded-xl p-1">
           <Button
             type="button"

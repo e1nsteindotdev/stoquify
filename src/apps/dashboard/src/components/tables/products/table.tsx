@@ -212,7 +212,7 @@ export function ProductsTable() {
 
       <div className="flex w-full justify-end">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="hidden sm:inline text-sm text-muted-foreground">
             Afficher les données uniquement pour cette période :
           </span>
           <DateController

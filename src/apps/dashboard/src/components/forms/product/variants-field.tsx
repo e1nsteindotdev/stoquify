@@ -83,55 +83,61 @@ function VariantItem({
   );
 
   return (
-    <div className="bg-neutral-200 rounded-none border border-input-border  p-4">
-      <div className="flex  items-center gap-4">
-        <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600">
-          {" "}
-          {index + 1}{" "}
-        </span>
-        <div className="h-[24px] rounded-md py-0.5 bg-primary/10 w-[2px]" />
+    <div className="bg-neutral-200 rounded-none border border-input-border p-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+        <div className="flex flex-1 items-center gap-4">
+          <span className="rounded-md bg-[#C5C5C5]/50 px-2 py-1 text-[12px] font-semibold text-neutral-600">
+            {" "}
+            {index + 1}{" "}
+          </span>
+          <div className="h-[24px] rounded-md py-0.5 bg-primary/10 w-[2px]" />
 
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="text-[16px] font-semibold">{variant.name}</div>
-          <div className="flex flex-wrap gap-2">
-            {variant.options?.map((opt, i) => (
-              <span
-                key={`${opt.name}-${i}`}
-                className="rounded-[6px] bg-primary/10 px-3 py-1 text-primary text-sm"
-              >
-                {opt.name}
-              </span>
-            ))}
+          <div className="flex-1 flex flex-col gap-2">
+            <div className="text-[16px] font-semibold">{variant.name}</div>
+            <div className="flex flex-wrap gap-2">
+              {variant.options?.map((opt, i) => (
+                <span
+                  key={`${opt.name}-${i}`}
+                  className="rounded-[6px] bg-primary/10 px-3 py-1 text-primary text-sm"
+                >
+                  {opt.name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            className={`bg-[#F4F4F4] w-11 h-11 shadow-none hover:bg-black/5 ${isLast ? "cursor-default" : ""}`}
-            aria-label="Move down"
-            disabled={isLast}
-            onClick={() => moveVariantDown(index)}
-          >
-            <DownArrow />
-          </Button>
-          <Button
-            type="button"
-            className={`bg-[#F4F4F4] w-11 h-11 shadow-none hover:bg-black/5 ${isFirst ? " cursor-default" : ""}`}
-            aria-label="Move up"
-            disabled={isFirst}
-            onClick={() => moveVariantUp(index)}
-          >
-            <UpArrow />
-          </Button>
-          <div className="h-6 w-px bg-black/10" />
-          <Button
-            type="button"
-            className="border-transparent w-11 h-11 bg-[#DADADA] shadow-none hover:bg-black/10"
-            aria-label="Delete variant"
-            onClick={() => deleteVariant(index)}
-          >
-            <Trash2 color="red" className="size-5" />
-          </Button>
+        <div className="flex items-center gap-3 border-t sm:border-t-0 border-black/5 pt-3 sm:pt-0 justify-between sm:justify-end">
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              className={`bg-[#F4F4F4] w-11 h-11 shadow-none hover:bg-black/5 ${isLast ? "cursor-default" : ""}`}
+              aria-label="Move down"
+              disabled={isLast}
+              onClick={() => moveVariantDown(index)}
+            >
+              <DownArrow />
+            </Button>
+            <Button
+              type="button"
+              className={`bg-[#F4F4F4] w-11 h-11 shadow-none hover:bg-black/5 ${isFirst ? " cursor-default" : ""}`}
+              aria-label="Move up"
+              disabled={isFirst}
+              onClick={() => moveVariantUp(index)}
+            >
+              <UpArrow />
+            </Button>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-px bg-black/10" />
+            <Button
+              type="button"
+              className="border-transparent w-11 h-11 bg-[#DADADA] shadow-none hover:bg-black/10"
+              aria-label="Delete variant"
+              onClick={() => deleteVariant(index)}
+            >
+              <Trash2 color="red" className="size-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

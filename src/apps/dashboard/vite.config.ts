@@ -4,6 +4,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,6 +12,7 @@ export default defineConfig({
     format: "es",
   },
   plugins: [
+    basicSsl(),
     tanstackRouter({ autoCodeSplitting: true }),
     tailwindcss(),
     viteReact(),

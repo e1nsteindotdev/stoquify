@@ -8,9 +8,11 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useInitApp } from "@/hooks/use-init-app";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { motion } from "motion/react";
+import { MobileMenu } from "@/components/sidebar/mobile-menu";
+import { RefreshButton } from "@/components/sidebar/refresh-button";
 
 export const Route = createFileRoute("/_dashboard")({
-  loader: async () => { },
+  loader: async () => {},
   component: PathlessLayoutComponent,
 });
 
@@ -26,16 +28,18 @@ function PathlessLayoutComponent() {
       <AppSidebar />
       <SidebarInset>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-[#EEEFEF]">
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col relative">
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: .5 }}
+              transition={{ duration: 0.5 }}
               className="flex flex-1 flex-col"
             >
               <Outlet />
             </motion.div>
+            <MobileMenu />
+            <RefreshButton />
           </div>
         </div>
       </SidebarInset>

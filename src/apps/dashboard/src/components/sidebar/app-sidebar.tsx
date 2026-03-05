@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavSecondary } from "./nav-secondary";
 import { NavDocuments } from "./nav-documents";
+import { secondaryNavItems } from "./nav-data";
 
 // This is sample data.
 const data = {
@@ -41,103 +42,6 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  navMain: [
-    {
-      title: "Tableau de bord",
-      url: "#",
-      icon: IconDashboard,
-    },
-    {
-      title: "Cycle de vie",
-      url: "#",
-      icon: IconListDetails,
-    },
-    {
-      title: "Analytique",
-      url: "#",
-      icon: IconChartBar,
-    },
-    {
-      title: "Projets",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Équipe",
-      url: "#",
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Propositions actives",
-          url: "#",
-        },
-        {
-          title: "Archivé",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposition",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Propositions actives",
-          url: "#",
-        },
-        {
-          title: "Archivé",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Propositions actives",
-          url: "#",
-        },
-        {
-          title: "Archivé",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "POS",
-      url: "/pos",
-      icon: IconShoppingBag,
-    },
-    {
-      title: "Paramètres",
-      url: "/parametres",
-      icon: IconSettings,
-    },
-    // {
-    //   title: "Aide",
-    //   url: "#",
-    //   icon: IconHelp,
-    // },
-    // {
-    //   title: "Recherche",
-    //   url: "#",
-    //   icon: IconSearch,
-    // },
-  ],
   documents: [
     // {
     //   name: "Bibliothèque de données",
@@ -181,7 +85,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain />
         {data.documents.length > 0 && <NavDocuments items={data.documents} />}
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary items={secondaryNavItems} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser avatar={data.user.avatar} />

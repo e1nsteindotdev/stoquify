@@ -11,6 +11,11 @@ import { useGetExpenseCategories } from "@/database/expense-categories";
 import type { ExpenseCategory } from "@/database/expense-categories";
 import { useAppStore } from "@/lib/store";
 import { ExpenseFormModal } from "@/components/forms/expense/expense-form-modal";
+import {
+  DateController,
+  getPresetDates,
+  type DateRange,
+} from "@/components/analytics/date-controller";
 import { Search, X, Loader2, Plus } from "lucide-react";
 import Fuse from "fuse.js";
 import { useDebounce } from "use-debounce";
@@ -22,6 +27,9 @@ export function ExpensesTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] =
     useState<ExpenseWithCategory | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>(() =>
+    getPresetDates("allTime"),
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounce(searchQuery, 150);
 
@@ -36,22 +44,31 @@ export function ExpensesTable() {
   const deferredQuery = useDeferredValue(debouncedQuery);
   const isSearchStale = searchQuery !== deferredQuery;
 
+  const expensesByDate = useMemo(() => {
+    const from = new Date(`${dateRange.from}T00:00:00+01:00`).getTime();
+    const to = new Date(`${dateRange.to}T23:59:59+01:00`).getTime();
+    return expenses.filter((expense) => {
+      const date = new Date(expense.date).getTime();
+      return date >= from && date <= to;
+    });
+  }, [expenses, dateRange]);
+
   const fuse = useMemo(() => {
-    return new Fuse(expenses, {
+    return new Fuse(expensesByDate, {
       keys: ["title", "description"],
       threshold: 0.3,
       ignoreLocation: true,
       minMatchCharLength: 2,
     });
-  }, [expenses]);
+  }, [expensesByDate]);
 
   const filteredExpenses = useMemo(() => {
     if (deferredQuery.trim()) {
       const results = fuse.search(deferredQuery);
       return results.map((result) => result.item);
     }
-    return expenses;
-  }, [expenses, deferredQuery, fuse]);
+    return expensesByDate;
+  }, [expensesByDate, deferredQuery, fuse]);
 
   const totalExpenses = useMemo(() => {
     return filteredExpenses.reduce((sum, expense) => sum + expense.cost, 0);
@@ -150,6 +167,18 @@ export function ExpensesTable() {
         <span className="font-medium text-red-600">
           -{totalExpenses.toLocaleString("fr-FR")} DZD
         </span>
+      </div>
+
+      <div className="flex w-full justify-end">
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline text-sm text-muted-foreground">
+            Afficher les données uniquement pour cette période :
+          </span>
+          <DateController
+            defaultPreset="allTime"
+            onChange={(range) => setDateRange(range)}
+          />
+        </div>
       </div>
 
       {filteredExpenses.length === 0 ? (

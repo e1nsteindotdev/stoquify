@@ -55,9 +55,9 @@ export function TopProductsCard() {
           />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 overflow-x-auto">
         {topProducts.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-[600px]">
             {topProducts.map((product) => (
               <div key={product.name} className="group relative">
                 <div className="flex items-center gap-3">

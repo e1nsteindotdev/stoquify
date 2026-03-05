@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { LittleItem } from "@/components/ui/little-item";
 import { TypeDecodedSKU, TypeDecodedVariant } from "../types";
+import { formatNumberInput } from "@/lib/utils";
 
 export default function StockageField({ field, variants, strat }) {
   const skus: TypeDecodedSKU[] = field.state.value;
@@ -42,7 +43,10 @@ function ByNumberForm({ inventoryVariants, field }: any) {
           <p className="text-[14px] text-neutral-700">Quantité</p>
           <Input
             type="number"
-            onChange={(e) => changeQuantity(Number(e.target.value))}
+            onChange={(e) => {
+              const val = e.target.value;
+              changeQuantity(val === "" ? 0 : Number(formatNumberInput(val)));
+            }}
             placeholder="eg. 100"
             defaultValue={quantity}
             className="text-[14px] py-1 w-24"
@@ -98,23 +102,28 @@ function ByVariantsForm({
       {generatedSKUs.length > 0 ? (
         generatedSKUs.map((sku, idx) => (
           <div key={sku.tempId}>
-            <div className="flex items-center py-3 px-4 gap-4 justify-between">
-              <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-3 px-4 gap-4 justify-between">
+              <div className="flex flex-wrap gap-4">
                 {sku.options.map((option, optIdx) => (
                   <div key={optIdx} className="">
                     <LittleItem>{option.optionName}</LittleItem>
                   </div>
                 ))}
               </div>
-              <div className="w-24 mr-10">
+              <div className="w-full sm:w-24 flex items-center gap-2 border-t sm:border-t-0 border-black/5 pt-3 sm:pt-0">
+                <span className="sm:hidden text-sm font-medium">Quantité:</span>
                 <Input
                   type="number"
-                  onChange={(e) =>
-                    changeQuantity(sku.tempId, Number(e.target.value))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    changeQuantity(
+                      sku.tempId,
+                      val === "" ? 0 : Number(formatNumberInput(val)),
+                    );
+                  }}
                   placeholder="0"
                   value={sku.quantity}
-                  className="text-[14px] py-1"
+                  className="text-[14px] py-1 flex-1"
                 />
               </div>
             </div>

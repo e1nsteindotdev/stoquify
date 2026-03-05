@@ -10,11 +10,7 @@ import { useFieldContext } from "@/hooks/form-context.tsx";
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ResponsivePopover } from "@/components/ui/responsive-popover";
 import { CircleX, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,6 +32,7 @@ export default function CollectionsField({
 
   const [name, setName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [openCreate, setOpenCreate] = useState(false);
 
   async function handleCreate() {
     if (!name.trim() || isAdding) return;
@@ -53,10 +50,11 @@ export default function CollectionsField({
       if (res.ok) {
         toast.success("Collection ajoutée avec succès");
         queryClient.refetchQueries({ queryKey: ["collections"] });
+        setName("");
+        setOpenCreate(false);
       } else {
         toast.error(res.msg);
       }
-      setName("");
     } finally {
       setIsAdding(false);
     }
@@ -77,41 +75,38 @@ export default function CollectionsField({
         </CardHeader>
 
         <CardContent>
-          <Popover>
-            <PopoverTrigger asChild>
+          <ResponsivePopover
+            title="Ajouter à une collection"
+            trigger={
               <Button className="bg-transparent border-1 w-full justify-start py-2 border-black/20 text-black/70 hover:bg-transparent rounded-none">
                 <PlusIcon />
                 Ajouter à une nouvelle collection
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
-              {collections?.length !== 0 ? (
-                collections?.map((c) => (
-                  <div
-                    key={c._id}
-                    className="flex gap-2 items-center uppercase"
-                  >
-                    <Checkbox
-                      checked={isSelected(c._id)}
-                      onCheckedChange={(checked) => {
-                        return checked
-                          ? field.setValue((prev) => [...prev, c._id])
-                          : field.setValue((prev) =>
-                              prev.filter((id) => id !== c._id),
-                            );
-                      }}
-                    />
-                    <p className="text-[12px]">{c.title}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
-                  Aucune collection n'existe, créez d'abord une nouvelle
-                  collection.
+            }
+          >
+            {collections?.length !== 0 ? (
+              collections?.map((c) => (
+                <div key={c._id} className="flex gap-2 items-center uppercase">
+                  <Checkbox
+                    checked={isSelected(c._id)}
+                    onCheckedChange={(checked) => {
+                      return checked
+                        ? field.setValue((prev) => [...prev, c._id])
+                        : field.setValue((prev) =>
+                            prev.filter((id) => id !== c._id),
+                          );
+                    }}
+                  />
+                  <p className="text-[12px]">{c.title}</p>
                 </div>
-              )}
-            </PopoverContent>
-          </Popover>
+              ))
+            ) : (
+              <div className="py-2 text-black/50 italic text-[12px] px-2 uppercase">
+                Aucune collection n'existe, créez d'abord une nouvelle
+                collection.
+              </div>
+            )}
+          </ResponsivePopover>
 
           {selectedCollections.length === 0 ? (
             <div className="pt-3 text-black/50 italic text-[12px] uppercase">
@@ -141,8 +136,11 @@ export default function CollectionsField({
           )}
           <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3 mb-3" />
 
-          <Popover>
-            <PopoverTrigger asChild>
+          <ResponsivePopover
+            title="Nouvelle collection"
+            open={openCreate}
+            onOpenChange={setOpenCreate}
+            trigger={
               <Button
                 type="button"
                 variant="ghost"
@@ -153,28 +151,25 @@ export default function CollectionsField({
                 </div>
                 <p className="text-[14px]">Créer une nouvelle collection</p>
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD] shadow-black/40 shadow-lg ">
-              <div className="flex flex-col gap-4">
-                <p className="text-[14px] font-medium">
-                  Nom de la collection :
-                </p>
-                <Input
-                  placeholder="e.g. New Arrival"
-                  value={name}
-                  className="py-1"
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <Button
-                onClick={handleCreate}
-                disabled={!name.trim() || isAdding}
-                className="bg-primary text-white hover:bg-primary/90"
-              >
-                {isAdding ? "Création..." : "Créer"}
-              </Button>
-            </PopoverContent>
-          </Popover>
+            }
+          >
+            <div className="flex flex-col gap-4">
+              <p className="text-[14px] font-medium">Nom de la collection :</p>
+              <Input
+                placeholder="e.g. New Arrival"
+                value={name}
+                className="py-1"
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={handleCreate}
+              disabled={!name.trim() || isAdding}
+              className="bg-primary text-white hover:bg-primary/90 mt-4 w-full"
+            >
+              {isAdding ? "Création..." : "Créer"}
+            </Button>
+          </ResponsivePopover>
         </CardContent>
       </Card>
     </div>

@@ -206,7 +206,7 @@ export function RevenueProfitCard({
 
             {/* Bars Area */}
             <div
-              className={`flex-1 flex items-end justify-between gap-1 pb-6 relative h-full ${preset === "allTime" ? "min-w-max pr-4" : "w-full"}`}
+              className={`flex-1 flex items-end justify-between gap-1 pb-6 relative h-full min-w-[800px] ${preset === "allTime" ? "pr-4" : ""}`}
             >
               {/* Horizontal grid lines - moved here to stay fixed relative to bars if needed, or we can keep them in Y axis */}
               <div className="absolute inset-0 pointer-events-none pr-4">

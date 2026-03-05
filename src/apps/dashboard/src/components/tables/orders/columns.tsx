@@ -19,6 +19,9 @@ import { ordersCollection } from "@/database/orders";
 import { salesCollection } from "@/database/sales";
 import { useState } from "react";
 import { PermissionGuard } from "@/components/permission-guard";
+import { queryClient } from "@/lib/ts-query-client";
+import { useAppStore } from "@/lib/store";
+import { toast } from "sonner";
 
 export type OrderRow = {
   _id: string;
@@ -159,14 +162,40 @@ export const columns: ColumnDef<OrderRow>[] = [
         setIsLoading(true);
         try {
           if (newStatus === "confirmed") {
-            await confirmOrder.mutateAsync({
+            const result = await confirmOrder.mutateAsync({
               orderId: row.original._id as any,
             });
-            await salesCollection.preload();
+            if (result.ok) {
+              toast.success("Commande confirmée");
+            } else if (result.error === "stock_not_sufficient") {
+              const items = result.insufficientStockItems || [];
+              const errorMessage = items
+                .map(
+                  (item) =>
+                    `SKU ${item.skuId}: demandé ${item.requested}, disponible ${item.available}`,
+                )
+                .join(", ");
+              toast.error(`Stock insuffisant: ${errorMessage}`);
+            } else {
+              toast.error(result.error || "Erreur lors de la confirmation");
+            }
           } else {
             await denyOrder.mutateAsync({ orderId: row.original._id as any });
-            await ordersCollection.preload();
+            toast.success("Commande refusée");
           }
+
+          const storeId = useAppStore.getState().selectedStore?._id;
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["orders"] }),
+            queryClient.invalidateQueries({ queryKey: ["sales", storeId] }),
+          ]);
+
+          await Promise.all([
+            ordersCollection.preload(),
+            salesCollection.preload(),
+          ]);
+        } catch (error) {
+          toast.error("Une erreur est survenue");
         } finally {
           setIsLoading(false);
         }
@@ -251,7 +280,21 @@ export const columns: ColumnDef<OrderRow>[] = [
       const deleteOrder = useDeleteOrder();
       const handleDelete = async () => {
         if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
-          await deleteOrder.mutateAsync({ orderId: row.original._id as any });
+          try {
+            await deleteOrder.mutateAsync({ orderId: row.original._id as any });
+            const storeId = useAppStore.getState().selectedStore?._id;
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ["orders"] }),
+              queryClient.invalidateQueries({ queryKey: ["sales", storeId] }),
+            ]);
+            await Promise.all([
+              ordersCollection.preload(),
+              salesCollection.preload(),
+            ]);
+            toast.success("Commande supprimée");
+          } catch (error) {
+            toast.error("Erreur lors de la suppression");
+          }
         }
       };
       return (

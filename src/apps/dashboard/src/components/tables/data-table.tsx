@@ -128,21 +128,24 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-4 py-2">
-        <span className="text-sm text-muted-foreground">
-          {table.getRowModel().rows.length} /{" "}
-          {table.getFilteredRowModel().rows.length} commandes affichées
-        </span>
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-col items-center gap-4 py-4 sm:flex-row sm:justify-end sm:space-x-4 sm:py-2">
+        <div className="order-2 sm:order-1">
+          <span className="text-sm text-muted-foreground">
+            {table.getRowModel().rows.length} /{" "}
+            {table.getFilteredRowModel().rows.length} commandes affichées
+          </span>
+        </div>
+        <div className="flex w-full items-center justify-between space-x-2 px-2 sm:w-auto sm:px-0 order-1 sm:order-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="flex-1 sm:flex-none"
           >
             Précédent
           </Button>
-          <span className="text-sm font-medium px-2">
+          <span className="text-sm font-medium px-2 whitespace-nowrap">
             {table.getState().pagination.pageIndex + 1} /{" "}
             {table.getPageCount() || 1}
           </span>
@@ -151,6 +154,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="flex-1 sm:flex-none"
           >
             Suivant
           </Button>

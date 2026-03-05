@@ -56,9 +56,9 @@ export function CategoryPerformanceCard() {
           />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 overflow-x-auto">
         {categories.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-[600px]">
             {categories.map((category) => (
               <div key={category.name} className="group relative">
                 <div className="flex items-center gap-3">

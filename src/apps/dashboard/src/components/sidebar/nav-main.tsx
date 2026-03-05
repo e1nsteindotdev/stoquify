@@ -6,95 +6,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  IconChartBar,
-  IconPackage,
-  IconShoppingBag,
-  IconUsers,
-  IconReceipt2,
-} from "@tabler/icons-react";
 import { useAppStore } from "@/lib/store";
-import {
-  hasStorePermission,
-  hasGlobalPermission,
-  PermissionAction,
-} from "@/lib/permissions";
-
-type NavPermission = {
-  resource: string;
-  action: PermissionAction;
-  scope: "store" | "global";
-};
-
-type NavItem = {
-  title: string;
-  url: string;
-  icon: React.ComponentType;
-  requiredPermission?: NavPermission;
-};
-
-const navItems: NavItem[] = [
-  {
-    title: "Analytique",
-    url: "/",
-    icon: IconChartBar,
-    requiredPermission: {
-      resource: "analytics",
-      action: "read",
-      scope: "store",
-    },
-  },
-  {
-    title: "Produits",
-    url: "/produits",
-    icon: IconPackage,
-    requiredPermission: {
-      resource: "products",
-      action: "read",
-      scope: "store",
-    },
-  },
-  {
-    title: "Commandes",
-    url: "/commandes",
-    icon: IconShoppingBag,
-    requiredPermission: {
-      resource: "orders",
-      action: "read",
-      scope: "store",
-    },
-  },
-  {
-    title: "Clients",
-    url: "/clients",
-    icon: IconUsers,
-    requiredPermission: {
-      resource: "customers",
-      action: "read",
-      scope: "store",
-    },
-  },
-  {
-    title: "Dépenses",
-    url: "/depenses",
-    icon: IconReceipt2,
-    requiredPermission: {
-      resource: "expenses",
-      action: "read",
-      scope: "store",
-    },
-  },
-  {
-    title: "Employés",
-    url: "/employes",
-    icon: IconUsers,
-    requiredPermission: {
-      resource: "employees",
-      action: "read",
-      scope: "global",
-    },
-  },
-];
+import { hasStorePermission, hasGlobalPermission } from "@/lib/permissions";
+import { mainNavItems, NavItem } from "./nav-data";
 
 export function NavMain() {
   const { location } = useRouterState();
@@ -126,7 +40,7 @@ export function NavMain() {
     );
   };
 
-  const visibleItems = navItems.filter(hasAccess);
+  const visibleItems = mainNavItems.filter(hasAccess);
 
   return (
     <SidebarGroup>

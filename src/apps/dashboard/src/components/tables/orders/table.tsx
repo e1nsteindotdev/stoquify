@@ -42,14 +42,23 @@ export function OrdersTable() {
   const deferredQuery = useDeferredValue(debouncedQuery);
   const isSearchStale = searchQuery !== deferredQuery;
 
+  const rowsByDate = useMemo(() => {
+    const from = new Date(`${dateRange.from}T00:00:00+01:00`).getTime();
+    const to = new Date(`${dateRange.to}T23:59:59+01:00`).getTime();
+    return rows.filter((row) => {
+      const date = new Date(row.createdAt).getTime();
+      return date >= from && date <= to;
+    });
+  }, [rows, dateRange]);
+
   const fuse = useMemo(() => {
-    return new Fuse(rows, {
+    return new Fuse(rowsByDate, {
       keys: ["customerName"],
       threshold: 0.3,
       ignoreLocation: true,
       minMatchCharLength: 2,
     });
-  }, [rows]);
+  }, [rowsByDate]);
 
   const filteredRows = useMemo(() => {
     if (deferredQuery.trim()) {
@@ -61,8 +70,8 @@ export function OrdersTable() {
       );
       return results.map((result) => result.item);
     }
-    return rows;
-  }, [rows, deferredQuery, fuse]);
+    return rowsByDate;
+  }, [rowsByDate, deferredQuery, fuse]);
 
   if (isLoading) {
     return (
@@ -116,7 +125,7 @@ export function OrdersTable() {
 
       <div className="flex w-full justify-end">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="hidden sm:inline text-sm text-muted-foreground">
             Afficher les données uniquement pour cette période :
           </span>
           <DateController

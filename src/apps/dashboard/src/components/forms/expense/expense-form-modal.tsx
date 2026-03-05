@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useAppForm } from "@/hooks/form";
 import { useAppStore } from "@/lib/store";
+import { formatNumberInput } from "@/lib/utils";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { Id } from "api/data-model";
@@ -143,7 +144,12 @@ export function ExpenseFormModal({ open, onOpenChange, expense }: Props) {
                 <Input
                   type="number"
                   value={field.state.value}
-                  onChange={(e) => field.handleChange(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    field.handleChange(
+                      val === "" ? 0 : Number(formatNumberInput(val)),
+                    );
+                  }}
                   onBlur={field.handleBlur}
                   placeholder="0"
                 />

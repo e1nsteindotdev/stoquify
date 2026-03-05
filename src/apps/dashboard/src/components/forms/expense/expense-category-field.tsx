@@ -10,11 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ResponsivePopover } from "@/components/ui/responsive-popover";
 import { useGetExpenseCategories } from "@/database/expense-categories";
 import { Id } from "api/data-model";
 import { useAppStore } from "@/lib/store";
@@ -34,6 +30,7 @@ export default function ExpenseCategoryField({ label }: Props) {
 
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [open, setOpen] = useState(false);
 
   async function handleCreate() {
     if (!name.trim() || isCreating) return;
@@ -52,6 +49,7 @@ export default function ExpenseCategoryField({ label }: Props) {
       await queryClient.refetchQueries({ queryKey: ["expenseCategories"] });
       field.handleChange(id);
       setName("");
+      setOpen(false);
     } finally {
       setIsCreating(false);
     }
@@ -83,8 +81,11 @@ export default function ExpenseCategoryField({ label }: Props) {
 
         <div className="h-[1px] w-[98%] bg-black/5 justify-self-center mt-3 mb-3" />
 
-        <Popover>
-          <PopoverTrigger asChild>
+        <ResponsivePopover
+          title="Nouvelle catégorie de dépense"
+          open={open}
+          onOpenChange={setOpen}
+          trigger={
             <Button
               type="button"
               variant="ghost"
@@ -95,25 +96,24 @@ export default function ExpenseCategoryField({ label }: Props) {
               </div>
               <p className="text-[14px]">Ajouter une autre catégorie</p>
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="flex flex-col gap-4 w-80 bg-card border-[#FBFAFD]">
-            <div className="flex flex-col gap-2">
-              <p className="text-[14px] font-medium">Nom de la catégorie :</p>
-              <Input
-                placeholder="e.g. Loyer"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <Button
-              onClick={handleCreate}
-              disabled={!name.trim() || isCreating}
-              className="bg-primary text-white hover:bg-primary/90"
-            >
-              {isCreating ? "Création..." : "Créer"}
-            </Button>
-          </PopoverContent>
-        </Popover>
+          }
+        >
+          <div className="flex flex-col gap-2">
+            <p className="text-[14px] font-medium">Nom de la catégorie :</p>
+            <Input
+              placeholder="e.g. Loyer"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={handleCreate}
+            disabled={!name.trim() || isCreating}
+            className="bg-primary text-white hover:bg-primary/90 mt-2"
+          >
+            {isCreating ? "Création..." : "Créer"}
+          </Button>
+        </ResponsivePopover>
       </div>
     </div>
   );
