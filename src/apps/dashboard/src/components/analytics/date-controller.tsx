@@ -33,15 +33,15 @@ interface DateControllerProps {
 }
 
 const presetLabels: Record<DatePreset, string> = {
-  today: "Today",
-  thisWeek: "This Week",
-  thisMonth: "This Month",
-  lastWeek: "Last Week",
-  lastMonth: "Last Month",
-  lastYear: "Last Year",
-  thisYear: "This Year",
-  custom: "Custom",
-  allTime: "All Time",
+  today: "Aujourd'hui",
+  thisWeek: "Cette semaine",
+  thisMonth: "Ce mois",
+  lastWeek: "Semaine dernière",
+  lastMonth: "Mois dernier",
+  lastYear: "Année dernière",
+  thisYear: "Cette année",
+  custom: "Personnalisé",
+  allTime: "Tout le temps",
 };
 
 function getPresetDates(preset: DatePreset): DateRange {
@@ -181,7 +181,9 @@ export function DateController({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1">
             <CalendarIcon className="size-4" />
-            <span>{preset === "custom" ? "Custom" : presetLabels[preset]}</span>
+            <span>
+              {preset === "custom" ? "Personnalisé" : presetLabels[preset]}
+            </span>
             <ChevronDownIcon className="size-3" />
           </Button>
         </DropdownMenuTrigger>

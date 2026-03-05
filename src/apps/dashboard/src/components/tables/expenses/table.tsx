@@ -1,5 +1,5 @@
 import { useState, useMemo, useDeferredValue } from "react";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { ClipLoader } from "react-spinners";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
 import { useGetExpenses } from "@/database/expenses";
+import { useGetExpenseCategories } from "@/database/expense-categories";
+import type { ExpenseCategory } from "@/database/expense-categories";
 import { useAppStore } from "@/lib/store";
 import { ExpenseFormModal } from "@/components/forms/expense/expense-form-modal";
 import { Search, X, Loader2, Plus } from "lucide-react";
@@ -26,6 +28,10 @@ export function ExpensesTable() {
   const storeId = useAppStore((state) => state.selectedStore?._id);
   const expensesResult = useGetExpenses(storeId);
   const expenses = expensesResult?.data ?? [];
+  const categoriesResult = useGetExpenseCategories(storeId);
+  const categories = (categoriesResult?.data as ExpenseCategory[]) ?? [];
+
+  const columns = useMemo(() => getColumns(categories), [categories]);
 
   const deferredQuery = useDeferredValue(debouncedQuery);
   const isSearchStale = searchQuery !== deferredQuery;
@@ -169,7 +175,11 @@ export function ExpensesTable() {
           )}
         </div>
       ) : (
-        <DataTable columns={columns} data={filteredExpenses} />
+        <DataTable
+          columns={columns}
+          data={filteredExpenses}
+          defaultSorting={[{ id: "date", desc: true }]}
+        />
       )}
 
       <ExpenseFormModal

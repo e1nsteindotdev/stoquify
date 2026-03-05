@@ -10,11 +10,14 @@ export const settingsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["settings"],
     queryFn: async (): Promise<any[]> => {
+      console.log("[settings] queryFn running");
       try {
         const settings = await convex.query(api.settings.getSettings);
         const normalizedSettings = Array.isArray(settings)
           ? settings
-          : [settings];
+          : settings
+            ? [settings]
+            : [];
         idbRefresh("settings", normalizedSettings);
         return normalizedSettings;
       } catch (e) {
@@ -23,8 +26,9 @@ export const settingsCollection = createCollection(
       }
     },
     queryClient: queryClient,
-    getKey: (item) => item._id,
+    getKey: (item) => item?._id,
     syncMode: "eager",
+    staleTime: 24 * 60 * 60 * 1000,
   }),
 );
 

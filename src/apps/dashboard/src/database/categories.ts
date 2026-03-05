@@ -14,6 +14,7 @@ export const categoriesCollection = createCollection(
       return ["categories", storeId];
     },
     queryFn: async (): Promise<any[]> => {
+      console.log("[categories] queryFn running");
       try {
         const categories = await convex.query(api.categories.listCategories);
         idbRefresh("categories", categories);
@@ -26,6 +27,7 @@ export const categoriesCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
+    staleTime: 24 * 60 * 60 * 1000,
   }),
 );
 

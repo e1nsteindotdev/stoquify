@@ -7,6 +7,15 @@ import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import { idbGet, idbRefresh } from "@/lib/idb";
 
+import type { Id } from "api/data-model";
+
+export type ExpenseCategory = {
+  _id: Id<"expenseCategories">;
+  _creationTime: number;
+  storeId: Id<"stores">;
+  name: string;
+};
+
 export const expenseCategoriesCollection = createCollection(
   queryCollectionOptions({
     queryKey: () => {
@@ -14,6 +23,7 @@ export const expenseCategoriesCollection = createCollection(
       return ["expenseCategories", storeId];
     },
     queryFn: async (): Promise<any[]> => {
+      console.log("[expense-categories] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
       try {
@@ -33,6 +43,7 @@ export const expenseCategoriesCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
+    staleTime: 24 * 60 * 60 * 1000,
   }),
 );
 

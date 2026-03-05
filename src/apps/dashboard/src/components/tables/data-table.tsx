@@ -8,6 +8,7 @@ import {
   getFilteredRowModel,
   useReactTable,
   type Row,
+  type SortingState,
 } from "@tanstack/react-table";
 
 import {
@@ -26,6 +27,7 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number;
   getRowCanExpand?: (row: Row<TData>) => boolean;
   renderSubComponent?: (props: { row: Row<TData> }) => React.ReactElement;
+  defaultSorting?: SortingState;
 }
 
 export function DataTable<TData, TValue>({
@@ -34,6 +36,7 @@ export function DataTable<TData, TValue>({
   pageSize = 50,
   getRowCanExpand,
   renderSubComponent,
+  defaultSorting = [],
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -47,6 +50,7 @@ export function DataTable<TData, TValue>({
       pagination: {
         pageSize,
       },
+      sorting: defaultSorting,
     },
   });
 

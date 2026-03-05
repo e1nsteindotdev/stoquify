@@ -48,6 +48,7 @@ export const columns: ColumnDef<ClientRow>[] = [
   },
   {
     accessorKey: "lastOrderDate",
+    enableSorting: true,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}

@@ -9,6 +9,7 @@ export const usersCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["users"],
     queryFn: async (): Promise<any[]> => {
+      console.log("[users] queryFn running");
       try {
         const user = await convex.query(api.users.get);
         const normalizedUsers = user ? [user] : [];
@@ -27,6 +28,6 @@ export const usersCollection = createCollection(
     queryClient,
     getKey: (item: any) => item._id ?? item.subject,
     syncMode: "eager",
+    staleTime: 24 * 60 * 60 * 1000,
   }),
 );
-

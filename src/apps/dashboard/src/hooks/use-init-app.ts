@@ -39,6 +39,7 @@ export const useInitApp = () => {
         collections,
         customers,
         expenses,
+        expenseCategories,
         faqs,
         orders,
         products,
@@ -53,6 +54,7 @@ export const useInitApp = () => {
         idbGet("collections"),
         idbGet("customers"),
         idbGet("expenses"),
+        idbGet("expenseCategories"),
         idbGet("faqs"),
         idbGet("orders"),
         idbGet("products"),
@@ -92,18 +94,19 @@ export const useInitApp = () => {
         collections,
         customers,
         expenses,
+        expenseCategories,
         faqs,
         orders,
         products,
         sales,
         settings,
         users,
-        user: normalizeUser(localUser),
         stores: useAppStore.getState().stores,
         selectedStoreId: useAppStore.getState().selectedStore?._id,
       });
 
-      preloadAllCollections();
+      const selectedStoreId = useAppStore.getState().selectedStore?._id;
+      preloadAllCollections(selectedStoreId);
 
       if (!mounted) return;
       hasBootstrapped = true;

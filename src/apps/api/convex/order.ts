@@ -1,9 +1,8 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./customeFunction";
+import { mutation } from "./_generated/server";
 
-export const placeOrder = authedMutation({
-  resource: "orders",
-  action: "create",
+export const placeOrder = mutation({
   args: v.object({
     address: v.string(),
     firstName: v.string(),
@@ -150,9 +149,9 @@ export const listOrders = authedQuery({
           customer,
           address: address
             ? {
-                ...address,
-                wilaya,
-              }
+              ...address,
+              wilaya,
+            }
             : null,
           itemCount,
           profit,
@@ -183,10 +182,10 @@ export const getOrder = authedQuery({
         const sku = await ctx.db.get(item.skuId);
         const variantOptions = sku
           ? await Promise.all(
-              sku.options.map(async (optId) => {
-                return await ctx.db.get(optId);
-              }),
-            )
+            sku.options.map(async (optId) => {
+              return await ctx.db.get(optId);
+            }),
+          )
           : [];
         return {
           ...item,
@@ -202,9 +201,9 @@ export const getOrder = authedQuery({
       customer,
       address: address
         ? {
-            ...address,
-            wilaya,
-          }
+          ...address,
+          wilaya,
+        }
         : null,
       order: orderItems,
     };

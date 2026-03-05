@@ -67,6 +67,23 @@ export const columns: ColumnDef<OrderRow>[] = [
     ),
   },
   {
+    accessorKey: "createdAt",
+    enableSorting: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Date" />
+    ),
+    cell: ({ row }) => {
+      const date = new Date(row.original.createdAt);
+      return date.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    },
+  },
+  {
     accessorKey: "phoneNumber",
     enableSorting: false,
     header: ({ column }) => (
@@ -226,23 +243,6 @@ export const columns: ColumnDef<OrderRow>[] = [
         {row.original.source === "online" ? "EN LIGNE" : "EN MAGASIN"}
       </span>
     ),
-  },
-  {
-    accessorKey: "createdAt",
-    enableSorting: false,
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Date" />
-    ),
-    cell: ({ row }) => {
-      const date = new Date(row.original.createdAt);
-      return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    },
   },
   {
     id: "actions",

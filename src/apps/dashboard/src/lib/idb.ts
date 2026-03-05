@@ -38,7 +38,8 @@ export const idbPromise = () => {
 export async function idbGet(store: string) {
   try {
     const db = await idbPromise();
-    return (await db.get(store, "all")) ?? [];
+    const data = await db.get(store, "all");
+    return Array.isArray(data) ? data : [];
   } catch (e) {
     //    console.log("faild to preload products :", String(e));
     return null;

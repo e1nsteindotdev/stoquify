@@ -22,6 +22,7 @@ export const collectionsCollection = createCollection(
       return ["collections", storeId];
     },
     queryFn: async (): Promise<any[]> => {
+      console.log("[collections] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
       try {
@@ -43,6 +44,7 @@ export const collectionsCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
+    staleTime: 24 * 60 * 60 * 1000,
   }),
 );
 

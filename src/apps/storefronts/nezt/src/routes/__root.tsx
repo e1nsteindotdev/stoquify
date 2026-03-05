@@ -4,6 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { motion } from "motion/react";
 import { useCatalogStore } from "@/lib/catalog-store";
 import { useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -60,6 +61,7 @@ function RootComponent() {
         >
           <Outlet />
         </motion.div>
+        <Toaster />
       </motion.div>
     </AnimatePresence>
   );

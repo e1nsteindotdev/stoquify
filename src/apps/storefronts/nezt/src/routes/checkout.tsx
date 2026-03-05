@@ -1,3 +1,4 @@
+import { ClipLoader } from "react-spinners";
 import { Image } from "@/components/ui/image";
 import {
   Select,
@@ -20,14 +21,15 @@ import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useCartTotal, useCartStore } from "@/lib/state";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "api/convex";
 import { XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Id } from "api/data-model";
 import { useCatalogStore } from "@/lib/catalog-store";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
 
 export const Route = createFileRoute("/checkout")({
   component: RouteComponent,
@@ -54,13 +56,12 @@ function RouteComponent() {
       <div className="flex flex-col gap-5 lg:gap-0 lg:flex-row justify-center min-h-screen pb-20 lg:pb-0">
         {/* form */}
         <OrderForm />
-        <div className="w-[95%] mx-auto h-[1px]  bg-black order-2 lg:hidden" />
+        {/* <div className="w-[95%] mx-auto h-[1px]  bg-black order-2 lg:hidden" /> */}
         {/* summary  */}
-        <div className="flex-1 flex justify-start lg:px-10 order-1">
-          <div className="w-full lg:w-[600px] lg:h-[800px] gap-40 lg:gap-0 flex flex-col justify-between px-10 lg:px-0 my-8 order-2 font-inter relative">
+        {/* <div className="flex-1 flex justify-start lg:px-10 order-1">
+          <div className="w-full lg:w-[600px] lg:h-[800px] gap-40 lg:gap-0 flex flex-col justify-between px-10 lg:px-0 my-8 order-2 font-inter relative z-0">
             <div className="h-full w-[1px] bg-black absolute left-5 lg:-left-5 top-0" />
 
-            {/* upper part */}
             <div>
               <p className="text-[25px] font-bold uppercase">REÇU</p>
               <div className="flex flex-col gap-3 pt-3 lg:pt-4">
@@ -129,7 +130,6 @@ function RouteComponent() {
               <div className="w-full h-[1px] bg-black" />
             </div>
 
-            {/* lower part  */}
             <div className="flex flex-col gap-2 text-[14px] uppercase border-t-1 border-black pt-3">
               <div className="w-full flex justify-between">
                 <p className="font-bold">SOUS-TOTAL</p>
@@ -147,14 +147,32 @@ function RouteComponent() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
 }
 
 function OrderForm() {
-  const sendOrder = useMutation(api.order.placeOrder);
+  const sendOrder = async (data: any) => {
+    const response = await fetch(`${CONVEX_URL}/api/mutation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        path: "order:placeOrder",
+        args: data,
+        format: "json",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to place order: ${response.statusText}`);
+    }
+    const result = await response.json();
+    return result.value;
+  };
   const cart = useCartStore((state) => state.cart);
   const removeProductFromCart = useCartStore(
     (state) => state.removeProductFromCart,
@@ -174,6 +192,8 @@ function OrderForm() {
   const products = useCatalogStore((state) => state.products);
   const wilayat = useCatalogStore((state) => state.wilayat);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (
     firstName: string,
     lastName: string,
@@ -181,46 +201,60 @@ function OrderForm() {
     address: string,
     wilaya: string,
   ) => {
-    const insufficientItems: Array<{
-      productTitle: string;
-      requested: number;
-      available: number;
-    }> = [];
+    setIsSubmitting(true);
+    try {
+      const insufficientItems: Array<{
+        productTitle: string;
+        requested: number;
+        available: number;
+      }> = [];
 
-    for (const [productId, content] of cartArray) {
-      const product = products?.find((p) => p._id === productId);
-      const skuData = product?.skus.find((s) => s._id === content.skuId);
+      for (const [productId, content] of cartArray) {
+        const product = products?.find((p) => p._id === productId);
+        const skuData = product?.skus.find((s) => s._id === content.skuId);
 
-      if (skuData && skuData.quantity < content.quantity) {
-        insufficientItems.push({
-          productTitle: product?.title || "Unknown Product",
-          requested: content.quantity,
-          available: skuData.quantity,
-        });
+        if (skuData && skuData.quantity < content.quantity) {
+          insufficientItems.push({
+            productTitle: product?.title || "Unknown Product",
+            requested: content.quantity,
+            available: skuData.quantity,
+          });
+        }
       }
-    }
 
-    if (insufficientItems.length > 0) {
-      setStockError({ items: insufficientItems, isOpen: true });
-      return;
-    }
+      if (insufficientItems.length > 0) {
+        setStockError({ items: insufficientItems, isOpen: true });
+        setIsSubmitting(false);
+        return;
+      }
 
-    const data = {
-      firstName,
-      lastName,
-      phoneNumber,
-      address,
-      wilaya,
-      order: cartArray.map(([productId, content]) => ({
-        quantity: content.quantity,
-        productId,
-        price: content.price,
-        skuId: content.skuId,
-      })),
-    };
-    const orderId = await sendOrder(data);
-    if (orderId) {
-      navigate({ to: "/order-success", search: { orderId } });
+      const data = {
+        firstName,
+        lastName,
+        phoneNumber,
+        address,
+        wilaya,
+        order: cartArray.map(([productId, content]) => ({
+          quantity: content.quantity,
+          productId,
+          price: content.price,
+          skuId: content.skuId,
+        })),
+      };
+      const orderId = await sendOrder(data);
+      if (orderId) {
+        toast.success("Commande passée avec succès!");
+        navigate({ to: "/order-success", search: { orderId } });
+      } else {
+        toast.error("Erreur lors de la commande. Veuillez réessayer.");
+      }
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      toast.error(
+        "Une erreur est survenue lors de la commande. Veuillez réessayer.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -231,30 +265,43 @@ function OrderForm() {
     address: string,
     wilaya: string,
   ) => {
-    const data = {
-      firstName,
-      lastName,
-      phoneNumber,
-      address,
-      wilaya,
-      order: cartArray.map(([productId, content]) => {
-        const product = products?.find((p) => p._id === productId);
-        const skuData = product?.skus.find((s) => s._id === content.skuId);
-        const availableQty = skuData
-          ? Math.min(content.quantity, skuData.quantity)
-          : content.quantity;
-        return {
-          quantity: availableQty,
-          productId,
-          price: content.price,
-          skuId: content.skuId,
-        };
-      }),
-    };
-    const orderId = await sendOrder(data);
-    if (orderId) {
-      setStockError({ items: [], isOpen: false });
-      navigate({ to: "/order-success", search: { orderId } });
+    setIsSubmitting(true);
+    try {
+      const data = {
+        firstName,
+        lastName,
+        phoneNumber,
+        address,
+        wilaya,
+        order: cartArray.map(([productId, content]) => {
+          const product = products?.find((p) => p._id === productId);
+          const skuData = product?.skus.find((s) => s._id === content.skuId);
+          const availableQty = skuData
+            ? Math.min(content.quantity, skuData.quantity)
+            : content.quantity;
+          return {
+            quantity: availableQty,
+            productId,
+            price: content.price,
+            skuId: content.skuId,
+          };
+        }),
+      };
+      const orderId = await sendOrder(data);
+      if (orderId) {
+        setStockError({ items: [], isOpen: false });
+        toast.success("Commande passée avec succès!");
+        navigate({ to: "/order-success", search: { orderId } });
+      } else {
+        toast.error("Erreur lors de la commande. Veuillez réessayer.");
+      }
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      toast.error(
+        "Une erreur est survenue lors de la commande. Veuillez réessayer.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -273,17 +320,17 @@ function OrderForm() {
     },
   });
   return (
-    <div className="order-3 lg:order-1 relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white overflow-clip ">
+    <div className="order-3 lg:order-1 relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white overflow-clip">
       <div className="h-full w-[1px] bg-black absolute left-5 lg:left-14 bottom-0 lg:hidden" />
 
-      <div className="my-8 lg:px-13 px-8 lg:w-[600px] lg:h-[800px] font-inter ">
+      <div className="my-8 lg:px-13 px-8 lg:w-[600px] lg:h-[800px] font-inter">
         <p className="text-[25px] font-bold uppercase">Finaliser la commande</p>
         <div className="w-full h-[1px] bg-black mt-4" />
         <form
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            form.handleSubmit();
+            void form.handleSubmit();
           }}
           className="flex flex-col h-full justify-between"
         >
@@ -298,6 +345,7 @@ function OrderForm() {
                       onChange={(e) => field.handleChange(e.target.value)}
                       value={field.state.value}
                       placeholder="Tebboun"
+                      required
                     />
                   )}
                 />
@@ -311,6 +359,7 @@ function OrderForm() {
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder="Abdelmajid"
                       value={field.state.value}
+                      required
                     />
                   )}
                 />
@@ -322,9 +371,11 @@ function OrderForm() {
                 name="phoneNumber"
                 children={(field) => (
                   <Input
+                    type="number"
                     onChange={(e) => field.handleChange(Number(e.target.value))}
                     placeholder="0540228402"
                     value={field.state.value}
+                    required
                   />
                 )}
               />
@@ -339,6 +390,7 @@ function OrderForm() {
                     <Select
                       onValueChange={(e) => field.handleChange(e)}
                       value={field.state.value}
+                      required
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Wilaya" />
@@ -356,7 +408,7 @@ function OrderForm() {
                   )}
                 />
               ) : (
-                <div className="bg-grapy-200 animate-pulse h-10 w-30" />
+                <div className="bg-gray-200 animate-pulse h-10 w-30" />
               )}
             </div>
 
@@ -369,13 +421,19 @@ function OrderForm() {
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Belfort, El Harrach"
                     value={field.state.value}
+                    required
                   />
                 )}
               />
             </div>
           </div>
 
-          <button className="w-full bg-primary rounded-2xl py-2 text-white font-semibold mb-8 uppercase">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-wait transition-colors rounded-2xl py-2 text-white font-semibold mb-8 uppercase flex justify-center items-center gap-2 cursor-pointer"
+          >
+            {isSubmitting && <ClipLoader size={18} color="#fff" />}
             Finaliser la commande
           </button>
         </form>

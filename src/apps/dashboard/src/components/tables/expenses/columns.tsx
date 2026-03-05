@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DataTableColumnHeader } from "../data-table-column-header";
 import type { ExpenseWithCategory } from "@/database/expenses";
+import type { ExpenseCategory } from "@/database/expense-categories";
 import { PermissionGuard } from "@/components/permission-guard";
 
 const formatMoney = (value: number) => {
@@ -22,10 +23,12 @@ const formatDate = (timestamp: number) => {
   });
 };
 
-export const columns: ColumnDef<ExpenseWithCategory>[] = [
+export const getColumns = (
+  categories: ExpenseCategory[],
+): ColumnDef<ExpenseWithCategory>[] => [
   {
     accessorKey: "date",
-    enableSorting: false,
+    enableSorting: true,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date" />
     ),
@@ -34,8 +37,8 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
     ),
   },
   {
-    id: "title",
-    enableSorting: false,
+    accessorKey: "title",
+    enableSorting: true,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -58,14 +61,20 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
   },
   {
     id: "category",
-    enableSorting: false,
+    accessorFn: (row) => row.category?.name,
+    enableSorting: true,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
         title="Catégorie"
         explanation="Classification de la dépense pour le suivi"
+        isChoice
+        choices={categories.map((c) => ({ label: c.name, value: c.name }))}
       />
     ),
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
     cell: ({ row }) => {
       const category = row.original.category;
       return category ? (
@@ -79,6 +88,7 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
   },
   {
     accessorKey: "cost",
+    enableSorting: true,
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}

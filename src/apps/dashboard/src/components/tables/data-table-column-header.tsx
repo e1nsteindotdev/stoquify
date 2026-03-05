@@ -1,5 +1,5 @@
 import { type Column } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Filter, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Filter, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,12 @@ export function DataTableColumnHeader<TData, TValue>({
   isChoice,
   choices,
 }: DataTableColumnHeaderProps<TData, TValue>) {
-  if (!column.getCanSort() && !column.getCanFilter()) {
+  const selectedFilters = new Set(column.getFilterValue() as string[]);
+  const hasFilterOptions = isChoice && choices && choices.length > 0;
+  const canSort = column.getCanSort();
+  const canFilter = column.getCanFilter();
+
+  if (!canSort && !canFilter) {
     const content = (
       <div className={cn("text-xs font-medium", className)}>{title}</div>
     );
@@ -57,8 +62,37 @@ export function DataTableColumnHeader<TData, TValue>({
     return content;
   }
 
-  const selectedFilters = new Set(column.getFilterValue() as string[]);
-  const hasFilterOptions = isChoice && choices && choices.length > 0;
+  if (canSort && !hasFilterOptions) {
+    const content = (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-3 h-8 hover:bg-transparent hover:text-foreground rounded-none text-xs font-medium"
+        onClick={() => column.toggleSorting()}
+      >
+        <span>{title}</span>
+        {column.getIsSorted() === "desc" && (
+          <ArrowDown className="ml-2 h-3 w-3" />
+        )}
+        {column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-3 w-3" />}
+      </Button>
+    );
+
+    if (explanation) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px]">
+              {explanation}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return content;
+  }
 
   const trigger = (
     <Button
@@ -71,15 +105,13 @@ export function DataTableColumnHeader<TData, TValue>({
         <ArrowDown className="ml-2 h-3 w-3" />
       ) : column.getIsSorted() === "asc" ? (
         <ArrowUp className="ml-2 h-3 w-3" />
-      ) : hasFilterOptions ? (
+      ) : (
         <Filter
           className={cn(
             "ml-2 h-2.5 w-2.5",
             column.getFilterValue() ? "text-primary" : "text-muted-foreground",
           )}
         />
-      ) : (
-        <ChevronsUpDown className="ml-2 h-3 w-3" />
       )}
     </Button>
   );
@@ -102,32 +134,6 @@ export function DataTableColumnHeader<TData, TValue>({
           <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
         )}
         <DropdownMenuContent align="start" className="rounded-none">
-          {column.getCanSort() && !hasFilterOptions && (
-            <>
-              <DropdownMenuItem
-                className="rounded-none cursor-pointer"
-                onClick={() => column.toggleSorting(false)}
-              >
-                <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                Ascendant
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-none cursor-pointer"
-                onClick={() => column.toggleSorting(true)}
-              >
-                <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                Descendant
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="rounded-none cursor-pointer"
-                onClick={() => column.clearSorting()}
-              >
-                <ChevronsUpDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                Désactiver le tri
-              </DropdownMenuItem>
-            </>
-          )}
-
           {hasFilterOptions && choices && (
             <>
               {choices.map((choice) => (

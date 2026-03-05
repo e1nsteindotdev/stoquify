@@ -147,7 +147,11 @@ export function OrdersTable() {
           )}
         </div>
       ) : (
-        <DataTable columns={columns} data={filteredRows} />
+        <DataTable
+          columns={columns}
+          data={filteredRows}
+          defaultSorting={[{ id: "createdAt", desc: true }]}
+        />
       )}
     </div>
   );

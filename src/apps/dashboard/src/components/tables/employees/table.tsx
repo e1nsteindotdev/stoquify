@@ -1,6 +1,5 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "api/convex";
-import { ClipLoader } from "react-spinners";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, CopyIcon, QrCode, Trash2, Settings } from "lucide-react";
 import { useState } from "react";
@@ -41,8 +40,6 @@ export function EmployeesTable() {
   const users = useQuery(api.users.getOrganizationUsers);
   const pendingInvites = useQuery(api.magicLinks.getPendingByOrganization);
   const revoke = useMutation(api.magicLinks.revoke);
-
-  console.log("Pending invites from getPendingByOrganization:", pendingInvites);
 
   if (!users || pendingInvites === undefined) {
     return (
@@ -253,14 +250,14 @@ export function EmployeesTable() {
                       )
                         ? "Tous les accès"
                         : user.permissions
-                            ?.map((p) => {
-                              const resource =
-                                p.resource === "*" ? "touts" : p.resource;
-                              const action =
-                                p.action === "*" ? "touts" : p.action;
-                              return `${resource}: ${action}`;
-                            })
-                            .join(", ") || "Aucune";
+                          ?.map((p) => {
+                            const resource =
+                              p.resource === "*" ? "touts" : p.resource;
+                            const action =
+                              p.action === "*" ? "touts" : p.action;
+                            return `${resource}: ${action}`;
+                          })
+                          .join(", ") || "Aucune";
 
                       return (
                         <div key={user._id} className="bg-card p-3 border">

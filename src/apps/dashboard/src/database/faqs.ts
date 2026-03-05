@@ -18,6 +18,7 @@ export const faqsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["faqs"],
     queryFn: async (): Promise<any[]> => {
+      console.log("[faqs] queryFn running");
       try {
         const faqs = await convex.query(api.settings.getFAQs);
         idbRefresh("faqs", faqs);
@@ -30,6 +31,7 @@ export const faqsCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
+    staleTime: 24 * 60 * 60 * 1000,
   }),
 );
 
