@@ -88,6 +88,7 @@ export const handleImageChanges = authedMutation({
         url: v.optional(v.string()),
         order: v.optional(v.number()),
         hidden: v.optional(v.boolean()),
+        indexedDBId: v.optional(v.number()),
       }),
     ),
     toDelete: v.array(v.id("images")),

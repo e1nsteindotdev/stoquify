@@ -101,6 +101,14 @@ export const getCatalog = authedQuery({
       activeProducts.flatMap((p) => p.collections ?? []),
     );
 
+    const settings = await ctx.db
+      .query("settings")
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .first();
+
+    const faqs = await ctx.db.query("faqs").collect();
+    const wilayat = await ctx.db.query("wilayat").collect();
+
     const data = {
       products: activeProducts.map((product) => ({
         ...product,
@@ -129,6 +137,9 @@ export const getCatalog = authedQuery({
       })),
       categories: categories.filter((c) => activeCategoryIds.has(c._id)),
       collections: collections.filter((c) => activeCollectionIds.has(c._id)),
+      settings: settings || null,
+      faqs: faqs.sort((a, b) => a.order - b.order),
+      wilayat: wilayat,
     };
     console.log("returning cataglog data :", data);
 

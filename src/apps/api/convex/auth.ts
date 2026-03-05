@@ -60,6 +60,17 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           throw new ConvexError("Store name is required for founder signup");
         }
 
+        const existingUser = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("phone"), args.profile.phone))
+          .unique();
+
+        if (existingUser) {
+          throw new ConvexError(
+            "Un compte existe déjà avec ce numéro de téléphone",
+          );
+        }
+
         const organizationId = await ctx.db.insert("organizations", {
           name: undefined,
         });
