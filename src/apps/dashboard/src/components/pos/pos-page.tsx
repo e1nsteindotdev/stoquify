@@ -54,7 +54,25 @@ export default function POSPage() {
     : products;
 
   const addToCart = (product: any, selection: any[] = []) => {
-    const skuId = "00000000000000000000000000";
+    // Find matching SKU
+    const sku = product.skus?.find((s: any) => {
+      if (selection.length === 0) {
+        return !s.options || s.options.length === 0;
+      }
+      return (
+        s.options?.length === selection.length &&
+        selection.every((sel) =>
+          s.options.some((opt: any) => opt._id === sel.variantOptionId),
+        )
+      );
+    });
+
+    const skuId = sku?._id || product.skus?.[0]?._id;
+
+    if (!skuId) {
+      toast.error("Erreur: SKU non trouvé pour ce produit");
+      return;
+    }
 
     const existingIndex = cart.findIndex(
       (item) =>
@@ -224,10 +242,10 @@ export default function POSPage() {
 
             <Button
               className="w-full py-6 text-lg"
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || createSale.isPending}
               onClick={handleConfirm}
             >
-              Confirmer la vente
+              {createSale.isPending ? "Confirmation..." : "Confirmer la vente"}
             </Button>
           </div>
         </div>

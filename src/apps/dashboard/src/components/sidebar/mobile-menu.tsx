@@ -1,7 +1,7 @@
 import * as React from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { IconMenu2, IconX, IconArrowLeft } from "@tabler/icons-react";
 import { useAppStore } from "@/lib/store";
 import { hasStorePermission, hasGlobalPermission } from "@/lib/permissions";
 import { mainNavItems, secondaryNavItems, NavItem } from "./nav-data";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 export function MobileMenu() {
   const [isOpen, setIsOpen] = React.useState(false);
   const { location } = useRouterState();
+  const navigate = useNavigate();
   const user = useAppStore((state) => state.user);
   const selectedStore = useAppStore((state) => state.selectedStore);
 
@@ -34,6 +35,8 @@ export function MobileMenu() {
 
   const visibleMainItems = mainNavItems.filter(hasAccess);
   const allItems = [...visibleMainItems, ...secondaryNavItems];
+
+  const isSubRoute = !allItems.some((item) => item.url === location.pathname);
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -87,6 +90,30 @@ export function MobileMenu() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Go Back Button */}
+      <AnimatePresence>
+        {isSubRoute && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            className="mb-4"
+          >
+            <Button
+              onClick={() => window.history.back()}
+              className={cn(
+                "w-14 h-14 rounded-none border-none flex items-center justify-center shadow-xl transition-all duration-300 p-0",
+                "bg-white text-primary",
+              )}
+            >
+              <IconArrowLeft size={34} stroke={2.5} />
+            </Button>
+          </motion.div>
         )}
       </AnimatePresence>
 

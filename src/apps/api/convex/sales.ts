@@ -20,6 +20,15 @@ export const createSale = authedMutation({
       args.order.map((item) => ctx.db.get(item.productId)),
     );
 
+    // Update inventory
+    for (const item of args.order) {
+      const sku = await ctx.db.get(item.skuId);
+      if (sku) {
+        const newQuantity = Math.max(0, sku.quantity - item.quantity);
+        await ctx.db.patch(item.skuId, { quantity: newQuantity });
+      }
+    }
+
     const saleId = await ctx.db.insert("sales", {
       saleTime: new Date().toISOString(),
       order: args.order.map((item) => {
