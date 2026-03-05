@@ -84,23 +84,23 @@ export const Route = createFileRoute("/mobile-signin")({
 
 type LoaderData =
   | {
-    valid: true;
-    token: string;
-    user: {
-      _id: string;
-      name: string;
-      email?: string;
-      phone: string;
-      organizationId: string;
-      role: string;
-    };
-  }
+      valid: true;
+      token: string;
+      user: {
+        _id: string;
+        name: string;
+        email?: string;
+        phone: string;
+        organizationId: string;
+        role: string;
+      };
+    }
   | {
-    error: string;
-    message: string;
-    usedAt?: number;
-    expiresAt?: number;
-  };
+      error: string;
+      message: string;
+      usedAt?: number;
+      expiresAt?: number;
+    };
 
 function MobileSigninPage() {
   const loaderData = Route.useLoaderData() as LoaderData;
@@ -117,20 +117,29 @@ function MobileSigninPage() {
     if (!("valid" in loaderData) || !loaderData.valid) return;
 
     try {
-      // Use the dedicated mobile-magic-link provider
       const signinResult = await signIn("mobile-magic-link", {
         token: loaderData.token,
       });
-      console.log('signIn result : ', signinResult)
-      // Clear local storage to avoid stale data from a previous user
+
+      if (
+        signinResult &&
+        typeof signinResult === "object" &&
+        "error" in signinResult
+      ) {
+        const errorMsg = String(signinResult.error);
+        toast.error(errorMsg || "Erreur lors de la connexion");
+        return;
+      }
+
       await clearIDB();
 
       toast.success("Connexion réussie");
-      // Force a full application reload to reset stores and query cache
       window.location.href = "/";
     } catch (error) {
       console.error("Sign-in error:", error);
-      toast.error("Erreur lors de la connexion");
+      const errorMessage =
+        error instanceof Error ? error.message : "Erreur lors de la connexion";
+      toast.error(errorMessage);
     }
   };
 

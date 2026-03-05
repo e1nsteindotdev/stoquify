@@ -101,7 +101,12 @@ export function NavMain() {
   const user = useAppStore((state) => state.user);
   const selectedStore = useAppStore((state) => state.selectedStore);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
+  };
 
   const hasAccess = (item: NavItem): boolean => {
     if (!item.requiredPermission) return true;

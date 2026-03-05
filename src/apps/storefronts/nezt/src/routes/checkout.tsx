@@ -172,8 +172,7 @@ function OrderForm() {
   }>({ items: [], isOpen: false });
 
   const products = useCatalogStore((state) => state.products);
-  const skuIds = cartArray.map(([_, content]) => content.skuId);
-  const skuQuantities = useQuery(api.skus.getSkuQuantities, { skuIds });
+  const wilayat = useCatalogStore((state) => state.wilayat);
 
   const handleSubmit = async (
     firstName: string,
@@ -182,8 +181,6 @@ function OrderForm() {
     address: string,
     wilaya: string,
   ) => {
-    if (!skuQuantities) return;
-
     const insufficientItems: Array<{
       productTitle: string;
       requested: number;
@@ -191,8 +188,8 @@ function OrderForm() {
     }> = [];
 
     for (const [productId, content] of cartArray) {
-      const skuData = skuQuantities.find((s) => s.skuId === content.skuId);
       const product = products?.find((p) => p._id === productId);
+      const skuData = product?.skus.find((s) => s._id === content.skuId);
 
       if (skuData && skuData.quantity < content.quantity) {
         insufficientItems.push({
@@ -241,7 +238,8 @@ function OrderForm() {
       address,
       wilaya,
       order: cartArray.map(([productId, content]) => {
-        const skuData = skuQuantities?.find((s) => s.skuId === content.skuId);
+        const product = products?.find((p) => p._id === productId);
+        const skuData = product?.skus.find((s) => s._id === content.skuId);
         const availableQty = skuData
           ? Math.min(content.quantity, skuData.quantity)
           : content.quantity;
@@ -274,7 +272,6 @@ function OrderForm() {
       await handleSubmit(firstName, lastName, phoneNumber, address, wilaya);
     },
   });
-  const wilayat = useQuery(api.order.getWilayat);
   return (
     <div className="order-3 lg:order-1 relative flex-1 flex justify-center lg:justify-end lg:bg-[#EAEAEA] border-r-1 border-white overflow-clip ">
       <div className="h-full w-[1px] bg-black absolute left-5 lg:left-14 bottom-0 lg:hidden" />

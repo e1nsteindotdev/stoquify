@@ -15,14 +15,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  useGetExpenseCategories,
-  expenseCategoriesCollection,
-} from "@/database/expense-categories";
+import { useGetExpenseCategories } from "@/database/expense-categories";
 import { Id } from "api/data-model";
 import { useAppStore } from "@/lib/store";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
+import { queryClient } from "@/lib/ts-query-client";
 
 type Props = {
   label?: string;
@@ -51,7 +49,7 @@ export default function ExpenseCategoryField({ label }: Props) {
       );
       console.log("new id :", id);
       if (!id) throw Error("failed at creating id");
-      await expenseCategoriesCollection.preload();
+      await queryClient.refetchQueries({ queryKey: ["expenseCategories"] });
       field.handleChange(id);
       setName("");
     } finally {

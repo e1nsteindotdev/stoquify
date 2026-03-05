@@ -290,7 +290,7 @@ export function NavUser({ avatar }: { avatar: string }) {
                             className="px-2"
                             title="Copier le lien"
                             onClick={() => {
-                              const url = `http://localhost:3000/mobile-signin?token=${activeLink.token}`;
+                              const url = `${base_url}/mobile-signin?token=${activeLink.token}`;
                               navigator.clipboard.writeText(url);
                               toast.success("Lien copié");
                             }}

@@ -1,10 +1,9 @@
 import { DownChevron } from "./icons/down-chevron";
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { useCatalogStore } from "@/lib/catalog-store";
 
 export function FAQs() {
-  const faqs = useQuery(api.settings.getFAQs) || [];
+  const faqs = useCatalogStore((state) => state.faqs);
 
   if (faqs.length === 0) {
     return null;

@@ -18,6 +18,7 @@ import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function SignUpForm({
   step,
@@ -42,20 +43,36 @@ export function SignUpForm({
       password: "&c_jJC}<Tw!&_)4g",
     },
     onSubmit: async ({ value }) => {
-      console.log("Submitting with flow:", step);
       try {
-        await signIn("phone", {
+        const signUpResult = await signIn("phone", {
           ...value,
           role: "founder",
           flow: step,
         });
 
+        if (
+          signUpResult &&
+          typeof signUpResult === "object" &&
+          "error" in signUpResult
+        ) {
+          const errorMsg = String(signUpResult.error);
+          toast.error(errorMsg || "Erreur lors de la création du compte");
+          return;
+        }
+
         const stores = await convex.query(api.stores.list);
         const user = await convex.query(api.users.getUserData);
         setStores(stores);
         setUser(user);
+
+        toast.success("Compte créé avec succès");
       } catch (error) {
         console.error("error while trying to sign up :", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Une erreur est survenue lors de la création du compte";
+        toast.error(errorMessage);
       }
     },
   });

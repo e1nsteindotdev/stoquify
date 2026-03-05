@@ -632,18 +632,17 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                   animationComponents={{
                     loading: (
                       <span className="flex items-center gap-2">
-                        <ClipLoader size={18} color="currentColor" /> EN
-                        COURS...
+                        <ClipLoader size={18} color="currentColor" /> en cours
                       </span>
                     ),
                     done: (
                       <span className="flex items-center gap-2">
-                        <CheckIcon className="size-5" /> C'EST BON!
+                        <CheckIcon className="size-5" /> c'est bon
                       </span>
                     ),
                   }}
                 >
-                  Enregister
+                  enregistrer
                 </AnimatedButton>
               )}
             />

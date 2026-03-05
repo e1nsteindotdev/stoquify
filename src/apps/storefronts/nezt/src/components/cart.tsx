@@ -10,7 +10,6 @@ import { CartIcon } from "./icons/cart-icon";
 import { useCartStore } from "@/lib/state";
 import { XIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { LoadingSpinner } from "./loading-spinner";
 import { useCatalogStore } from "@/lib/catalog-store";
 import type { Id } from "api/data-model";
 
@@ -61,10 +60,10 @@ export function Cart() {
               ) : (
                 Array.from(cart.keys()).map((key) => {
                   const product = products?.find((p) => p._id === key);
-                  if (!product)
-                    return (
-                      <LoadingSpinner size={20} key={key} className="py-2" />
-                    );
+                  if (!product) {
+                    removeProductFromCart(key);
+                    return null;
+                  }
                   return (
                     <div
                       key={key}

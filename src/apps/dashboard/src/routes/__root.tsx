@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { queryClient } from "@/lib/ts-query-client";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 import { AuthForm } from "@/components/forms/auth/auth-form";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 import "@/App.css";
 
@@ -20,7 +21,9 @@ export const Route = createRootRoute({
     const routerState = useRouterState();
     // Normalize path to remove double slashes
     const currentPath = routerState.location.pathname.replace(/\/+/g, "/");
-    const isPublicRoute = PUBLIC_ROUTES.some((route) => currentPath.startsWith(route),);
+    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+      currentPath.startsWith(route),
+    );
 
     return (
       <>
@@ -31,7 +34,9 @@ export const Route = createRootRoute({
               <Outlet />
             ) : (
               <>
-                <AuthLoading><p>loading...</p></AuthLoading>
+                <AuthLoading>
+                  <LoadingScreen />
+                </AuthLoading>
                 <Unauthenticated>
                   <AuthForm />
                 </Unauthenticated>

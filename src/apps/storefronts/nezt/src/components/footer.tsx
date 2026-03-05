@@ -1,10 +1,9 @@
 import { UpArrow } from "./icons/up-arrow";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
+import { useCatalogStore } from "@/lib/catalog-store";
 import { smoothScrollTo } from "../lib/scroll";
 
 export function Footer() {
-  const settings = useQuery(api.settings.getSettings);
+  const settings = useCatalogStore((state) => state.settings);
   const instagramLink = settings?.instagramLink || "";
   const facebookLink = settings?.facebookLink || "";
   const tiktokLink = settings?.tiktokLink || "";

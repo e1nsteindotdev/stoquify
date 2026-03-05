@@ -6,6 +6,7 @@ import { useLiveQuery } from "@tanstack/react-db";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import { idbGet, idbRefresh } from "@/lib/idb";
+import type { Id } from "api/data-model";
 
 export const expensesCollection = createCollection(
   queryCollectionOptions({
@@ -41,6 +42,16 @@ export const useGetExpenses = (storeId?: string) => {
       .from({ expenses: expensesCollection })
       .where(({ expenses }) => eq(expenses.storeId, effectiveStoreId)),
   );
+};
+
+export const useGetExpenseById = (id: Id<"expenses">) => {
+  const { data: expense } = useLiveQuery((q) =>
+    q
+      .from({ expenses: expensesCollection })
+      .where(({ expenses }) => eq(expenses._id, id))
+      .findOne(),
+  );
+  return expense as ExpenseWithCategory | undefined;
 };
 
 export type ExpenseWithCategory = NonNullable<

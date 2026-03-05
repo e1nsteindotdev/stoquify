@@ -39,13 +39,21 @@ export const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: "orderCount",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Commandes" />
+      <DataTableColumnHeader
+        column={column}
+        title="Commandes"
+        explanation="Nombre total de commandes passées par ce client"
+      />
     ),
   },
   {
     accessorKey: "lastOrderDate",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Dernière commande" />
+      <DataTableColumnHeader
+        column={column}
+        title="Dernière commande"
+        explanation="Date de la transaction la plus récente"
+      />
     ),
     cell: ({ row }) => {
       const date = row.original.lastOrderDate;
@@ -55,7 +63,11 @@ export const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: "totalRevenue",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Revenu" />
+      <DataTableColumnHeader
+        column={column}
+        title="Revenu"
+        explanation="Somme totale des achats effectués par ce client"
+      />
     ),
     cell: ({ row }) => {
       const revenue = row.original.totalRevenue;
@@ -65,7 +77,11 @@ export const columns: ColumnDef<ClientRow>[] = [
   {
     accessorKey: "totalProfit",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Bénéfice" />
+      <DataTableColumnHeader
+        column={column}
+        title="Bénéfice"
+        explanation="Marge nette totale réalisée grâce à ce client"
+      />
     ),
     cell: ({ row }) => {
       const profit = row.original.totalProfit;

@@ -6,16 +6,20 @@ import { Input } from "@/components/ui/input";
 import { ClipLoader } from "react-spinners";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
-import { useGetExpenses, expensesCollection } from "@/database/expenses";
+import { useGetExpenses } from "@/database/expenses";
 import { useAppStore } from "@/lib/store";
 import { ExpenseFormModal } from "@/components/forms/expense/expense-form-modal";
 import { Search, X, Loader2, Plus } from "lucide-react";
 import Fuse from "fuse.js";
 import { useDebounce } from "use-debounce";
 import { PermissionGuard } from "@/components/permission-guard";
+import type { ExpenseWithCategory } from "@/database/expenses";
+import { queryClient } from "@/lib/ts-query-client";
 
 export function ExpensesTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] =
+    useState<ExpenseWithCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounce(searchQuery, 150);
 
@@ -54,8 +58,25 @@ export function ExpensesTable() {
     ) as HTMLButtonElement | null;
     if (button) {
       const id = button.getAttribute("data-expense-id") as any;
-      await convex.mutation(api.expenses.deleteExpense, { id });
-      await expensesCollection.preload();
+      const action = button.getAttribute("data-action");
+
+      if (action === "edit") {
+        const expense = expenses.find((exp) => exp._id === id);
+        if (expense) {
+          setSelectedExpense(expense);
+          setIsModalOpen(true);
+        }
+      } else if (action === "delete") {
+        await convex.mutation(api.expenses.deleteExpense, { id });
+        await queryClient.refetchQueries({ queryKey: ["expenses"] });
+      }
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      setSelectedExpense(null);
     }
   };
 
@@ -151,7 +172,11 @@ export function ExpensesTable() {
         <DataTable columns={columns} data={filteredExpenses} />
       )}
 
-      <ExpenseFormModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <ExpenseFormModal
+        open={isModalOpen}
+        onOpenChange={handleOpenChange}
+        expense={selectedExpense}
+      />
     </div>
   );
 }

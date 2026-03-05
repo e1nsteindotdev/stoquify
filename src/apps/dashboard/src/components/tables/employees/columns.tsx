@@ -35,7 +35,11 @@ export const columns: ColumnDef<EmployeeRow>[] = [
     accessorKey: "name",
     enableSorting: false,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Nom" />
+      <DataTableColumnHeader
+        column={column}
+        title="Nom"
+        explanation="Nom complet et coordonnées de l'employé"
+      />
     ),
     cell: ({ row }) => {
       const name = row.getValue("name") as string;
@@ -58,7 +62,11 @@ export const columns: ColumnDef<EmployeeRow>[] = [
     accessorKey: "role",
     enableSorting: false,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Rôle" />
+      <DataTableColumnHeader
+        column={column}
+        title="Rôle"
+        explanation="Niveau d'accès et responsabilités dans le système"
+      />
     ),
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
@@ -75,7 +83,11 @@ export const columns: ColumnDef<EmployeeRow>[] = [
     accessorKey: "permissions",
     enableSorting: false,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Permissions" />
+      <DataTableColumnHeader
+        column={column}
+        title="Permissions"
+        explanation="Actions spécifiques autorisées pour cet utilisateur"
+      />
     ),
     cell: ({ row }) => {
       const permissions = row.original.permissions;

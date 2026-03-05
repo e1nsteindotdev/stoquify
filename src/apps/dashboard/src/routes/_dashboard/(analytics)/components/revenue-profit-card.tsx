@@ -189,7 +189,7 @@ export function RevenueProfitCard({
       <CardContent className="relative z-10 pb-6 pt-2">
         {/* Chart Area */}
         {chartSeries.length > 0 ? (
-          <div className="h-[280px] w-full flex mt-4 group overflow-x-auto relative">
+          <div className="h-[280px] w-full flex mt-4 group overflow-x-auto overflow-y-hidden relative">
             {/* Y Axis */}
             <div className="sticky left-0 z-20 flex flex-col justify-between pr-4 pb-6 text-sm text-muted-foreground w-14 flex-shrink-0 bg-card/90 backdrop-blur-sm">
               {yAxisTicks.map((tick, i) => (

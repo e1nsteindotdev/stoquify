@@ -58,7 +58,7 @@ const filterChipConfig: {
 
 export function ProductsTable() {
   const [dateRange, setDateRange] = useState<DateRange>(() =>
-    getPresetDates("thisMonth"),
+    getPresetDates("allTime"),
   );
   const [activeFilters, setActiveFilters] = useState<FilterChip[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -216,7 +216,7 @@ export function ProductsTable() {
             Afficher les données uniquement pour cette période :
           </span>
           <DateController
-            defaultPreset="thisMonth"
+            defaultPreset="allTime"
             onChange={(range) => setDateRange(range)}
           />
         </div>

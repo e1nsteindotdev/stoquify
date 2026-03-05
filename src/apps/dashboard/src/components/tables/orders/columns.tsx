@@ -59,7 +59,11 @@ export const columns: ColumnDef<OrderRow>[] = [
     accessorKey: "customerName",
     enableSorting: false,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Client" />
+      <DataTableColumnHeader
+        column={column}
+        title="Client"
+        explanation="Nom du client ayant passé la commande"
+      />
     ),
   },
   {
@@ -79,21 +83,33 @@ export const columns: ColumnDef<OrderRow>[] = [
   {
     accessorKey: "profit",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Bénéfice" />
+      <DataTableColumnHeader
+        column={column}
+        title="Bénéfice"
+        explanation="Marge nette générée par cette commande"
+      />
     ),
     cell: ({ row }) => `${row.original.profit} DA`,
   },
   {
     accessorKey: "itemCount",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Articles" />
+      <DataTableColumnHeader
+        column={column}
+        title="Articles"
+        explanation="Nombre total d'articles dans cette commande"
+      />
     ),
     cell: ({ row }) => row.original.itemCount,
   },
   {
     accessorKey: "customerOrderCount",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Commandes client" />
+      <DataTableColumnHeader
+        column={column}
+        title="Commandes client"
+        explanation="Nombre total de commandes passées par ce client"
+      />
     ),
     cell: ({ row }) => row.original.customerOrderCount,
   },
@@ -104,6 +120,7 @@ export const columns: ColumnDef<OrderRow>[] = [
       <DataTableColumnHeader
         column={column}
         title="Statut"
+        explanation="État actuel du traitement de la commande"
         isChoice
         choices={[
           { label: "En attente", value: "pending" },
@@ -193,6 +210,7 @@ export const columns: ColumnDef<OrderRow>[] = [
       <DataTableColumnHeader
         column={column}
         title="Source"
+        explanation="Canal d'origine de la commande"
         isChoice
         choices={[
           { label: "En ligne", value: "online" },

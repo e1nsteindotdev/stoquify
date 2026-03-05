@@ -12,10 +12,18 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
+  explanation?: string;
   isChoice?: boolean;
   choices?: { label: string; value: string }[];
 }
@@ -23,45 +31,76 @@ interface DataTableColumnHeaderProps<TData, TValue>
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
+  explanation,
   className,
   isChoice,
   choices,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort() && !column.getCanFilter()) {
-    return <div className={cn("text-xs font-medium", className)}>{title}</div>;
+    const content = (
+      <div className={cn("text-xs font-medium", className)}>{title}</div>
+    );
+
+    if (explanation) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px]">
+              {explanation}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return content;
   }
 
   const selectedFilters = new Set(column.getFilterValue() as string[]);
   const hasFilterOptions = isChoice && choices && choices.length > 0;
 
+  const trigger = (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-3 h-8 data-[state=open]:bg-accent hover:bg-transparent hover:text-foreground rounded-none text-xs font-medium"
+    >
+      <span>{title}</span>
+      {column.getIsSorted() === "desc" ? (
+        <ArrowDown className="ml-2 h-3 w-3" />
+      ) : column.getIsSorted() === "asc" ? (
+        <ArrowUp className="ml-2 h-3 w-3" />
+      ) : hasFilterOptions ? (
+        <Filter
+          className={cn(
+            "ml-2 h-2.5 w-2.5",
+            column.getFilterValue() ? "text-primary" : "text-muted-foreground",
+          )}
+        />
+      ) : (
+        <ChevronsUpDown className="ml-2 h-3 w-3" />
+      )}
+    </Button>
+  );
+
   return (
     <div className={cn("flex items-center space-x-2", className)}>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-accent rounded-none text-xs font-medium"
-          >
-            <span>{title}</span>
-            {column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-3 w-3" />
-            ) : column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-3 w-3" />
-            ) : hasFilterOptions ? (
-              <Filter
-                className={cn(
-                  "ml-2 h-2.5 w-2.5",
-                  column.getFilterValue()
-                    ? "text-primary"
-                    : "text-muted-foreground",
-                )}
-              />
-            ) : (
-              <ChevronsUpDown className="ml-2 h-3 w-3" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
+        {explanation ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px]">
+                {explanation}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+        )}
         <DropdownMenuContent align="start" className="rounded-none">
           {column.getCanSort() && !hasFilterOptions && (
             <>

@@ -7,17 +7,16 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { z } from "zod";
 import { Check, MinusIcon, PlusIcon } from "lucide-react";
 import { CartIcon } from "@/components/icons/cart-icon";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/state";
+import { useCatalogStore } from "@/lib/catalog-store";
 import { AnimatePresence, motion } from "motion/react";
 import { LoadingScreen } from "@/components/loading-spinner";
 
-import { api } from "api/convex";
 import type { Id } from "api/data-model";
 
 export const Route = createFileRoute("/products/$slug")({
@@ -44,44 +43,86 @@ function RouteComponent() {
   const cartArray = Array.from(cart);
 
   const addProductToCart = useCartStore((state) => state.addProductToCart);
-  const product = useQuery(api.products.getProductById, { id: productId });
+  const products = useCatalogStore((state) => state.products);
+  const product = products.find((p) => p._id === productId);
 
   if (sourceType === "categories") sourceType = "catégories";
   else if (sourceType === "collections") sourceType = "collections";
   else sourceType = "";
 
-  const initialSelection = new Map<
-    string,
-    {
-      variantOptionId: string;
-      variantOptionName: string;
-    }
-  >(
-    product?.variants.map((v) => [
-      v._id,
-      { variantOptionId: "", variantOptionName: "" },
-    ]),
-  );
+  const [selectedVariants, setSelectedVariants] = useState(new Map());
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   const isCartOpened = useCartStore((state) => state.isCartOpened);
   const images = product?.images?.sort((a, b) => a.order - b.order) ?? [];
-  const [selectedVariants, setSelectedVariants] = useState(initialSelection);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+
+  useEffect(() => {
+    if (product) {
+      setSelectedVariants(
+        new Map(
+          product.variants.map((v) => [
+            v._id,
+            { variantOptionId: "", variantOptionName: "" },
+          ]),
+        ),
+      );
+    }
+  }, [product?._id]);
 
   const navigation = useNavigate();
 
-  const selectedOptionIds = Object.values(selectedVariants)
+  const selectedOptionIds = Array.from(selectedVariants.values())
     .filter((v) => v && v.variantOptionId)
     .map((v) => v.variantOptionId);
 
-  const currentSku = product?.skus.find((sku) =>
-    sku.options.every((opt) => selectedOptionIds.includes(opt._id)),
-  );
-  const isOutOfStock = !currentSku || currentSku.quantity === 0;
-  const isInsufficientStock =
-    currentSku &&
-    currentSku.quantity > 0 &&
-    currentSku.quantity < selectedQuantity;
+  const currentSku =
+    product?.stockingStrategy === "by_variants"
+      ? product?.skus.find((sku) =>
+        sku.options.every((opt) => selectedOptionIds.includes(opt._id)),
+      )
+      : product?.skus[0];
+
+  const allOptionsSelected =
+    product?.stockingStrategy === "by_variants"
+      ? product?.variants && product.variants.length > 0
+        ? product.variants.every((v) => {
+          const sel = selectedVariants.get(v._id);
+          return sel && sel.variantOptionId !== "";
+        })
+        : true
+      : true;
+
+  const isOutOfStock = (() => {
+    if (!product) return false;
+    if (product.stockingStrategy === "by_demand") return false;
+    if (product.stockingStrategy === "by_number")
+      return (product.quantity ?? 0) <= 0;
+    // by_variants
+    if (allOptionsSelected) {
+      return !currentSku || currentSku.quantity <= 0;
+    }
+    return product.skus.every((sku) => sku.quantity <= 0);
+  })();
+
+  const isInsufficientStock = (() => {
+    if (!product) return false;
+    if (product.stockingStrategy === "by_demand") return false;
+    if (product.stockingStrategy === "by_number")
+      return (product.quantity ?? 0) < selectedQuantity;
+    // by_variants
+    return (
+      currentSku &&
+      currentSku.quantity > 0 &&
+      currentSku.quantity < selectedQuantity
+    );
+  })();
+
+  const maxAvailableQuantity = (() => {
+    if (!product) return 100;
+    if (product.stockingStrategy === "by_demand") return 100;
+    if (product.stockingStrategy === "by_number") return product.quantity ?? 0;
+    return currentSku?.quantity ?? 0;
+  })();
 
   if (!product) return <LoadingScreen />;
   const header = (
@@ -110,14 +151,10 @@ function RouteComponent() {
   );
 
   function handleSubmit(mode: "BUY_IT_NOW" | "ADD_TO_CART") {
-    if (isOutOfStock) return;
+    if (isOutOfStock || !allOptionsSelected) return;
 
     if (mode === "ADD_TO_CART") {
-      if (
-        product?._id &&
-        Object.values(selectedVariants).includes(null) === false &&
-        currentSku
-      ) {
+      if (product?._id && currentSku) {
         addProductToCart(product?._id, {
           skuId: currentSku._id as Id<"skus">,
           quantity: selectedQuantity,
@@ -125,11 +162,7 @@ function RouteComponent() {
         });
       }
     } else if (mode === "BUY_IT_NOW") {
-      if (
-        product?._id &&
-        Object.values(selectedVariants).includes(null) === false &&
-        currentSku
-      ) {
+      if (product?._id && currentSku) {
         cartArray.forEach(([productId]) => {
           removeProductFromCart(productId);
         });
@@ -145,14 +178,7 @@ function RouteComponent() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -100 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1 }}
-      exit={{ opacity: 0, transition: { duration: 2 } }}
-      className="overflow-clip"
-      key={"product-page"}
-    >
+    <div className="overflow-clip">
       <div className="px-3 lg:px-4 max-w-[1800px] mx-auto bg-[#E6E6E6] relative">
         <div
           className={cn(
@@ -227,48 +253,54 @@ function RouteComponent() {
 
                   <div className="flex flex-col gap-4 items-center lg:items-start px-3 lg:px-0">
                     {/* options form  */}
-                    <div className="flex flex-col border-white border-1 w-full lg:w-auto">
-                      {product?.variants.map((variant) => {
-                        return (
-                          <div key={variant._id}>
-                            <div className="flex flex-col gap-2 p-3">
-                              <p className="text-primary text-[18px] font-bold uppercase">
-                                {variant.name}
-                              </p>
-                              <div className="flex gap-3">
-                                {variant.options.map((option) => (
-                                  <button
-                                    key={option._id}
-                                    onClick={() => {
-                                      setSelectedVariants((prev) => {
-                                        prev.set(variant._id, {
-                                          variantOptionName: option.name,
-                                          variantOptionId: option._id,
+                    <div
+                      className={cn(
+                        "flex flex-col w-full lg:w-auto",
+                        product?.stockingStrategy === "by_variants" &&
+                        "border-white border-1",
+                      )}
+                    >
+                      {product?.stockingStrategy === "by_variants" &&
+                        product?.variants.map((variant) => {
+                          return (
+                            <div key={variant._id}>
+                              <div className="flex flex-col gap-2 p-3">
+                                <p className="text-primary text-[18px] font-bold uppercase">
+                                  {variant.name}
+                                </p>
+                                <div className="flex gap-3">
+                                  {variant.options.map((option) => (
+                                    <button
+                                      key={option._id}
+                                      onClick={() => {
+                                        setSelectedVariants((prev) => {
+                                          prev.set(variant._id, {
+                                            variantOptionName: option.name,
+                                            variantOptionId: option._id,
+                                          });
+                                          return new Map(prev);
                                         });
-                                        return new Map(prev);
-                                      });
-                                    }}
-                                    className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
-                                    ${
-                                      selectedVariants.get(variant._id)
-                                        ?.variantOptionName === option.name
-                                        ? "text-primary border-primary bg-primary/5"
-                                        : "border-white"
-                                    } `}
-                                  >
-                                    {option.name}
-                                  </button>
-                                ))}
+                                      }}
+                                      className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
+                                    ${selectedVariants.get(variant._id)
+                                          ?.variantOptionName === option.name
+                                          ? "text-primary border-primary bg-primary/5"
+                                          : "border-white"
+                                        } `}
+                                    >
+                                      {option.name}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
+                              <div className="w-full h-[1px] bg-white" />
                             </div>
-                            <div className="w-full h-[1px] bg-white" />
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
 
                       {/* quantity selector  */}
 
-                      <div className="flex flex-col gap-2 p-3">
+                      <div className="flex flex-col gap-2 p-3 border-white border-1 mt-4 lg:mt-0">
                         <p className="text-primary text-[18px] font-bold uppercase">
                           Quantité
                         </p>
@@ -292,7 +324,9 @@ function RouteComponent() {
                           <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={() => {
-                              setSelectedQuantity((prev) => prev + 1);
+                              setSelectedQuantity((prev) =>
+                                Math.min(prev + 1, maxAvailableQuantity),
+                              );
                             }}
                             className="border-black border-[1px] flex items-center justify-center h-[26px] w-[26px]"
                           >
@@ -310,30 +344,35 @@ function RouteComponent() {
                       )}
                       {isInsufficientStock && (
                         <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg text-center font-semibold">
-                          Stock insuffisant (max: {currentSku?.quantity})
+                          Stock insuffisant (max: {maxAvailableQuantity})
                         </div>
                       )}
                       <motion.button
-                        whileTap={{ scale: isOutOfStock ? 1 : 0.95 }}
+                        whileTap={{
+                          scale: isOutOfStock || !allOptionsSelected ? 1 : 0.95,
+                        }}
                         onClick={() => handleSubmit("BUY_IT_NOW")}
-                        disabled={isOutOfStock}
+                        disabled={isOutOfStock || !allOptionsSelected}
                         className={cn(
                           "font-semibold uppercase pt-[11px] pb-[12px] w-full rounded-[16px] ring-1 lg:text-[18px] lg:w-[500px]",
                           isOutOfStock
                             ? "bg-gray-200 text-gray-400 ring-gray-300 cursor-not-allowed"
                             : "bg-primary/5 text-primary ring-primary",
+                          !allOptionsSelected && !isOutOfStock && "opacity-50",
                         )}
                       >
-                        <p className="leading-[1] pt-1.25 font-bold">
+                        <p className="leading-[1] pt-1 font-bold">
                           ACHETER MAINTENANT
                         </p>
                       </motion.button>
                       <FuckingButton
                         handleSubmit={handleSubmit}
-                        disabled={isOutOfStock}
+                        disabled={isOutOfStock || !allOptionsSelected}
+                        isOutOfStock={isOutOfStock}
+                        allOptionsSelected={allOptionsSelected}
                       />
 
-                      <p className="uppercase text-[12px] lg:text-[16px] text-black/40 uppercase font-inter italic text-center lg:text-start">
+                      <p className="uppercase text-[12px] lg:text-[16px] text-black/40 font-inter italic text-center lg:text-start">
                         LIVRAISON 48H MAXIMUM
                       </p>
                     </div>
@@ -351,16 +390,20 @@ function RouteComponent() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 function FuckingButton({
   handleSubmit,
   disabled,
+  isOutOfStock,
+  allOptionsSelected,
 }: {
   handleSubmit: any;
   disabled?: boolean;
+  isOutOfStock: boolean;
+  allOptionsSelected: boolean;
 }) {
   const [clicked, setClicked] = useState(false);
   useEffect(() => {
@@ -384,9 +427,10 @@ function FuckingButton({
       disabled={disabled}
       className={cn(
         "font-semibold uppercase pt-[11px] pb-[12px] rounded-[12px] lg:text-[18px] w-full lg:w-[500px] flex-1 grow-1 overflow-clip lg:h-[45px]",
-        disabled
+        isOutOfStock
           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
           : "bg-primary text-white cursor-pointer",
+        !allOptionsSelected && !isOutOfStock && "opacity-50",
       )}
     >
       <div className="h-[23px]">
@@ -426,7 +470,7 @@ function FuckingButton({
                 </p>
                 <CartIcon
                   color="white"
-                  className="stoke-white mt-1.25"
+                  className="stoke-white"
                   size={16}
                 />
               </div>

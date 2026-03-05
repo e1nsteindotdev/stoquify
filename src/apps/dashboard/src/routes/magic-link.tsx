@@ -16,6 +16,7 @@ import {
 import { ClipLoader } from "react-spinners";
 import { toast } from "sonner";
 import { useState } from "react";
+import { clearIDB } from "@/lib/idb";
 
 export const Route = createFileRoute("/magic-link")({
   loader: async () => {
@@ -101,7 +102,9 @@ function MagicLinkPage() {
     setIsLoading(true);
 
     try {
-      await signIn("phone", {
+      await clearIDB();
+
+      const signUpResult = await signIn("phone", {
         phone,
         name,
         ...(email ? { email } : {}),
@@ -109,6 +112,17 @@ function MagicLinkPage() {
         magicLinkId: magicLink._id,
         flow: "signUp",
       });
+
+      if (
+        signUpResult &&
+        typeof signUpResult === "object" &&
+        "error" in signUpResult
+      ) {
+        const errorMsg = String(signUpResult.error);
+        toast.error(errorMsg || "Erreur lors de la création du compte");
+        setIsLoading(false);
+        return;
+      }
 
       const stores = await convex.query(api.stores.list);
       const user = await convex.query(api.users.getUserData);
@@ -119,8 +133,11 @@ function MagicLinkPage() {
       window.location.href = "/";
     } catch (error) {
       console.error("Signup error:", error);
-      toast.error("Erreur lors de la création du compte");
-    } finally {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la création du compte";
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   };

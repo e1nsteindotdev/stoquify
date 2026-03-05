@@ -14,7 +14,7 @@ import { useDebounce } from "use-debounce";
 
 export function ClientsTable() {
   const [dateRange, setDateRange] = useState<DateRange>(() =>
-    getPresetDates("thisMonth"),
+    getPresetDates("allTime"),
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounce(searchQuery, 150);
@@ -108,7 +108,7 @@ export function ClientsTable() {
             Afficher les données uniquement pour cette période :
           </span>
           <DateController
-            defaultPreset="thisMonth"
+            defaultPreset="allTime"
             onChange={(range) => setDateRange(range)}
           />
         </div>

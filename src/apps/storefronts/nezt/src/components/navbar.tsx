@@ -1,7 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Image } from "./ui/image";
-import { useQuery } from "convex/react";
-import { api } from "api/convex";
 import { MenuIcon } from "./icons/menu-icon";
 import { OrderIcon } from "./icons/order-icon";
 import { Cart } from "./cart";
@@ -60,7 +58,7 @@ export function HeaderAnonc() {
 }
 
 export function Header() {
-  const settings = useQuery(api.settings.getSettings);
+  const settings = useCatalogStore((state) => state.settings);
   const products = useCatalogStore((state) => state.products);
 
   const productsCount = products?.length ?? 0;

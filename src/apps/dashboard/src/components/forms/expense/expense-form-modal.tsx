@@ -3,8 +3,8 @@ import { useAppForm } from "@/hooks/form";
 import { useAppStore } from "@/lib/store";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
-import { expensesCollection } from "@/database/expenses";
 import { Id } from "api/data-model";
+import { queryClient } from "@/lib/ts-query-client";
 import {
   Dialog,
   DialogContent,
@@ -20,10 +20,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ExpenseCategoryField from "./expense-category-field";
+import type { ExpenseWithCategory } from "@/database/expenses";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  expense?: ExpenseWithCategory | null;
 };
 
 const getTodayDate = () => {
@@ -31,18 +33,23 @@ const getTodayDate = () => {
   return today.toISOString().split("T")[0];
 };
 
-export function ExpenseFormModal({ open, onOpenChange }: Props) {
+export function ExpenseFormModal({ open, onOpenChange, expense }: Props) {
   const selectedStore = useAppStore((state) => state.selectedStore);
+  const isNew = !expense;
 
   const defaultValues = useMemo(
     () => ({
-      title: "",
-      description: "",
-      cost: 0,
-      date: getTodayDate(),
-      categoryId: undefined as Id<"expenseCategories"> | undefined,
+      title: expense?.title ?? "",
+      description: expense?.description ?? "",
+      cost: expense?.cost ?? 0,
+      date: expense
+        ? new Date(expense.date).toISOString().split("T")[0]
+        : getTodayDate(),
+      categoryId:
+        expense?.categoryId ??
+        (undefined as Id<"expenseCategories"> | undefined),
     }),
-    [],
+    [expense],
   );
 
   const form = useAppForm({
@@ -54,16 +61,27 @@ export function ExpenseFormModal({ open, onOpenChange }: Props) {
 
       const dateTimestamp = new Date(value.date).getTime();
 
-      await convex.mutation(api.expenses.createExpense, {
-        storeId: selectedStore._id,
-        title: value.title,
-        description: value.description || undefined,
-        cost: value.cost,
-        date: dateTimestamp,
-        categoryId: value.categoryId || undefined,
-      });
+      if (isNew) {
+        await convex.mutation(api.expenses.createExpense, {
+          storeId: selectedStore._id,
+          title: value.title,
+          description: value.description || undefined,
+          cost: value.cost,
+          date: dateTimestamp,
+          categoryId: value.categoryId || undefined,
+        });
+      } else {
+        await convex.mutation(api.expenses.updateExpense, {
+          id: expense._id,
+          title: value.title,
+          description: value.description || undefined,
+          cost: value.cost,
+          date: dateTimestamp,
+          categoryId: value.categoryId || undefined,
+        });
+      }
 
-      await expensesCollection.preload();
+      await queryClient.refetchQueries({ queryKey: ["expenses"] });
       onOpenChange(false);
       form.reset(defaultValues);
     },
@@ -73,7 +91,9 @@ export function ExpenseFormModal({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Ajouter une dépense</DialogTitle>
+          <DialogTitle>
+            {isNew ? "Ajouter une dépense" : "Modifier la dépense"}
+          </DialogTitle>
         </DialogHeader>
 
         <form
@@ -157,7 +177,7 @@ export function ExpenseFormModal({ open, onOpenChange }: Props) {
               <DialogFooter>
                 <AnimatedButton
                   type="submit"
-                  className="w-full text-[16px] py-2 bg-primary text-white font-semibold rounded-md disabled:pointer-events-none disabled:bg-primary/50 uppercase"
+                  className="w-full text-[16px] py-2 bg-primary text-white font-semibold rounded-none disabled:pointer-events-none disabled:bg-primary/50 uppercase"
                   loading={isSubmitting}
                   disabled={!canSubmit}
                   animationComponents={{
@@ -174,7 +194,7 @@ export function ExpenseFormModal({ open, onOpenChange }: Props) {
                     ),
                   }}
                 >
-                  Ajouter
+                  {isNew ? "Ajouter" : "Modifier"}
                 </AnimatedButton>
               </DialogFooter>
             )}

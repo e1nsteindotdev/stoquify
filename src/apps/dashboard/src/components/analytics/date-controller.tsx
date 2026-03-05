@@ -131,7 +131,7 @@ function getPresetDates(preset: DatePreset): DateRange {
 }
 
 export function DateController({
-  defaultPreset = "thisMonth",
+  defaultPreset = "allTime",
   excludePresets = [],
   className,
   onChange,

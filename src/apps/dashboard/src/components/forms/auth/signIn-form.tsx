@@ -18,6 +18,7 @@ import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function SignInForm({
   step,
@@ -39,19 +40,30 @@ export function SignInForm({
     },
     onSubmit: async ({ value }) => {
       try {
-        console.log("going to sign in");
         const signInResult = await signIn("phone", {
           phone: value.phone,
           password: value.password,
           flow: "signIn",
         });
-        console.log("signIn Result", signInResult);
-        // const stores = await convex.query(api.stores.list);
-        // const user = await convex.query(api.users.getUserData);
-        // setStores(stores)
-        // setUser(user)
+
+        if (
+          signInResult &&
+          typeof signInResult === "object" &&
+          "error" in signInResult
+        ) {
+          const errorMsg = String(signInResult.error);
+          toast.error(errorMsg || "Erreur de connexion");
+          return;
+        }
+
+        toast.success("Connexion réussie");
       } catch (error) {
         console.error("error while trying to sign in :", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Une erreur est survenue lors de la connexion";
+        toast.error(errorMessage);
       }
     },
   });
@@ -64,7 +76,7 @@ export function SignInForm({
             <CardHeader>
               <CardTitle>Connectez-vous à votre compte</CardTitle>
               <CardDescription>
-                Entrez votre email ci-dessous pour vous connecter à votre compte
+                Entrez votre numéro de téléphone ci-dessous pour vous connecter
               </CardDescription>
             </CardHeader>
             <CardContent>

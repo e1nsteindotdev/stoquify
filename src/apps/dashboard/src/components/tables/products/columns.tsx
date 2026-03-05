@@ -92,13 +92,13 @@ const SkuOptionBadges = ({
       {values.map((value, index) => (
         <span
           key={`${value}-${index}`}
-          className="inline-flex items-center justify-center min-w-[32px] h-8 px-2 text-sm border border-border text-foreground rounded-md"
+          className="inline-flex items-center justify-center min-w-[32px] h-8 px-2 text-sm border border-border bg-background text-foreground"
         >
           {value}
         </span>
       ))}
       {showQuantity && (
-        <span className="inline-flex items-center justify-center h-8 px-2 text-sm font-semibold border border-border text-foreground ml-2 rounded-md">
+        <span className="inline-flex items-center justify-center h-8 px-2 text-sm font-semibold border border-border bg-background text-foreground ml-2">
           Qté: {quantity}
         </span>
       )}
@@ -172,7 +172,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "unitsSold",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Unités vendues" />
+      <DataTableColumnHeader
+        column={column}
+        title="Unités vendues"
+        explanation="Nombre total d'unités vendues pour ce produit"
+      />
     ),
     cell: ({ row }) => (
       <span className="font-medium">
@@ -183,7 +187,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "cost",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Coût" />
+      <DataTableColumnHeader
+        column={column}
+        title="Coût"
+        explanation="Coût de revient unitaire et marge brute en pourcentage"
+      />
     ),
     cell: ({ row }) => {
       const { cost, margin } = row.original;
@@ -202,7 +210,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "revenue",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Revenu" />
+      <DataTableColumnHeader
+        column={column}
+        title="Revenu"
+        explanation="Chiffre d'affaires total généré par ce produit"
+      />
     ),
     cell: ({ row }) => (
       <span className="font-medium">{formatMoney(row.original.revenue)}</span>
@@ -211,7 +223,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "profit",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Bénéfice" />
+      <DataTableColumnHeader
+        column={column}
+        title="Bénéfice"
+        explanation="Bénéfice net total généré (Revenu - Coût total)"
+      />
     ),
     cell: ({ row }) => {
       const { profit } = row.original;
@@ -230,7 +246,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "stockValue",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Valeur du stock" />
+      <DataTableColumnHeader
+        column={column}
+        title="Valeur du stock"
+        explanation="Valeur monétaire du stock actuel (Quantité × Coût)"
+      />
     ),
     cell: ({ row }) => (
       <span className="font-medium">
@@ -240,7 +260,13 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   },
   {
     id: "inventoryStatus",
-    header: "État du stock",
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title="État du stock"
+        explanation="Quantité totale disponible avec détails par variations"
+      />
+    ),
     enableSorting: false,
     cell: ({ row }) => {
       const { totalQuantity, skus } = row.original;
@@ -257,9 +283,9 @@ export const columns: ColumnDef<ProductTableRow>[] = [
                 {totalQuantity}
               </span>
             </TooltipTrigger>
-            <TooltipContent className="w-64">
+            <TooltipContent className="w-64 bg-popover border-border text-popover-foreground">
               <div className="space-y-2 text-sm">
-                <div className="font-medium">Détail des SKUs</div>
+                <div className="font-semibold text-base">Détail des SKUs</div>
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {skus.map((sku) => (
                     <div key={sku._id} className="py-1">
@@ -280,7 +306,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "sellThrough",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Taux de vente" />
+      <DataTableColumnHeader
+        column={column}
+        title="Taux de vente"
+        explanation="Pourcentage de stock vendu par rapport au stock total"
+      />
     ),
     cell: ({ row }) => {
       const value = row.original.sellThrough;
@@ -307,7 +337,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "daysSinceLastSale",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Dernière vente" />
+      <DataTableColumnHeader
+        column={column}
+        title="Dernière vente"
+        explanation="Nombre de jours depuis la dernière transaction"
+      />
     ),
     cell: ({ row }) => {
       const days = row.original.daysSinceLastSale;
@@ -336,7 +370,11 @@ export const columns: ColumnDef<ProductTableRow>[] = [
   {
     accessorKey: "agingBand",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Ancienneté" />
+      <DataTableColumnHeader
+        column={column}
+        title="Ancienneté"
+        explanation="Nombre de jours depuis l'entrée du produit en stock"
+      />
     ),
     cell: ({ row }) => {
       const days = row.original.agingBand;

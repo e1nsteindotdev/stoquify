@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { CatalogProduct } from "@/lib/catalog";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 export function Product({
   data,
@@ -29,18 +30,40 @@ export function Product({
     setCurrentImageIndex(0);
   };
 
+  const isOutOfStock = (() => {
+    if (!data) return false;
+    if (data.stockingStrategy === "by_demand") return false;
+    if (data.stockingStrategy === "by_number") return (data.quantity ?? 0) <= 0;
+    // by_variants
+    return data.skus.every((sku) => sku.quantity <= 0);
+  })();
+
   return (
     <div className="flex flex-col gap-3 shrink-0">
-      <div className="">
+      <div className="relative">
         <button
-          className="ratio-[3/4] w-full lg:min-h-[300px] xl:min-h-[500px] border-white border cursor-pointer"
+          className="ratio-[3/4] w-full lg:min-h-[300px] xl:min-h-[500px] border-white border cursor-pointer overflow-hidden group"
           onClick={() =>
             navigate({ to: `/products/${data?._id}`, search: { source } })
           }
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <img className="flex-1 ratio-3/4 object-cover" src={picture_url} />
+          <img
+            className={cn(
+              "flex-1 ratio-3/4 object-cover transition-transform duration-500",
+              !isOutOfStock && "group-hover:scale-105",
+              isOutOfStock && "grayscale opacity-60",
+            )}
+            src={picture_url}
+          />
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="bg-white text-black px-4 py-2 text-xs font-bold uppercase tracking-widest border border-black">
+                Rupture de stock
+              </span>
+            </div>
+          )}
         </button>
       </div>
       <div className="flex flex-col gap-1.5">
@@ -52,9 +75,12 @@ export function Product({
         <p className="font-bold lg:text-[14px] leading-[1] uppercase tracking-wider font-inter">
           {data?.title}
         </p>
-        <p className="text-black/50 text-[12px] leading-[1] font-semibold uppercase tracking-wider font-inter">
-          3 couleurs
-        </p>
+        {data?.stockingStrategy === "by_variants" &&
+          data.variants.length > 0 && (
+            <p className="text-black/50 text-[12px] leading-[1] font-semibold uppercase tracking-wider font-inter">
+              {data.variants[0].options.length} options
+            </p>
+          )}
       </div>
     </div>
   );
@@ -95,14 +121,22 @@ export function CollectionProduct({
     setCurrentImageIndex(0);
   };
 
+  const isOutOfStock = (() => {
+    if (!data) return false;
+    if (data.stockingStrategy === "by_demand") return false;
+    if (data.stockingStrategy === "by_number") return (data.quantity ?? 0) <= 0;
+    // by_variants
+    return data.skus.every((sku) => sku.quantity <= 0);
+  })();
+
   const picture_url =
     visibleImages[currentImageIndex]?.url ?? visibleImages[0]?.url;
 
   return (
     <div className="flex flex-col gap-3 shrink-0">
-      <div className="">
+      <div className="relative">
         <button
-          className="border-white border"
+          className="border-white border overflow-hidden group"
           onClick={() =>
             navigate({ to: `/products/${data?._id}`, search: { source } })
           }
@@ -110,9 +144,20 @@ export function CollectionProduct({
           onMouseLeave={handleMouseLeave}
         >
           <img
-            className="flex-1 ratio-3/4 object-cover w-[250px] lg:w-[400px]"
+            className={cn(
+              "flex-1 ratio-3/4 object-cover w-[250px] lg:w-[400px] transition-transform duration-500",
+              !isOutOfStock && "group-hover:scale-105",
+              isOutOfStock && "grayscale opacity-60",
+            )}
             src={picture_url}
           />
+          {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="bg-white text-black px-4 py-2 text-xs font-bold uppercase tracking-widest border border-black">
+                Rupture de stock
+              </span>
+            </div>
+          )}
         </button>
       </div>
       <div className="flex flex-col gap-1.5">
@@ -124,9 +169,12 @@ export function CollectionProduct({
         <p className="font-bold lg:text-[14px] leading-[1] uppercase tracking-wider font-inter mt-1">
           {data?.title}
         </p>
-        <p className="text-black/50 text-[12px] leading-[1] font-semibold uppercase tracking-wider font-inter">
-          3 couleurs
-        </p>
+        {data?.stockingStrategy === "by_variants" &&
+          data.variants.length > 0 && (
+            <p className="text-black/50 text-[12px] leading-[1] font-semibold uppercase tracking-wider font-inter">
+              {data.variants[0].options.length} options
+            </p>
+          )}
       </div>
     </div>
   );

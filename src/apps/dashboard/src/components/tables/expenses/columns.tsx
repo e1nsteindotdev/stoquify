@@ -37,7 +37,11 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
     id: "title",
     enableSorting: false,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Titre" />
+      <DataTableColumnHeader
+        column={column}
+        title="Titre"
+        explanation="Nom ou description courte de la dépense"
+      />
     ),
     cell: ({ row }) => (
       <div className="min-w-0">
@@ -56,7 +60,11 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
     id: "category",
     enableSorting: false,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Catégorie" />
+      <DataTableColumnHeader
+        column={column}
+        title="Catégorie"
+        explanation="Classification de la dépense pour le suivi"
+      />
     ),
     cell: ({ row }) => {
       const category = row.original.category;
@@ -72,7 +80,11 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
   {
     accessorKey: "cost",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Coût" />
+      <DataTableColumnHeader
+        column={column}
+        title="Coût"
+        explanation="Montant total de la dépense effectuée"
+      />
     ),
     cell: ({ row }) => (
       <span className="font-medium text-red-600">
@@ -85,12 +97,21 @@ export const columns: ColumnDef<ExpenseWithCategory>[] = [
     header: "Actions",
     enableSorting: false,
     cell: ({ row }) => (
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+      <div className="flex gap-2">
         <PermissionGuard resource="expenses" action="write">
+          <Button
+            size="sm"
+            variant="outline"
+            data-expense-id={row.original._id}
+            data-action="edit"
+          >
+            Modifier
+          </Button>
           <Button
             size="sm"
             variant="destructive"
             data-expense-id={row.original._id}
+            data-action="delete"
           >
             Supprimer
           </Button>

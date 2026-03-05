@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalQuery } from "./_generated/server";
+import { internalQuery, query } from "./_generated/server";
 import {
   insertVariants,
   insertVariantsInventory,
@@ -67,9 +67,7 @@ export const listProducts = authedQuery({
   },
 });
 
-export const getCatalog = authedQuery({
-  resource: "products",
-  action: "read",
+export const getCatalog = query({
   args: {
     storeId: v.id("stores"),
   },
@@ -141,7 +139,6 @@ export const getCatalog = authedQuery({
       faqs: faqs.sort((a, b) => a.order - b.order),
       wilayat: wilayat,
     };
-    console.log("returning cataglog data :", data);
 
     return data;
   },
