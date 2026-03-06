@@ -1,5 +1,5 @@
 import { type Column } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, Filter, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -71,10 +71,13 @@ export function DataTableColumnHeader<TData, TValue>({
         onClick={() => column.toggleSorting()}
       >
         <span>{title}</span>
-        {column.getIsSorted() === "desc" && (
+        {column.getIsSorted() === "desc" ? (
           <ArrowDown className="ml-2 h-3 w-3" />
+        ) : column.getIsSorted() === "asc" ? (
+          <ArrowUp className="ml-2 h-3 w-3" />
+        ) : (
+          <ArrowUpDown className="ml-2 h-3 w-3" />
         )}
-        {column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-3 w-3" />}
       </Button>
     );
 
@@ -105,7 +108,10 @@ export function DataTableColumnHeader<TData, TValue>({
         <ArrowDown className="ml-2 h-3 w-3" />
       ) : column.getIsSorted() === "asc" ? (
         <ArrowUp className="ml-2 h-3 w-3" />
-      ) : (
+      ) : canSort ? (
+        <ArrowUpDown className="ml-2 h-3 w-3" />
+      ) : null}
+      {hasFilterOptions && (
         <Filter
           className={cn(
             "ml-2 h-2.5 w-2.5",

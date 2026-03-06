@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { IconMenu2, IconX, IconArrowLeft } from "@tabler/icons-react";
 import { useAppStore } from "@/lib/store";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 export function MobileMenu() {
   const [isOpen, setIsOpen] = React.useState(false);
   const { location } = useRouterState();
-  const navigate = useNavigate();
   const user = useAppStore((state) => state.user);
   const selectedStore = useAppStore((state) => state.selectedStore);
 
@@ -50,37 +49,25 @@ export function MobileMenu() {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40"
-            />
-
             {/* Menu Panel */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, x: 20, y: 20 }}
-              animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, x: 20, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 400 }}
-              className="mb-4 w-64 bg-white shadow-2xl overflow-hidden z-50 border border-gray-200 rounded-none"
+              className="mb-4 w-64 bg-white shadow-lg overflow-hidden z-50 border border-neutral-200 rounded-none"
             >
-              <div className="p-3 flex flex-col gap-1.5">
-                <div className="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Navigation
-                </div>
+              <div className="flex flex-col divide-y divide-neutral-100">
                 {allItems.map((item) => (
                   <Link
                     key={item.title}
                     to={item.url}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-none",
+                      "flex items-center gap-3 px-5 py-3.5 transition-all duration-200 rounded-none",
                       isActive(item.url)
-                        ? "bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]"
-                        : "text-gray-700 hover:bg-gray-100 hover:translate-x-1",
+                        ? "bg-primary text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:pl-6",
                     )}
                   >
                     <item.icon size={20} stroke={2} />

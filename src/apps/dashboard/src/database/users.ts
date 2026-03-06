@@ -11,10 +11,10 @@ export const usersCollection = createCollection(
     queryFn: async (): Promise<any[]> => {
       console.log("[users] queryFn running");
       try {
-        const user = await convex.query(api.users.get);
-        const normalizedUsers = user ? [user] : [];
+        const user = await convex.query(api.users.getOrganizationUsers);
+        const normalizedUsers = Array.isArray(user) ? user : user ? [user] : [];
         idbRefresh("users", normalizedUsers);
-        idbRefresh("user", user ?? null);
+        // idbRefresh("user", user ?? null);
         return normalizedUsers;
       } catch (e) {
         const cachedUsers = await idbGet("users");

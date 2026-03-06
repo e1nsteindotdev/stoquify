@@ -12,6 +12,7 @@ import {
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import type { ProductTableRow } from "@/database/products-table";
 import { DataTableColumnHeader } from "../data-table-column-header";
+import { Badge } from "@/components/ui/badge";
 import { PermissionGuard } from "@/components/permission-guard";
 
 const formatMoney = (value: number) => {
@@ -259,7 +260,7 @@ export const columns: ColumnDef<ProductTableRow>[] = [
     ),
   },
   {
-    id: "inventoryStatus",
+    accessorKey: "totalQuantity",
     header: ({ column }) => (
       <DataTableColumnHeader
         column={column}
@@ -267,21 +268,38 @@ export const columns: ColumnDef<ProductTableRow>[] = [
         explanation="Quantité totale disponible avec détails par variations"
       />
     ),
-    enableSorting: false,
     cell: ({ row }) => {
       const { totalQuantity, skus } = row.original;
 
+      const getBadgeClass = (qty: number) => {
+        if (qty < 5)
+          return "bg-red-100 text-red-800 hover:bg-red-200 border-red-200";
+        if (qty < 10)
+          return "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200";
+        return "bg-green-100 text-green-800 hover:bg-green-200 border-green-200";
+      };
+
       if (skus.length === 0) {
-        return <span className="font-medium">{totalQuantity}</span>;
+        return (
+          <Badge variant="outline" className={getBadgeClass(totalQuantity)}>
+            {totalQuantity}
+          </Badge>
+        );
       }
 
       return (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="font-medium cursor-help underline decoration-dotted underline-offset-2">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "cursor-help underline decoration-dotted underline-offset-2",
+                  getBadgeClass(totalQuantity),
+                )}
+              >
                 {totalQuantity}
-              </span>
+              </Badge>
             </TooltipTrigger>
             <TooltipContent className="w-64 bg-popover border-border text-popover-foreground">
               <div className="space-y-2 text-sm">

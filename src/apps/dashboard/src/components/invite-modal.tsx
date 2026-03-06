@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "api/convex";
 import QRCode from "react-qr-code";
 import { useAppStore } from "@/lib/store";
+
+const CONVEX_URL = import.meta.env.VITE_CONVEX_URL!;
 
 export function InviteStaffModal() {
   const base_url = import.meta.env.VITE_BASE_URL?.replace(/\/$/, "");
@@ -12,7 +14,6 @@ export function InviteStaffModal() {
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
   const user = useAppStore((state) => state.user);
-  const invite = useMutation(api.magicLinks.invite);
   const availablePermissions = useQuery(api.permissions?.list || null);
 
   const handleGenerateLink = async () => {
@@ -23,16 +24,34 @@ export function InviteStaffModal() {
       action: "*" as const,
     }));
 
-    const result = await invite({
-      email,
-      role,
-      permissions,
-      organizationId: user.organization._id,
-    });
+    try {
+      const response = await fetch(`${CONVEX_URL}/api/mutation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          path: "magicLinks:invite",
+          args: {
+            email,
+            role,
+            permissions,
+            organizationId: user.organization._id,
+          },
+          format: "json",
+        }),
+      });
 
-    // const link = `${base_url}/magic-link?magicLinkId=${result._id}`;
-    const link = `http://localhost:3000/magic-link?magicLinkId=${result._id}`;
-    setGeneratedLink(link);
+      if (!response.ok) {
+        throw new Error(`Failed to generate invite: ${response.statusText}`);
+      }
+
+      const result = (await response.json()).value;
+      const link = `http://localhost:3000/magic-link?magicLinkId=${result._id}`;
+      setGeneratedLink(link);
+    } catch (error) {
+      console.error("Failed to generate invite:", error);
+    }
   };
 
   const togglePermission = (perm: string) => {

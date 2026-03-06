@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, CopyIcon, QrCode, Trash2, Settings } from "lucide-react";
@@ -17,6 +17,10 @@ import QRCode from "react-qr-code";
 import type { Role } from "@/components/forms/employee/employee-form";
 import type { Id } from "api/data-model";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLiveQuery } from "@tanstack/react-db";
+import { usersCollection } from "@/database/users";
+
+const CONVEX_URL = import.meta.env.VITE_CONVEX_URL!;
 
 const roleLabels: Record<string, string> = {
   founder: "Patron",
@@ -37,9 +41,10 @@ export function EmployeesTable() {
     inviteId: null,
   });
   const [showQR, setShowQR] = useState<string | null>(null);
-  const users = useQuery(api.users.getOrganizationUsers);
+  const { data: users } = useLiveQuery((q) =>
+    q.from({ users: usersCollection }),
+  );
   const pendingInvites = useQuery(api.magicLinks.getPendingByOrganization);
-  const revoke = useMutation(api.magicLinks.revoke);
 
   if (!users || pendingInvites === undefined) {
     return (
@@ -73,11 +78,30 @@ export function EmployeesTable() {
     );
   }
 
+  const usersData = users;
+  const pendingInvitesData = pendingInvites;
+
   const handleRevoke = async (inviteId: string) => {
     try {
-      await revoke({ invitationId: inviteId as any });
+      const response = await fetch(`${CONVEX_URL}/api/mutation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          path: "magicLinks:revoke",
+          args: { invitationId: inviteId },
+          format: "json",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to revoke invitation: ${response.statusText}`);
+      }
+
       toast.success("Invitation supprimée");
     } catch (error) {
+      console.error("Failed to revoke invitation:", error);
       toast.error("Erreur lors de la suppression");
     }
   };
@@ -88,14 +112,14 @@ export function EmployeesTable() {
   };
 
   const getEmployeesByRole = (role: string) => {
-    return users.filter((u) => u.role === role);
+    return usersData.filter((u) => u.role === role);
   };
 
   const getPendingByRole = (role: string) => {
-    return pendingInvites.filter((invite) => invite.role === role);
+    return pendingInvitesData.filter((invite) => invite.role === role);
   };
 
-  const totalEmployees = users.length + pendingInvites.length;
+  const totalEmployees = usersData.length + pendingInvitesData.length;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -108,8 +132,8 @@ export function EmployeesTable() {
         </div>
         <div className="text-sm text-muted-foreground">
           {totalEmployees} employé{totalEmployees !== 1 ? "s" : ""}
-          {pendingInvites.length > 0 &&
-            ` (${pendingInvites.length} en attente)`}
+          {pendingInvitesData.length > 0 &&
+            ` (${pendingInvitesData.length} en attente)`}
         </div>
       </div>
 
@@ -155,7 +179,7 @@ export function EmployeesTable() {
                     const isPending = !("name" in item) && "expiresAt" in item;
 
                     if (isPending) {
-                      const invite = item as (typeof pendingInvites)[0];
+                      const invite = item as (typeof pendingInvitesData)[0];
                       const link = `${window.location.origin}/magic-link?magicLinkId=${invite._id}`;
                       const pendingNumber = idx - employees.length + 1;
 
@@ -244,20 +268,20 @@ export function EmployeesTable() {
                         </div>
                       );
                     } else {
-                      const user = item as (typeof users)[0];
+                      const user = item as (typeof usersData)[0];
                       const permSummary = user.permissions?.some(
                         (p) => p.resource === "*" && p.action === "*",
                       )
                         ? "Tous les accès"
                         : user.permissions
-                          ?.map((p) => {
-                            const resource =
-                              p.resource === "*" ? "touts" : p.resource;
-                            const action =
-                              p.action === "*" ? "touts" : p.action;
-                            return `${resource}: ${action}`;
-                          })
-                          .join(", ") || "Aucune";
+                            ?.map((p) => {
+                              const resource =
+                                p.resource === "*" ? "touts" : p.resource;
+                              const action =
+                                p.action === "*" ? "touts" : p.action;
+                              return `${resource}: ${action}`;
+                            })
+                            .join(", ") || "Aucune";
 
                       return (
                         <div key={user._id} className="bg-card p-3 border">

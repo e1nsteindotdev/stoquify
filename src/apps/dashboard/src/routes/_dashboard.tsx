@@ -12,12 +12,11 @@ import { MobileMenu } from "@/components/sidebar/mobile-menu";
 import { RefreshButton } from "@/components/sidebar/refresh-button";
 
 export const Route = createFileRoute("/_dashboard")({
-  loader: async () => {},
+  loader: async () => { },
   component: PathlessLayoutComponent,
 });
 
 function PathlessLayoutComponent() {
-  const { location } = useRouterState();
   const { isLoading } = useInitApp();
   if (isLoading) {
     return <LoadingScreen />;
@@ -29,15 +28,7 @@ function PathlessLayoutComponent() {
       <SidebarInset>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 bg-[#EEEFEF]">
           <div className="flex flex-1 flex-col relative">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-1 flex-col"
-            >
-              <Outlet />
-            </motion.div>
+            <Outlet />
             <MobileMenu />
             <RefreshButton />
           </div>

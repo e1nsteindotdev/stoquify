@@ -38,17 +38,17 @@ function TableSkeleton() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Skeleton className="h-4 w-16" />
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-8 w-24" />
-        ))}
+        {/* <Skeleton className="h-4 w-16" /> */}
+        {/* {[1, 2, 3, 4, 5].map((i) => ( */}
+        {/*   <Skeleton key={i} className="h-8 w-24" /> */}
+        {/* ))} */}
       </div>
       <Skeleton className="h-4 w-24" />
       <div className="border rounded-md">
-        <Skeleton className="h-10 w-full" />
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <Skeleton key={i} className="h-14 w-full border-t" />
-        ))}
+        {/* <Skeleton className="h-10 w-full" /> */}
+        {/* {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => ( */}
+        {/*   <Skeleton key={i} className="h-14 w-full border-t" /> */}
+        {/* ))} */}
       </div>
     </div>
   );

@@ -71,21 +71,6 @@ const getProductInventoryQuantity = (product: any) => {
   return product?.quantity ?? 0;
 };
 
-const getOldestSkuCreationTime = (product: any) => {
-  if (!Array.isArray(product?.skus) || product.skus.length === 0) {
-    return null;
-  }
-  let oldest: number | null = null;
-  for (const sku of product.skus) {
-    if (sku.creationTime) {
-      if (oldest === null || sku.creationTime < oldest) {
-        oldest = sku.creationTime;
-      }
-    }
-  }
-  return oldest;
-};
-
 const checkSizeImbalance = (product: any): boolean => {
   if (!Array.isArray(product?.skus) || product.skus.length === 0) {
     return false;
@@ -218,11 +203,10 @@ export const useGetProductTableData = (
       const margin =
         salesData.revenue > 0 ? (profit / salesData.revenue) * 100 : 0;
 
-      const oldestCreationTime = getOldestSkuCreationTime(product);
-      const agingBand =
-        oldestCreationTime !== null
-          ? Math.floor((now - oldestCreationTime) / DAY_MS)
-          : 0;
+      const creationTime = product._creationTime;
+      const agingBand = creationTime
+        ? Math.floor((now - creationTime) / DAY_MS)
+        : 0;
 
       const firstImage = product.images
         ?.filter((img: any) => !img.hidden && img.url)
