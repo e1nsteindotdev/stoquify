@@ -1,22 +1,27 @@
 import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
-export const listExpenses = authedQuery({
+export const list = authedQuery({
   resource: "expenses",
   action: "read",
   args: {
     storeId: v.id("stores"),
+    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
-    const expenses = await ctx.db
+  handler: async (ctx, { storeId, cursor }) => {
+    let query = ctx.db
       .query("expenses")
-      .withIndex("by_store", (q) => q.eq("storeId", args.storeId))
-      .order("desc")
-      .collect();
+      .withIndex("by_store", (q) => q.eq("storeId", storeId));
+
+    if (cursor) {
+      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
+    }
+
+    const expenses = await query.order("desc").collect();
 
     const categories = await ctx.db
       .query("expenseCategories")
-      .withIndex("by_store", (q) => q.eq("storeId", args.storeId))
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
       .collect();
 
     const categoryMap = new Map(categories.map((c) => [c._id, c]));
@@ -30,7 +35,7 @@ export const listExpenses = authedQuery({
   },
 });
 
-export const createExpense = authedMutation({
+export const insert = authedMutation({
   resource: "expenses",
   action: "create",
   args: {
@@ -42,19 +47,20 @@ export const createExpense = authedMutation({
     categoryId: v.optional(v.id("expenseCategories")),
   },
   handler: async (ctx, args) => {
-    const id = await ctx.db.insert("expenses", {
+    const now = Date.now();
+    return await ctx.db.insert("expenses", {
       storeId: args.storeId,
       title: args.title,
       description: args.description,
       cost: args.cost,
       date: args.date,
       categoryId: args.categoryId,
+      lastUpdate: now,
     });
-    return id;
   },
 });
 
-export const updateExpense = authedMutation({
+export const update = authedMutation({
   resource: "expenses",
   action: "update",
   args: {
@@ -67,17 +73,73 @@ export const updateExpense = authedMutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    await ctx.db.patch(id, updates);
+    await ctx.db.patch(id, { ...updates, lastUpdate: Date.now() });
   },
 });
 
-export const deleteExpense = authedMutation({
+export const remove = authedMutation({
   resource: "expenses",
   action: "delete",
   args: {
     id: v.id("expenses"),
   },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
+    await ctx.db.patch(args.id, { deleted: true, lastUpdate: Date.now() });
+  },
+});
+
+export const listCategories = authedQuery({
+  resource: "expenseCategories",
+  action: "read",
+  args: {
+    storeId: v.id("stores"),
+    cursor: v.optional(v.number()),
+  },
+  handler: async (ctx, { storeId, cursor }) => {
+    let query = ctx.db
+      .query("expenseCategories")
+      .withIndex("by_store", (q) => q.eq("storeId", storeId));
+
+    if (cursor) {
+      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
+    }
+
+    return await query.collect();
+  },
+});
+
+export const insertCategory = authedMutation({
+  resource: "expenseCategories",
+  action: "create",
+  args: {
+    storeId: v.id("stores"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("expenseCategories")
+      .withIndex("by_store", (q) => q.eq("storeId", args.storeId))
+      .filter((q) => q.eq(q.field("name"), args.name))
+      .first();
+
+    if (existing) return existing._id;
+
+    const now = Date.now();
+    return await ctx.db.insert("expenseCategories", {
+      name: args.name,
+      storeId: args.storeId,
+      lastUpdate: now,
+    });
+  },
+});
+
+export const removeCategory = authedMutation({
+  resource: "expenseCategories",
+  action: "delete",
+  args: {
+    id: v.id("expenseCategories"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { deleted: true, lastUpdate: Date.now() });
   },
 });

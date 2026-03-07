@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "convex/react";
 import { api } from "api/convex";
 import QRCode from "react-qr-code";
 import { useAppStore } from "@/lib/store";
-
-const CONVEX_URL = import.meta.env.VITE_CONVEX_URL!;
+import { convex } from "@/lib/convex-client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import type { Id } from "api/data-model";
 
 export function InviteStaffModal() {
   const base_url = import.meta.env.VITE_BASE_URL?.replace(/\/$/, "");
@@ -14,7 +14,22 @@ export function InviteStaffModal() {
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
   const user = useAppStore((state) => state.user);
-  const availablePermissions = useQuery(api.permissions?.list || null);
+  const invite = useMutation({
+    mutationFn: (payload: {
+      email?: string;
+      role: "admin" | "staff";
+      permissions: { resource: string; action: "*" }[];
+      organizationId: string;
+    }) =>
+      convex.mutation(api.magicLinks.insert, {
+        ...payload,
+        organizationId: payload.organizationId as Id<"organizations">,
+      }),
+  });
+  const { data: availablePermissions = [] } = useQuery({
+    queryKey: ["permissions"],
+    queryFn: () => convex.query(api.permissions.list),
+  });
 
   const handleGenerateLink = async () => {
     if (!user?.organization?._id) return;
@@ -24,34 +39,16 @@ export function InviteStaffModal() {
       action: "*" as const,
     }));
 
-    try {
-      const response = await fetch(`${CONVEX_URL}/api/mutation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          path: "magicLinks:invite",
-          args: {
-            email,
-            role,
-            permissions,
-            organizationId: user.organization._id,
-          },
-          format: "json",
-        }),
-      });
+    const result = await invite.mutateAsync({
+      email,
+      role,
+      permissions,
+      organizationId: user.organization._id,
+    });
 
-      if (!response.ok) {
-        throw new Error(`Failed to generate invite: ${response.statusText}`);
-      }
-
-      const result = (await response.json()).value;
-      const link = `http://localhost:3000/magic-link?magicLinkId=${result._id}`;
-      setGeneratedLink(link);
-    } catch (error) {
-      console.error("Failed to generate invite:", error);
-    }
+    // const link = `${base_url}/magic-link?magicLinkId=${result._id}`;
+    const link = `http://localhost:3000/magic-link?magicLinkId=${result._id}`;
+    setGeneratedLink(link);
   };
 
   const togglePermission = (perm: string) => {

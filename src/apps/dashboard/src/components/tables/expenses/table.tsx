@@ -90,7 +90,7 @@ export function ExpensesTable() {
           setIsModalOpen(true);
         }
       } else if (action === "delete") {
-        await convex.mutation(api.expenses.deleteExpense, { id });
+        await convex.mutation(api.expenses.remove, { id });
         await queryClient.refetchQueries({ queryKey: ["expenses"] });
       }
     }

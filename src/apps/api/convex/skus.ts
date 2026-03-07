@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
-export const getSkuQuantities = authedQuery({
+export const listQuantities = authedQuery({
   resource: "skus",
   action: "read",
   args: { skuIds: v.array(v.id("skus")) },
@@ -16,7 +16,7 @@ export const getSkuQuantities = authedQuery({
   },
 });
 
-export const replaceSKUs = authedMutation({
+export const replace = authedMutation({
   resource: "skus",
   action: "update",
   args: {

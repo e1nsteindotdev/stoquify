@@ -109,7 +109,7 @@ export function ProductsTable() {
     ) as HTMLButtonElement | null;
     if (button) {
       const id = button.getAttribute("data-product-id") as any;
-      await convex.mutation(api.products.deleteProduct, { id });
+      await convex.mutation(api.products.remove, { id });
       queryClient.refetchQueries({ queryKey: ["products"] });
     }
   };

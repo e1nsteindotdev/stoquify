@@ -40,7 +40,7 @@ export default function CategoriesField({ label }: Props) {
     setIsCreating(true);
     try {
       if (!storeId) throw Error("no storeId");
-      const id = await convex.mutation(api.categories.createCategory, {
+      const id = await convex.mutation(api.categories.insert, {
         name,
         storeId,
       });

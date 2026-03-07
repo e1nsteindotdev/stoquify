@@ -8,9 +8,9 @@ export function useGetUser() {
     queryKey: ["user"],
     queryFn: async () => {
       try {
-        const user = await convex.query(api.users.getUserData);
-        await idbRefresh('user', user)
-        return user
+        const user = await convex.query(api.users.me);
+        await idbRefresh("user", user);
+        return user;
       } catch (e) {
         const cachedUser = await idbGet("user");
         if (!cachedUser || Array.isArray(cachedUser)) {

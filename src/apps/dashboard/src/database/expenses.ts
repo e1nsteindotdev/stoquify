@@ -5,7 +5,8 @@ import { createCollection, eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
-import { idbGet, idbRefresh } from "@/lib/idb";
+import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
+import { computeNewCursor, mergeRowsWithStoreScope } from "@/lib/cursor-utils";
 import type { Id } from "api/data-model";
 
 export const expensesCollection = createCollection(
@@ -15,18 +16,35 @@ export const expensesCollection = createCollection(
       return ["expenses", storeId];
     },
     queryFn: async (): Promise<any[]> => {
-      console.log("[expenses] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
+
+      const cursor = await idbGetCursor("expenses", storeId);
+
       try {
-        const expenses = await convex.query(api.expenses.listExpenses, {
+        const expenses = await convex.query(api.expenses.list, {
           storeId,
+          cursor: cursor ?? undefined,
         });
-        idbRefresh("expenses", expenses);
-        return expenses;
+
+        const cachedExpenses = await idbGet<any[]>("expenses", storeId);
+        const mergedExpenses = mergeRowsWithStoreScope(
+          expenses,
+          cachedExpenses || [],
+          storeId,
+        );
+
+        await idbRefresh("expenses", mergedExpenses, storeId);
+
+        if (expenses.length > 0) {
+          const newCursor = computeNewCursor(expenses);
+          await idbSetCursor("expenses", newCursor, storeId);
+        }
+
+        return mergedExpenses;
       } catch (e) {
-        const cachedExpenses = await idbGet("expenses");
-        return Array.isArray(cachedExpenses) ? cachedExpenses : [];
+        const cachedExpenses = await idbGet<any[]>("expenses", storeId);
+        return cachedExpenses || [];
       }
     },
     queryClient,

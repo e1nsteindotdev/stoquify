@@ -16,10 +16,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useCreateSale } from "@/hooks/use-convex-queries";
 import { useGetCategories } from "@/database/categories";
 import { useGetProducts, useGetProductById } from "@/database/products";
 import type { Id } from "api/data-model";
+import { useMutation } from "@tanstack/react-query";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
 
 interface CartItem {
   productId: string;
@@ -47,7 +49,20 @@ export default function POSPage() {
   const productsResult = useGetProducts();
   const categories = categoriesResult?.data ?? [];
   const products = productsResult?.data ?? [];
-  const createSale = useCreateSale();
+  const createSale = useMutation({
+    mutationFn: (
+      order: {
+        productId: Id<"products">;
+        skuId: Id<"skus">;
+        price: number;
+        quantity: number;
+      }[],
+    ) =>
+      convex.mutation(api.sales.insert, {
+        source: "in_store",
+        order,
+      }),
+  });
 
   const filteredProducts = selectedCategory
     ? products?.filter((p) => p.categoryId === selectedCategory)
@@ -115,19 +130,14 @@ export default function POSPage() {
     if (cart.length === 0) return;
 
     try {
-      const subTotalCost = cart.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0,
-      );
-      await createSale.mutateAsync({
-        order: cart.map((item) => ({
-          productId: item.productId as any,
-          skuId: item.skuId as any,
+      await createSale.mutateAsync(
+        cart.map((item) => ({
+          productId: item.productId as Id<"products">,
+          skuId: item.skuId as Id<"skus">,
           price: item.price,
           quantity: item.quantity,
         })),
-        subTotalCost,
-      });
+      );
       toast.success("Vente confirmée !");
       setCart([]);
     } catch (error) {

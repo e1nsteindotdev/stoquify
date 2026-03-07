@@ -5,14 +5,18 @@ import { queryClient } from "@/lib/ts-query-client";
 import { createCollection, inArray } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import type { Id } from "api/data-model";
-import { idbGet, idbRefresh } from "@/lib/idb";
 import { useAppStore } from "@/lib/store";
+import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
+import { computeNewCursor, mergeRowsWithStoreScope } from "@/lib/cursor-utils";
 
 type CachedCollection = {
   _id: Id<"collections">;
   productIds?: Id<"products">[];
   storeId: Id<"stores">;
   title: string;
+  lastUpdate?: number;
+  deleted?: boolean;
+  _creationTime: number;
 };
 
 export const collectionsCollection = createCollection(
@@ -22,23 +26,41 @@ export const collectionsCollection = createCollection(
       return ["collections", storeId];
     },
     queryFn: async (): Promise<any[]> => {
-      console.log("[collections] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
+
+      const cursor = await idbGetCursor("collections", storeId);
+
       try {
-        const collections = await convex.query(
-          api.collections.listAllCollections,
-          {
-            storeId,
-          },
+        const collections = await convex.query(api.collections.list, {
+          storeId,
+          cursor: cursor ?? undefined,
+        });
+
+        const cachedCollections = await idbGet<CachedCollection[]>(
+          "collections",
+          storeId,
         );
-        idbRefresh("collections", collections);
-        return collections;
+        const mergedCollections = mergeRowsWithStoreScope(
+          collections,
+          cachedCollections || [],
+          storeId,
+        );
+
+        await idbRefresh("collections", mergedCollections, storeId);
+
+        if (collections.length > 0) {
+          const newCursor = computeNewCursor(collections);
+          await idbSetCursor("collections", newCursor, storeId);
+        }
+
+        return mergedCollections;
       } catch (e) {
-        const cachedCollections = await idbGet("collections");
-        return Array.isArray(cachedCollections)
-          ? (cachedCollections as CachedCollection[])
-          : [];
+        const cachedCollections = await idbGet<CachedCollection[]>(
+          "collections",
+          storeId,
+        );
+        return cachedCollections || [];
       }
     },
     queryClient,

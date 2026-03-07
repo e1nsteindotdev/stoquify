@@ -5,7 +5,7 @@ export type PermissionAction = "read" | "write" | "*";
 export const availableResources = [
   { key: "products", label: "Produits", description: "Gérer les produits" },
   {
-    key: "orders",
+    key: "sales",
     label: "Commandes",
     description: "Voir et gérer les commandes",
   },

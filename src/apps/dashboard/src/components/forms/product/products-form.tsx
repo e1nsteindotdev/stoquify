@@ -187,7 +187,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
             throw new Error("Veuillez sélectionner une boutique");
           }
           const { productId: newProductId } = yield* Effect.promise(() =>
-            convex.mutation(api.products.createProduct, {
+            convex.mutation(api.products.insert, {
               ...newProduct,
               collections: [...newProduct.collections],
               storeId: selectedStore._id,
@@ -214,7 +214,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
             });
             if (productChanges || newProduct.collections) {
               return yield* Effect.promise(() =>
-                convex.mutation(api.products.updateProductMetaData, {
+                convex.mutation(api.products.update, {
                   productId: ensuredProductId,
                   ...productChanges,
                   collections: [...newProduct.collections],
@@ -264,7 +264,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           );
 
           return yield* Effect.promise(() =>
-            convex.mutation(api.images.handleImageChanges, {
+            convex.mutation(api.images.sync, {
               productId: ensuredProductId as Id<"products">,
               toCreate: imageChanges.toCreate.map((img) => ({
                 url: img.url,
@@ -300,7 +300,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
               ),
             });
           const result = yield* Effect.promise(() =>
-            convex.mutation(api.variants.handleVariantChanges, {
+            convex.mutation(api.variants.sync, {
               productId: ensuredProductId as Id<"products">,
               toDelete: variantChanges.toDelete.map(
                 (v) => v.tempId as Id<"variants">,
@@ -310,7 +310,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 name: v.name,
                 order: v.order,
                 options: v.options.map((o) => ({
-                  order: o.order,
+                  order: o.order ?? 0,
                   name: o.name,
                 })),
               })),
@@ -318,7 +318,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
                 name: v.name,
                 order: v.order,
                 options: v.options.map((o) => ({
-                  order: o.order,
+                  order: o.order ?? 0,
                   name: o.name,
                 })),
               })),
@@ -333,7 +333,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         const handleSKUs = (options: Map<string, Id<"variantOptions">>) =>
           Effect.gen(function* () {
             return yield* Effect.promise(() =>
-              convex.mutation(api.skus.replaceSKUs, {
+              convex.mutation(api.skus.replace, {
                 productId: ensuredProductId as Id<"products">,
                 skus: skus.map((sku) => ({
                   quantity: sku.quantity,

@@ -59,8 +59,7 @@ export function EmployeeForm({
 
   const { data: existingInvite } = useQuery({
     queryKey: ["invite", inviteId],
-    queryFn: () =>
-      convex.query(api.magicLinks.getById, { magicLinkId: inviteId! }),
+    queryFn: () => convex.query(api.magicLinks.get, { magicLinkId: inviteId! }),
     enabled: !!inviteId,
   });
 
@@ -97,7 +96,7 @@ export function EmployeeForm({
       const program = Effect.gen(function* () {
         if (isNew) {
           const result = yield* Effect.promise(() =>
-            convex.mutation(api.magicLinks.invite, {
+            convex.mutation(api.magicLinks.insert, {
               role: value.role,
               permissions,
               organizationId: orgId,

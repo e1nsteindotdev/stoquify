@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_dashboard/(analytics)/")({
   loader: () => {
-    // ordersCollection.preload();
     // salesCollection.preload();
   },
   component: Page,

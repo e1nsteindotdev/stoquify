@@ -4,10 +4,11 @@ import { api } from "api/convex";
 import { createCollection, eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import type { Id } from "api/data-model";
-import { idbGet, idbRefresh } from "@/lib/idb";
+import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import type { TypeProduct } from "api/types";
+import { computeNewCursor, mergeRowsWithStoreScope } from "@/lib/cursor-utils";
 
 type CachedProduct = TypeProduct;
 type ProductForForm = Omit<TypeProduct, "collections"> & {
@@ -24,17 +25,39 @@ export const productsCollection = createCollection(
       console.log("[products] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
+
+      const cursor = await idbGetCursor("products", storeId);
+
       try {
-        const products = await convex.query(api.products.listProducts, {
+        const products = await convex.query(api.products.list, {
           storeId,
+          cursor: cursor ?? undefined,
         });
-        idbRefresh("products", products);
-        return products;
+
+        const cachedProducts = await idbGet<CachedProduct[]>(
+          "products",
+          storeId,
+        );
+        const mergedProducts = mergeRowsWithStoreScope(
+          products,
+          cachedProducts || [],
+          storeId,
+        );
+
+        await idbRefresh("products", mergedProducts, storeId);
+
+        if (products.length > 0) {
+          const newCursor = computeNewCursor(products);
+          await idbSetCursor("products", newCursor, storeId);
+        }
+
+        return mergedProducts;
       } catch (e) {
-        const cachedProducts = await idbGet("products");
-        return Array.isArray(cachedProducts)
-          ? (cachedProducts as CachedProduct[])
-          : [];
+        const cachedProducts = await idbGet<CachedProduct[]>(
+          "products",
+          storeId,
+        );
+        return cachedProducts || [];
       }
     },
     queryClient,

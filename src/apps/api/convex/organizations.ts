@@ -1,8 +1,8 @@
 import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
 // Founder creates organization + first store + founder membership
-export const create = authedMutation({
+export const insert = authedMutation({
   resource: "organizations",
   action: "create",
   args: {
@@ -41,7 +41,7 @@ export const create = authedMutation({
 });
 
 // Get current user's organization
-export const getMyOrganization = authedQuery({
+export const getMine = authedQuery({
   resource: "organizations",
   action: "read",
   args: {},
@@ -56,7 +56,7 @@ export const getMyOrganization = authedQuery({
 });
 
 // Get user's role
-export const getMyRole = authedQuery({
+export const getRole = authedQuery({
   resource: "organizations",
   action: "read",
   args: {},

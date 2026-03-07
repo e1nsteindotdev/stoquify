@@ -5,7 +5,8 @@ import { createCollection, eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
-import { idbGet, idbRefresh } from "@/lib/idb";
+import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
+import { computeNewCursor, mergeRowsWithStoreScope } from "@/lib/cursor-utils";
 
 export const categoriesCollection = createCollection(
   queryCollectionOptions({
@@ -15,13 +16,35 @@ export const categoriesCollection = createCollection(
     },
     queryFn: async (): Promise<any[]> => {
       console.log("[categories] queryFn running");
+      const storeId = useAppStore.getState().selectedStore?._id;
+      if (!storeId) return [];
+
+      const cursor = await idbGetCursor("categories", storeId);
+
       try {
-        const categories = await convex.query(api.categories.listCategories);
-        idbRefresh("categories", categories);
-        return categories;
+        const categories = await convex.query(api.categories.list, {
+          storeId,
+          cursor: cursor ?? undefined,
+        });
+
+        const cachedCategories = await idbGet<any[]>("categories", storeId);
+        const mergedCategories = mergeRowsWithStoreScope(
+          categories,
+          cachedCategories || [],
+          storeId,
+        );
+
+        await idbRefresh("categories", mergedCategories, storeId);
+
+        if (categories.length > 0) {
+          const newCursor = computeNewCursor(categories);
+          await idbSetCursor("categories", newCursor, storeId);
+        }
+
+        return mergedCategories;
       } catch (e) {
-        const cachedCategories = await idbGet("categories");
-        return Array.isArray(cachedCategories) ? cachedCategories : [];
+        const cachedCategories = await idbGet<any[]>("categories", storeId);
+        return cachedCategories || [];
       }
     },
     queryClient,

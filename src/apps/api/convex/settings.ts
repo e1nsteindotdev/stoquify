@@ -1,19 +1,25 @@
 import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
-// Get FAQs
-export const getFAQs = authedQuery({
+export const listFaqs = authedQuery({
   resource: "settings",
   action: "read",
-  args: {},
-  handler: async (ctx) => {
-    const faqs = await ctx.db.query("faqs").collect();
+  args: {
+    cursor: v.optional(v.number()),
+  },
+  handler: async (ctx, { cursor }) => {
+    let query = ctx.db.query("faqs");
+
+    if (cursor) {
+      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
+    }
+
+    const faqs = await query.collect();
     return faqs.sort((a, b) => a.order - b.order);
   },
 });
 
-// Create FAQ
-export const createFAQ = authedMutation({
+export const insertFaq = authedMutation({
   resource: "settings",
   action: "create",
   args: {
@@ -22,16 +28,17 @@ export const createFAQ = authedMutation({
     order: v.number(),
   },
   handler: async (ctx, args) => {
+    const now = Date.now();
     return await ctx.db.insert("faqs", {
       question: args.question,
       answer: args.answer,
       order: args.order,
+      lastUpdate: now,
     });
   },
 });
 
-// Update FAQ
-export const updateFAQ = authedMutation({
+export const updateFaq = authedMutation({
   resource: "settings",
   action: "update",
   args: {
@@ -42,24 +49,22 @@ export const updateFAQ = authedMutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    await ctx.db.patch(id, updates);
+    await ctx.db.patch(id, { ...updates, lastUpdate: Date.now() });
   },
 });
 
-// Delete FAQ
-export const deleteFAQ = authedMutation({
+export const removeFaq = authedMutation({
   resource: "settings",
   action: "delete",
   args: {
     id: v.id("faqs"),
   },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
+    await ctx.db.patch(args.id, { deleted: true, lastUpdate: Date.now() });
   },
 });
 
-// Get settings for the default store
-export const getSettings = authedQuery({
+export const get = authedQuery({
   resource: "settings",
   action: "read",
   args: {},
@@ -72,24 +77,11 @@ export const getSettings = authedQuery({
       .withIndex("by_store", (q) => q.eq("storeId", storeId))
       .first();
 
-    // if (!settings) {
-    //   // Create default settings if none exist
-    //   const defaultId = await ctx.db.insert("settings", {
-    //     storeId: storeId,
-    //     locationLink: "",
-    //     instagramLink: "",
-    //     facebookLink: "",
-    //     tiktokLink: "",
-    //   });
-    //   return await ctx.db.get(defaultId);
-    // }
-
     return settings;
   },
 });
 
-// Update settings for the default store
-export const updateSettings = authedMutation({
+export const update = authedMutation({
   resource: "settings",
   action: "update",
   args: {
@@ -107,13 +99,16 @@ export const updateSettings = authedMutation({
       .withIndex("by_store", (q) => q.eq("storeId", storeId))
       .first();
 
+    const now = Date.now();
+
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      await ctx.db.patch(existing._id, { ...args, lastUpdate: now });
       return existing._id;
     } else {
       return await ctx.db.insert("settings", {
         storeId,
         ...args,
+        lastUpdate: now,
       });
     }
   },

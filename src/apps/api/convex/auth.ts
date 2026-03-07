@@ -32,7 +32,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 
         try {
           const result = await ctx.runMutation(
-            internal.signInMagicLinks.consume,
+            internal.magicLinks.consumeSignIn,
             {
               token,
             },

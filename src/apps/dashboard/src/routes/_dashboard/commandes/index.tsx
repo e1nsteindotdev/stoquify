@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { OrdersTable } from "@/components/tables/orders/table";
-import { ordersCollection } from "@/database/orders";
+import { CommandesTable } from "@/components/tables/commandes/table";
+import { salesCollection } from "@/database/sales";
 import { useTransition, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_dashboard/commandes/")({
   loader: () => {
-    ordersCollection.preload();
+    salesCollection.preload();
   },
   component: Page,
 });
@@ -22,7 +22,7 @@ function Page() {
   return (
     <div className="p-4 pt-0 w-full h-full flex flex-col gap-4">
       <div className="flex-1">
-        {showTable ? <OrdersTable /> : <TableSkeleton />}
+        {showTable ? <CommandesTable /> : <TableSkeleton />}
       </div>
     </div>
   );

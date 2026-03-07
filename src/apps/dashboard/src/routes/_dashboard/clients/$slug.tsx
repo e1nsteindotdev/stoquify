@@ -74,14 +74,16 @@ function ClientDetailComponent() {
     );
   }
 
-  const totalSpent = client.orders.reduce((sum: number, order: any) => {
-    return sum + (order.subTotalCost || 0) + (order.deliveryCost || 0);
+  const commandes = client.orders ?? [];
+
+  const totalSpent = commandes.reduce((sum: number, commande: any) => {
+    return sum + (commande.subTotalCost || 0) + (commande.deliveryCost || 0);
   }, 0);
 
-  const confirmedOrders = client.orders.filter(
+  const confirmedOrders = commandes.filter(
     (o: any) => o.status === "confirmed",
   ).length;
-  const pendingOrders = client.orders.filter(
+  const pendingOrders = commandes.filter(
     (o: any) => o.status === "pending",
   ).length;
 
@@ -123,7 +125,7 @@ function ClientDetailComponent() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{client.orders.length}</div>
+            <div className="text-2xl font-bold">{commandes.length}</div>
             <p className="text-xs text-muted-foreground">
               {confirmedOrders} confirmée{confirmedOrders !== 1 ? "s" : ""},{" "}
               {pendingOrders} en attente
@@ -141,8 +143,8 @@ function ClientDetailComponent() {
               {totalSpent.toLocaleString()} DA
             </div>
             <p className="text-xs text-muted-foreground">
-              Sur {client.orders.length} commande
-              {client.orders.length !== 1 ? "s" : ""}
+              Sur {commandes.length} commande
+              {commandes.length !== 1 ? "s" : ""}
             </p>
           </CardContent>
         </Card>
@@ -157,8 +159,8 @@ function ClientDetailComponent() {
           <CardContent>
             <div className="text-2xl font-bold">{confirmedOrders}</div>
             <p className="text-xs text-muted-foreground">
-              {client.orders.length > 0
-                ? ((confirmedOrders / client.orders.length) * 100).toFixed(0)
+              {commandes.length > 0
+                ? ((confirmedOrders / commandes.length) * 100).toFixed(0)
                 : 0}
               % du total
             </p>
@@ -172,8 +174,8 @@ function ClientDetailComponent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {client.orders.length > 0
-                ? Math.round(totalSpent / client.orders.length).toLocaleString()
+              {commandes.length > 0
+                ? Math.round(totalSpent / commandes.length).toLocaleString()
                 : 0}{" "}
               DA
             </div>
@@ -222,27 +224,29 @@ function ClientDetailComponent() {
           <CardHeader>
             <CardTitle>Historique des Commandes</CardTitle>
             <CardDescription>
-              {client.orders.length} commande
-              {client.orders.length !== 1 ? "s" : ""} au total
+              {commandes.length} commande
+              {commandes.length !== 1 ? "s" : ""} au total
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {client.orders.length === 0 ? (
+            {commandes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Package className="w-12 h-12 text-muted-foreground/50 mb-4" />
                 <p className="text-sm text-muted-foreground">Aucune commande</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                {client.orders.map((order: any) => {
+                {commandes.map((commande: any) => {
                   const totalCost =
-                    (order.subTotalCost || 0) + (order.deliveryCost || 0);
-                  const date = new Date(order.orderTime || order._creationTime);
+                    (commande.subTotalCost || 0) + (commande.deliveryCost || 0);
+                  const date = new Date(
+                    commande.createdAt || commande._creationTime,
+                  );
                   return (
                     <Link
-                      key={order._id}
+                      key={commande._id}
                       to="/commandes/$slug"
-                      params={{ slug: order._id }}
+                      params={{ slug: commande._id }}
                       className="block"
                     >
                       <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500">
@@ -251,10 +255,12 @@ function ClientDetailComponent() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <p className="text-sm font-semibold">
-                                  Commande #{order._id.slice(-8)}
+                                  Commande #{commande._id.slice(-8)}
                                 </p>
-                                <Badge className={statusColors[order.status]}>
-                                  {statusLabels[order.status]}
+                                <Badge
+                                  className={statusColors[commande.status]}
+                                >
+                                  {statusLabels[commande.status]}
                                 </Badge>
                               </div>
                               <p className="text-xs text-muted-foreground mb-2">
@@ -266,13 +272,13 @@ function ClientDetailComponent() {
                                   minute: "2-digit",
                                 })}
                               </p>
-                              {order.address && (
+                              {commande.address && (
                                 <p className="text-xs text-muted-foreground truncate">
                                   <MapPin className="w-3 h-3 inline mr-1" />
-                                  {order.address.address}
-                                  {order.address.wilaya && (
+                                  {commande.address.address}
+                                  {commande.address.wilaya && (
                                     <span>
-                                      , {order.address.wilaya.htmlName}
+                                      , {commande.address.wilaya.htmlName}
                                     </span>
                                   )}
                                 </p>
@@ -282,9 +288,9 @@ function ClientDetailComponent() {
                               <p className="text-lg font-bold">
                                 {totalCost.toLocaleString()} DA
                               </p>
-                              {order.deliveryCost > 0 && (
+                              {commande.deliveryCost > 0 && (
                                 <p className="text-xs text-muted-foreground">
-                                  +{order.deliveryCost.toLocaleString()} DA
+                                  +{commande.deliveryCost.toLocaleString()} DA
                                   livraison
                                 </p>
                               )}

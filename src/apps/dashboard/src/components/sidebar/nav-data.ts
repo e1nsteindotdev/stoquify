@@ -48,7 +48,7 @@ export const mainNavItems: NavItem[] = [
     url: "/commandes",
     icon: IconShoppingBag,
     requiredPermission: {
-      resource: "orders",
+      resource: "sales",
       action: "read",
       scope: "store",
     },

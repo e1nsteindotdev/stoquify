@@ -43,7 +43,7 @@ export default function CollectionsField({
     }
     setIsAdding(true);
     try {
-      const res = await convex.mutation(api.collections.createCollection, {
+      const res = await convex.mutation(api.collections.insert, {
         storeId,
         title: name,
       });

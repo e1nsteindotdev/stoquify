@@ -23,7 +23,7 @@ export const Route = createFileRoute("/mobile-signin")({
     if (!token) {
       return { error: "invalid", message: "Token manquant" };
     }
-    const result = await convex.query(api.signInMagicLinks.getByToken, {
+    const result = await convex.query(api.magicLinks.getSignInByToken, {
       token,
     });
 

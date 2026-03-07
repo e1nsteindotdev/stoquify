@@ -67,7 +67,7 @@ export function NavUser({ avatar }: { avatar: string }) {
   const { data: activeLink, isLoading: isLoadingLink } = useQuery({
     queryKey: ["signInMagicLink"],
     queryFn: async () => {
-      return await convex.query(api.signInMagicLinks.getActiveForCurrentUser);
+      return await convex.query(api.magicLinks.getSignInActive);
     },
     refetchInterval: 5000, // Poll every 5 seconds
   });
@@ -75,7 +75,7 @@ export function NavUser({ avatar }: { avatar: string }) {
   // Mutation to create new sign-in link
   const createLinkMutation = useMutation({
     mutationFn: async () => {
-      return await convex.mutation(api.signInMagicLinks.create);
+      return await convex.mutation(api.magicLinks.insertSignIn);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["signInMagicLink"] });

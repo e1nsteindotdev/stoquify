@@ -37,13 +37,10 @@ export default function ExpenseCategoryField({ label }: Props) {
     setIsCreating(true);
     try {
       if (!storeId) throw Error("no storeId");
-      const id = await convex.mutation(
-        api.expenseCategories.createExpenseCategory,
-        {
-          name,
-          storeId,
-        },
-      );
+      const id = await convex.mutation(api.expenses.insertCategory, {
+        name,
+        storeId,
+      });
       console.log("new id :", id);
       if (!id) throw Error("failed at creating id");
       await queryClient.refetchQueries({ queryKey: ["expenseCategories"] });

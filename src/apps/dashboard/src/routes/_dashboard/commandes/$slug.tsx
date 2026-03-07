@@ -10,17 +10,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useConfirmOrder, useDenyOrder } from "@/hooks/use-convex-queries";
-import { useGetOrderById, ordersCollection } from "@/database/orders";
-import { salesCollection } from "@/database/sales";
+import { salesCollection, useGetSaleById } from "@/database/sales";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import { ClipLoader } from "react-spinners";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
 
 export const Route = createFileRoute("/_dashboard/commandes/$slug")({
-  component: OrderDetailComponent,
+  component: CommandeDetailComponent,
 });
 
 const statusColors = {
@@ -35,15 +36,21 @@ const statusLabels = {
   denied: "Refusée",
 };
 
-function OrderDetailComponent() {
+function CommandeDetailComponent() {
   const { slug } = useParams({ from: "/_dashboard/commandes/$slug" });
-  const { data: order, isLoading } = useGetOrderById(slug as Id<"orders">);
-  const confirmOrder = useConfirmOrder();
-  const denyOrder = useDenyOrder();
+  const { data: commande, isLoading } = useGetSaleById(slug as Id<"sales">);
+  const confirmOrder = useMutation({
+    mutationFn: (saleId: Id<"sales">) =>
+      convex.mutation(api.sales.confirm, { saleId }),
+  });
+  const denyOrder = useMutation({
+    mutationFn: (saleId: Id<"sales">) =>
+      convex.mutation(api.sales.deny, { saleId }),
+  });
 
   const navigate = useNavigate();
 
-  if (isLoading || !order) {
+  if (isLoading || !commande) {
     return (
       <div className="p-4 pt-0 flex justify-center">
         <ClipLoader color="#000" size={50} />
@@ -53,21 +60,15 @@ function OrderDetailComponent() {
 
   const handleConfirm = async () => {
     try {
-      const result = await confirmOrder.mutateAsync({
-        orderId: slug as Id<"orders">,
-      });
+      const result = await confirmOrder.mutateAsync(slug as Id<"sales">);
 
       const storeId = useAppStore.getState().selectedStore?._id;
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["orders"] }),
         queryClient.invalidateQueries({ queryKey: ["sales", storeId] }),
-        queryClient.invalidateQueries({ queryKey: ["order", slug] }),
+        queryClient.invalidateQueries({ queryKey: ["sale", slug] }),
       ]);
 
-      await Promise.all([
-        ordersCollection.preload(),
-        salesCollection.preload(),
-      ]);
+      await salesCollection.preload();
 
       if (result.ok) {
         toast.success("Commande confirmée");
@@ -100,28 +101,27 @@ function OrderDetailComponent() {
   };
 
   const handleDeny = async () => {
-    await denyOrder.mutateAsync({ orderId: slug as Id<"orders"> });
+    await denyOrder.mutateAsync(slug as Id<"sales">);
 
     const storeId = useAppStore.getState().selectedStore?._id;
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["orders"] }),
       queryClient.invalidateQueries({ queryKey: ["sales", storeId] }),
-      queryClient.invalidateQueries({ queryKey: ["order", slug] }),
+      queryClient.invalidateQueries({ queryKey: ["sale", slug] }),
     ]);
 
-    await Promise.all([ordersCollection.preload(), salesCollection.preload()]);
+    await salesCollection.preload();
     toast.success("Commande refusée");
   };
 
-  const totalCost = order.subTotalCost + order.deliveryCost;
-  const date = new Date(order.orderTime);
+  const totalCost = commande.subTotalCost + commande.deliveryCost;
+  const date = new Date(commande.createdAt);
 
   return (
     <div className="p-4 pt-6 md:pt-0 w-full h-full flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            Commande #{order._id.slice(-8)}
+            Commande #{commande._id.slice(-8)}
           </h1>
           <p className="text-sm text-gray-500">
             {date.toLocaleDateString("fr-FR", {
@@ -137,7 +137,7 @@ function OrderDetailComponent() {
           <Link to="/commandes">
             <Button variant="outline">Retour</Button>
           </Link>
-          {order.status === "pending" && (
+          {commande.status === "pending" && (
             <>
               <Button variant="destructive" onClick={handleDeny}>
                 Refuser
@@ -157,19 +157,19 @@ function OrderDetailComponent() {
             <div>
               <p className="text-sm font-semibold">Nom complet</p>
               <p className="text-sm">
-                {order.customer?.firstName} {order.customer?.lastName}
+                {commande.customer?.firstName} {commande.customer?.lastName}
               </p>
             </div>
             <div>
               <p className="text-sm font-semibold">Téléphone</p>
-              <p className="text-sm">{order.customer?.phoneNumber}</p>
+              <p className="text-sm">{commande.customer?.phoneNumber}</p>
             </div>
             <div>
               <p className="text-sm font-semibold">Adresse</p>
               <p className="text-sm">
-                {order.address?.address}
-                {order.address?.wilaya && (
-                  <span>, {order.address.wilaya.htmlName}</span>
+                {commande.address?.address}
+                {commande.address?.wilaya && (
+                  <span>, {commande.address.wilaya.htmlName}</span>
                 )}
               </p>
             </div>
@@ -183,17 +183,21 @@ function OrderDetailComponent() {
           <CardContent className="space-y-2">
             <div className="flex justify-between">
               <p className="text-sm">Statut</p>
-              <Badge className={statusColors[order.status]}>
-                {statusLabels[order.status]}
+              <Badge className={statusColors[commande.status]}>
+                {statusLabels[commande.status]}
               </Badge>
             </div>
             <div className="flex justify-between">
               <p className="text-sm">Sous-total</p>
-              <p className="text-sm font-semibold">{order.subTotalCost} DA</p>
+              <p className="text-sm font-semibold">
+                {commande.subTotalCost} DA
+              </p>
             </div>
             <div className="flex justify-between">
               <p className="text-sm">Livraison</p>
-              <p className="text-sm font-semibold">{order.deliveryCost} DA</p>
+              <p className="text-sm font-semibold">
+                {commande.deliveryCost} DA
+              </p>
             </div>
             <div className="flex justify-between pt-2 border-t">
               <p className="text-sm font-bold">Total</p>
@@ -209,7 +213,7 @@ function OrderDetailComponent() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {order.order.map((item, index) => (
+            {(commande.items ?? []).map((item, index) => (
               <div
                 key={index}
                 className="flex gap-4 border-b pb-4 last:border-0"

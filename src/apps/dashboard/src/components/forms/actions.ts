@@ -37,13 +37,13 @@ export const getImageChanges = (
 };
 
 const compareOptions = (
-  oldOptions: { tempId: string; order: number; name: string }[],
-  newOptions: { tempId: string; order: number; name: string }[],
+  options1: { tempId: string; order: number | undefined; name: string }[],
+  options2: { tempId: string; order: number | undefined; name: string }[],
 ) => {
-  if (oldOptions.length !== newOptions.length) return false;
-  const oldOptMap = new Map(oldOptions.map((o) => [o.tempId, o]));
-  const newOptMap = new Map(newOptions.map((o) => [o.tempId, o]));
-  for (const oldOpt of oldOptions) {
+  if (options1.length !== options2.length) return false;
+  const oldOptMap = new Map(options1.map((o) => [o.tempId, o]));
+  const newOptMap = new Map(options2.map((o) => [o.tempId, o]));
+  for (const oldOpt of options1) {
     const newOpt = newOptMap.get(oldOpt.tempId);
     if (!newOpt) return false;
     if (oldOpt.order !== newOpt.order || oldOpt.name !== newOpt.name) {
@@ -97,7 +97,7 @@ export const getVariantChanges = (
 };
 
 type ProductFormValues = {
-  categoryId: Id<'categories'> | undefined;
+  categoryId: Id<"categories"> | undefined;
   title: string;
   desc: string;
   cost: number;
@@ -106,10 +106,10 @@ type ProductFormValues = {
   oldPrice: number;
   stockingStrategy: "by_demand" | "by_variants" | "by_number" | undefined;
   status: "active" | "hidden" | "incomplete" | undefined;
-}
+};
 
 type ProductFromDb = {
-  categoryId?: Id<'categories'>;
+  categoryId?: Id<"categories">;
   title?: string;
   desc?: string;
   price?: number;

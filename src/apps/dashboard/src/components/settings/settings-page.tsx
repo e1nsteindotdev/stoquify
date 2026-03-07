@@ -12,19 +12,45 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { type Id } from "api/data-model";
-import { useUpdateSettings, useCreateFAQ, useUpdateFAQ, useDeleteFAQ } from "@/hooks/use-convex-queries";
 import { useGetSettings } from "@/database/settings";
 import { useGetFAQs } from "@/database/faqs";
+import { useMutation } from "@tanstack/react-query";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { queryClient } from "@/lib/ts-query-client";
 
 export function SettingsPage() {
   const settingsData = useGetSettings();
   const settings = settingsData?.data as any;
   const faqsResult = useGetFAQs();
   const faqs = faqsResult?.data ?? [];
-  const updateSettings = useUpdateSettings();
-  const createFAQ = useCreateFAQ();
-  const updateFAQ = useUpdateFAQ();
-  const deleteFAQ = useDeleteFAQ();
+  const updateSettings = useMutation({
+    mutationFn: (payload: {
+      locationLink?: string;
+      instagramLink?: string;
+      facebookLink?: string;
+      tiktokLink?: string;
+    }) => convex.mutation(api.settings.update, payload),
+  });
+  const createFAQ = useMutation({
+    mutationFn: (payload: {
+      question: string;
+      answer: string;
+      order: number;
+    }) => convex.mutation(api.settings.insertFaq, payload),
+  });
+  const updateFAQ = useMutation({
+    mutationFn: (payload: {
+      id: Id<"faqs">;
+      question?: string;
+      answer?: string;
+      order?: number;
+    }) => convex.mutation(api.settings.updateFaq, payload),
+  });
+  const deleteFAQ = useMutation({
+    mutationFn: (payload: { id: Id<"faqs"> }) =>
+      convex.mutation(api.settings.removeFaq, payload),
+  });
 
   const [locationLink, setLocationLink] = useState("");
   const [instagramLink, setInstagramLink] = useState("");
@@ -63,6 +89,7 @@ export function SettingsPage() {
         facebookLink: facebookLink || undefined,
         tiktokLink: tiktokLink || undefined,
       });
+      await queryClient.refetchQueries({ queryKey: ["settings"] });
       toast.success("Paramètres enregistrés avec succès");
     } catch (error) {
       toast.error("Erreur lors de l'enregistrement des paramètres");
@@ -82,6 +109,7 @@ export function SettingsPage() {
         answer: newFaqAnswer,
         order: maxOrder + 1,
       });
+      await queryClient.refetchQueries({ queryKey: ["faqs"] });
       setNewFaqQuestion("");
       setNewFaqAnswer("");
       toast.success("FAQ ajoutée avec succès");
@@ -97,6 +125,7 @@ export function SettingsPage() {
         question: editingFaqQuestion,
         answer: editingFaqAnswer,
       });
+      await queryClient.refetchQueries({ queryKey: ["faqs"] });
       setEditingFaq(null);
       setEditingFaqQuestion("");
       setEditingFaqAnswer("");
@@ -127,6 +156,7 @@ export function SettingsPage() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette FAQ ?")) return;
     try {
       await deleteFAQ.mutateAsync({ id });
+      await queryClient.refetchQueries({ queryKey: ["faqs"] });
       toast.success("FAQ supprimée avec succès");
     } catch (error) {
       toast.error("Erreur lors de la suppression de la FAQ");

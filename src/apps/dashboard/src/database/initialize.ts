@@ -1,7 +1,6 @@
 import { categoriesCollection } from "./categories";
 import { collectionsCollection } from "./collections";
 import { productsCollection } from "./products";
-import { ordersCollection } from "./orders";
 import { customersCollection } from "./customers";
 import { salesCollection } from "./sales";
 import { queryClient } from "@/lib/ts-query-client";
@@ -11,6 +10,7 @@ import { settingsCollection } from "./settings";
 import { expenseCategoriesCollection } from "./expense-categories";
 import { faqsCollection } from "./faqs";
 import { usersCollection } from "./users";
+import { clearStoreScope, idbClearAllCursors } from "@/lib/idb";
 
 export function preloadAllCollections(selectedStoreId?: string) {
   console.log("preloading all collections");
@@ -28,16 +28,13 @@ export function preloadAllCollections(selectedStoreId?: string) {
     });
   }
 
-  ["customers", "orders", "stores", "settings", "faqs", "users"].forEach(
-    (key) => {
-      queryClient.invalidateQueries({ queryKey: [key] });
-    },
-  );
+  ["customers", "stores", "settings", "faqs", "users"].forEach((key) => {
+    queryClient.invalidateQueries({ queryKey: [key] });
+  });
 
   productsCollection.preload();
   categoriesCollection.preload();
   collectionsCollection.preload();
-  ordersCollection.preload();
   customersCollection.preload();
   salesCollection.preload();
   expensesCollection.preload();
@@ -48,6 +45,17 @@ export function preloadAllCollections(selectedStoreId?: string) {
   usersCollection.preload();
 }
 
+export function clearStoreData(storeId: string) {
+  clearStoreScope("products", storeId);
+  clearStoreScope("categories", storeId);
+  clearStoreScope("collections", storeId);
+  clearStoreScope("sales", storeId);
+  clearStoreScope("expenses", storeId);
+  clearStoreScope("expenseCategories", storeId);
+  clearStoreScope("customers", storeId);
+  idbClearAllCursors(storeId);
+}
+
 export function setCollectionsData({
   analytics,
   categories,
@@ -56,7 +64,6 @@ export function setCollectionsData({
   expenses,
   expenseCategories,
   faqs,
-  orders,
   products,
   sales,
   settings,
@@ -97,7 +104,6 @@ export function setCollectionsData({
     Array.isArray(expenseCategories) ? expenseCategories : [],
   );
   queryClient.setQueryData(["faqs"], Array.isArray(faqs) ? faqs : []);
-  queryClient.setQueryData(["orders"], Array.isArray(orders) ? orders : []);
   queryClient.setQueryData(
     ["products"],
     Array.isArray(products) ? products : [],

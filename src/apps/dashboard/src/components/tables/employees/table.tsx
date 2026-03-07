@@ -1,4 +1,3 @@
-import { useQuery } from "convex/react";
 import { api } from "api/convex";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, CopyIcon, QrCode, Trash2, Settings } from "lucide-react";
@@ -17,10 +16,8 @@ import QRCode from "react-qr-code";
 import type { Role } from "@/components/forms/employee/employee-form";
 import type { Id } from "api/data-model";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLiveQuery } from "@tanstack/react-db";
-import { usersCollection } from "@/database/users";
-
-const CONVEX_URL = import.meta.env.VITE_CONVEX_URL!;
+import { convex } from "@/lib/convex-client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const roleLabels: Record<string, string> = {
   founder: "Patron",
@@ -31,6 +28,7 @@ const roleLabels: Record<string, string> = {
 const roleOrder: Role[] = ["founder", "admin", "staff"];
 
 export function EmployeesTable() {
+  const queryClient = useQueryClient();
   const [formState, setFormState] = useState<{
     open: boolean;
     role: Role;
@@ -41,12 +39,27 @@ export function EmployeesTable() {
     inviteId: null,
   });
   const [showQR, setShowQR] = useState<string | null>(null);
-  const { data: users } = useLiveQuery((q) =>
-    q.from({ users: usersCollection }),
-  );
-  const pendingInvites = useQuery(api.magicLinks.getPendingByOrganization);
+  const { data: users = [], isLoading: isUsersLoading } = useQuery({
+    queryKey: ["users", "organization"],
+    queryFn: () => convex.query(api.users.listOrganization),
+  });
+  const { data: pendingInvites = [], isLoading: isInvitesLoading } = useQuery({
+    queryKey: ["magicLinks", "pending"],
+    queryFn: () => convex.query(api.magicLinks.listPending),
+  });
+  const revoke = useMutation({
+    mutationFn: (invitationId: string) =>
+      convex.mutation(api.magicLinks.remove, {
+        invitationId: invitationId as any,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["magicLinks", "pending"],
+      });
+    },
+  });
 
-  if (!users || pendingInvites === undefined) {
+  if (isUsersLoading || isInvitesLoading) {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -78,30 +91,11 @@ export function EmployeesTable() {
     );
   }
 
-  const usersData = users;
-  const pendingInvitesData = pendingInvites;
-
   const handleRevoke = async (inviteId: string) => {
     try {
-      const response = await fetch(`${CONVEX_URL}/api/mutation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          path: "magicLinks:revoke",
-          args: { invitationId: inviteId },
-          format: "json",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to revoke invitation: ${response.statusText}`);
-      }
-
+      await revoke.mutateAsync(inviteId);
       toast.success("Invitation supprimée");
     } catch (error) {
-      console.error("Failed to revoke invitation:", error);
       toast.error("Erreur lors de la suppression");
     }
   };
@@ -112,14 +106,14 @@ export function EmployeesTable() {
   };
 
   const getEmployeesByRole = (role: string) => {
-    return usersData.filter((u) => u.role === role);
+    return users.filter((u) => u.role === role);
   };
 
   const getPendingByRole = (role: string) => {
-    return pendingInvitesData.filter((invite) => invite.role === role);
+    return pendingInvites.filter((invite) => invite.role === role);
   };
 
-  const totalEmployees = usersData.length + pendingInvitesData.length;
+  const totalEmployees = users.length + pendingInvites.length;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -132,8 +126,8 @@ export function EmployeesTable() {
         </div>
         <div className="text-sm text-muted-foreground">
           {totalEmployees} employé{totalEmployees !== 1 ? "s" : ""}
-          {pendingInvitesData.length > 0 &&
-            ` (${pendingInvitesData.length} en attente)`}
+          {pendingInvites.length > 0 &&
+            ` (${pendingInvites.length} en attente)`}
         </div>
       </div>
 
@@ -179,7 +173,7 @@ export function EmployeesTable() {
                     const isPending = !("name" in item) && "expiresAt" in item;
 
                     if (isPending) {
-                      const invite = item as (typeof pendingInvitesData)[0];
+                      const invite = item as (typeof pendingInvites)[0];
                       const link = `${window.location.origin}/magic-link?magicLinkId=${invite._id}`;
                       const pendingNumber = idx - employees.length + 1;
 
@@ -268,7 +262,7 @@ export function EmployeesTable() {
                         </div>
                       );
                     } else {
-                      const user = item as (typeof usersData)[0];
+                      const user = item as (typeof users)[0];
                       const permSummary = user.permissions?.some(
                         (p) => p.resource === "*" && p.action === "*",
                       )

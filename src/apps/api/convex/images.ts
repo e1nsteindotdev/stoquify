@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
-export const generateUploadUrl = authedMutation({
+export const uploadUrl = authedMutation({
   resource: "images",
   action: "create",
   args: {},
@@ -21,7 +21,7 @@ export const getUrl = authedQuery({
   },
 });
 
-export const createImage = authedMutation({
+export const insert = authedMutation({
   resource: "images",
   action: "create",
   args: {
@@ -42,7 +42,7 @@ export const createImage = authedMutation({
   },
 });
 
-export const updateImage = authedMutation({
+export const update = authedMutation({
   resource: "images",
   action: "update",
   args: {
@@ -58,7 +58,7 @@ export const updateImage = authedMutation({
   },
 });
 
-export const deleteImage = authedMutation({
+export const remove = authedMutation({
   resource: "images",
   action: "delete",
   args: {
@@ -69,7 +69,7 @@ export const deleteImage = authedMutation({
   },
 });
 
-export const handleImageChanges = authedMutation({
+export const sync = authedMutation({
   resource: "images",
   action: "update",
   args: {

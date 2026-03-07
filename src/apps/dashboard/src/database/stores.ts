@@ -3,22 +3,35 @@ import { queryCollectionOptions } from "@tanstack/query-db-collection";
 import { api } from "api/convex";
 import { createCollection } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
-import type { Id } from "api/data-model";
-import { idbGet, idbRefresh } from "@/lib/idb";
+import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
 import { queryClient } from "@/lib/ts-query-client";
+import { computeNewCursor, mergeRows } from "@/lib/cursor-utils";
 
 export const storesCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["stores"],
     queryFn: async (): Promise<any[]> => {
-      console.log("[stores] queryFn running");
+      const cursor = await idbGetCursor("stores");
+
       try {
-        const stores = await convex.query(api.stores.list);
-        idbRefresh("stores", stores);
-        return stores;
+        const stores = await convex.query(api.stores.list, {
+          cursor: cursor ?? undefined,
+        });
+
+        const cachedStores = await idbGet<any[]>("stores");
+        const mergedStores = mergeRows(stores, cachedStores || []);
+
+        await idbRefresh("stores", mergedStores);
+
+        if (stores.length > 0) {
+          const newCursor = computeNewCursor(stores);
+          await idbSetCursor("stores", newCursor);
+        }
+
+        return mergedStores;
       } catch (e) {
-        const cachedStores = await idbGet("stores");
-        return Array.isArray(cachedStores) ? cachedStores : [];
+        const cachedStores = await idbGet<any[]>("stores");
+        return cachedStores || [];
       }
     },
     queryClient,
@@ -30,11 +43,4 @@ export const storesCollection = createCollection(
 
 export const useGetStores = () => {
   return useLiveQuery((q) => q.from({ stores: storesCollection }));
-};
-
-export const useGetStoreById = (id: Id<"stores">) => {
-  const { data: store } = useLiveQuery((q) =>
-    q.from({ stores: storesCollection }).findOne(),
-  );
-  return store;
 };

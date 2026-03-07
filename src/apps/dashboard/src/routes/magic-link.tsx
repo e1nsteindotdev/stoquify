@@ -26,7 +26,7 @@ export const Route = createFileRoute("/magic-link")({
       throw redirect({ to: "/" });
     }
 
-    const magicLink = await convex.query(api.magicLinks.getById, {
+    const magicLink = await convex.query(api.magicLinks.get, {
       magicLinkId: magicLinkId as any,
     });
 
@@ -125,7 +125,7 @@ function MagicLinkPage() {
       }
 
       const stores = await convex.query(api.stores.list);
-      const user = await convex.query(api.users.getUserData);
+      const user = await convex.query(api.users.me);
       setStores(stores);
       setUser(user);
 

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { authedMutation } from "./customeFunction";
+import { authedMutation } from "./customFunctions";
 
-export const handleVariantChanges = authedMutation({
+export const sync = authedMutation({
   resource: "variants",
   action: "update",
   args: {

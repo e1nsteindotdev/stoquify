@@ -72,7 +72,7 @@ export function CreateStoreForm({ open, onOpenChange }: CreateStoreFormProps) {
     onSubmit: async ({ value }) => {
       const program = Effect.gen(function* () {
         const storeId = yield* Effect.promise(() =>
-          convex.mutation(api.stores.create, { name: value.name }),
+          convex.mutation(api.stores.insert, { name: value.name }),
         );
         return { id: storeId, name: value.name };
       });

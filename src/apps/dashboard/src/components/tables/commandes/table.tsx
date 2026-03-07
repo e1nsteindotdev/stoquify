@@ -1,6 +1,6 @@
-import { columns, type OrderRow } from "./columns";
+import { columns, type CommandeRow } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
-import { useGetOrders } from "@/database/orders";
+import { useGetSales } from "@/database/sales";
 import { ClipLoader } from "react-spinners";
 import { useState, useMemo, useDeferredValue } from "react";
 import {
@@ -13,30 +13,30 @@ import { Search, X, Loader2 } from "lucide-react";
 import Fuse from "fuse.js";
 import { useDebounce } from "use-debounce";
 
-export function OrdersTable() {
+export function CommandesTable() {
   const [dateRange, setDateRange] = useState<DateRange>(() =>
     getPresetDates("allTime"),
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounce(searchQuery, 150);
 
-  const ordersResult = useGetOrders();
-  const orders = ordersResult?.data ?? [];
-  const isLoading = !ordersResult?.isEnabled;
+  const commandesResult = useGetSales();
+  const commandes = commandesResult?.data ?? [];
+  const isLoading = !commandesResult?.isEnabled;
 
-  const rows: OrderRow[] = orders.map((order: any) => ({
-    _id: order._id,
-    customerName: order.customer
-      ? `${order.customer.firstName} ${order.customer.lastName}`
+  const rows: CommandeRow[] = commandes.map((commande: any) => ({
+    _id: commande._id,
+    customerName: commande.customer
+      ? `${commande.customer.firstName} ${commande.customer.lastName}`
       : "N/A",
-    phoneNumber: order.customer?.phoneNumber ?? 0,
-    totalCost: order.subTotalCost + order.deliveryCost,
-    status: order.status,
-    createdAt: order.orderTime || order._creationTime,
-    source: order.source,
-    itemCount: order.itemCount || 0,
-    profit: order.profit || 0,
-    customerOrderCount: order.customerOrderCount || 0,
+    phoneNumber: commande.customer?.phoneNumber ?? 0,
+    totalCost: commande.subTotalCost + commande.deliveryCost,
+    status: commande.status,
+    createdAt: commande.createdAt || commande._creationTime,
+    source: commande.source,
+    itemCount: commande.itemCount || 0,
+    profit: commande.profit || 0,
+    customerOrderCount: commande.customerOrderCount || 0,
   }));
 
   const deferredQuery = useDeferredValue(debouncedQuery);
@@ -66,7 +66,7 @@ export function OrdersTable() {
       const results = fuse.search(deferredQuery);
       const searchTime = performance.now() - startTime;
       console.log(
-        `[Orders Search] Query: "${deferredQuery}" | Results: ${results.length} | Time: ${searchTime.toFixed(2)}ms`,
+        `[Commandes Search] Query: "${deferredQuery}" | Results: ${results.length} | Time: ${searchTime.toFixed(2)}ms`,
       );
       return results.map((result) => result.item);
     }

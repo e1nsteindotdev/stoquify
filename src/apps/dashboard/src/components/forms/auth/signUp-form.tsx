@@ -61,7 +61,7 @@ export function SignUpForm({
         }
 
         const stores = await convex.query(api.stores.list);
-        const user = await convex.query(api.users.getUserData);
+        const user = await convex.query(api.users.me);
         setStores(stores);
         setUser(user);
 

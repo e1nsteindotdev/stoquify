@@ -1,8 +1,10 @@
 import { mutation, query, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { nanoid } from "nanoid";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Id } from "./_generated/dataModel";
+
+const TWENTY_FOUR_HOURS = 1000 * 60 * 60 * 24;
 
 const permissions = v.array(
   v.object({
@@ -12,11 +14,11 @@ const permissions = v.array(
   }),
 );
 
-export const invite = mutation({
+export const insert = mutation({
   args: {
     email: v.optional(v.string()),
     role: v.union(v.literal("founder"), v.literal("admin"), v.literal("staff")),
-    organizationId: v.id("organizations"),
+    organizationId: v.optional(v.id("organizations")),
     permissions,
   },
   handler: async (ctx, args) => {
@@ -28,7 +30,7 @@ export const invite = mutation({
       token,
       role: args.role,
       permissions: args.permissions,
-      organizationId: args.organizationId,
+      organizationId: args.organizationId as Id<"organizations">,
       expiresAt,
       usedAt: undefined,
     });
@@ -37,7 +39,7 @@ export const invite = mutation({
   },
 });
 
-export const getPendingByOrganization = query({
+export const listPending = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
 
@@ -60,19 +62,17 @@ export const getPendingByOrganization = query({
 
     if (!hasPermission) return [];
 
-    const invites = await ctx.db
+    return await ctx.db
       .query("magicLinks")
       .withIndex("by_organization", (q) =>
-        q.eq("organizationId", user.organizationId),
+        q.eq("organizationId", user.organizationId as Id<"organizations">),
       )
       .filter((q) => q.eq(q.field("usedAt"), undefined))
       .collect();
-
-    return invites;
   },
 });
 
-export const getById = query({
+export const get = query({
   args: {
     magicLinkId: v.id("magicLinks"),
   },
@@ -126,7 +126,7 @@ export const update = mutation({
   },
 });
 
-export const revoke = mutation({
+export const remove = mutation({
   args: {
     invitationId: v.id("magicLinks"),
   },
@@ -152,7 +152,7 @@ export const revoke = mutation({
   },
 });
 
-export const verifyMagicLink = internalMutation({
+export const verify = internalMutation({
   args: {
     magicLinkId: v.id("magicLinks"),
     name: v.optional(v.string()),
@@ -160,7 +160,7 @@ export const verifyMagicLink = internalMutation({
     password: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { magicLinkId, name, phone, password } = args;
+    const { magicLinkId, name, phone } = args;
     const magicLink = await ctx.db.get(magicLinkId);
     if (!magicLink) {
       throw new Error("Invalid magic link");
@@ -186,32 +186,21 @@ export const verifyMagicLink = internalMutation({
         .unique();
     }
 
-    const userId = magicLink.organizationId;
-
     if (!name || !phone) {
       throw new Error("Name and phone are required");
     }
 
     if (!user) {
-      console.log("Creating new user with:", {
-        name,
-        email: magicLink.email,
-        phone,
-        organizationId: magicLink.organizationId,
-        role: magicLink.role,
-      });
-
       const newUserId = await ctx.db.insert("users", {
-        name: name,
+        name,
         email: magicLink.email ?? undefined,
-        phone: phone,
+        phone,
         organizationId: magicLink.organizationId,
         role: magicLink.role,
         permissions: magicLink.permissions,
       });
       user = await ctx.db.get(newUserId);
     } else {
-      console.log("Updating existing user:", user._id);
       await ctx.db.patch(user._id, {
         organizationId: magicLink.organizationId,
         role: magicLink.role,
@@ -224,12 +213,168 @@ export const verifyMagicLink = internalMutation({
 
     await ctx.db.patch(magicLink._id, { usedAt: Date.now() });
 
-    console.log("Returning user:", user._id);
-
     return {
       userId: user._id,
       email: magicLink.email,
       name: user.name,
+    };
+  },
+});
+
+export const insertSignIn = mutation({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId({ auth: ctx.auth });
+    if (!userId) throw new Error("Not authenticated");
+
+    const user = await ctx.db.get(userId);
+
+    if (!user) throw new Error("User not found");
+
+    const existingLinks = await ctx.db
+      .query("signInMagicLinks")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const link of existingLinks) {
+      await ctx.db.delete(link._id);
+    }
+
+    const token = nanoid(32);
+    const expiresAt = Date.now() + TWENTY_FOUR_HOURS;
+    const createdAt = Date.now();
+
+    const signInMagicLinkId = await ctx.db.insert("signInMagicLinks", {
+      userId: user._id,
+      token,
+      expiresAt,
+      createdAt,
+      usedAt: undefined,
+    });
+
+    return { _id: signInMagicLinkId, token, expiresAt, createdAt };
+  },
+});
+
+export const getSignInActive = query({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId({ auth: ctx.auth });
+    if (!userId) return null;
+
+    const user = await ctx.db.get(userId);
+
+    if (!user) return null;
+
+    const link = await ctx.db
+      .query("signInMagicLinks")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!link) return null;
+
+    const now = Date.now();
+    const isExpired = now > link.expiresAt;
+    const isUsed = !!link.usedAt;
+
+    let status: "active" | "used" | "expired";
+    if (isUsed) {
+      status = "used";
+    } else if (isExpired) {
+      status = "expired";
+    } else {
+      status = "active";
+    }
+
+    return {
+      _id: link._id,
+      token: link.token,
+      expiresAt: link.expiresAt,
+      usedAt: link.usedAt,
+      createdAt: link.createdAt,
+      status,
+    };
+  },
+});
+
+export const getSignInByToken = query({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db
+      .query("signInMagicLinks")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+
+    if (!link) {
+      return { error: "invalid" };
+    }
+
+    if (link.usedAt) {
+      return { error: "already_used", usedAt: link.usedAt };
+    }
+
+    if (Date.now() > link.expiresAt) {
+      return { error: "expired", expiresAt: link.expiresAt };
+    }
+
+    const user = await ctx.db.get(link.userId);
+    if (!user) {
+      return { error: "user_not_found" };
+    }
+
+    return {
+      _id: link._id,
+      token: link.token,
+      userId: link.userId,
+      expiresAt: link.expiresAt,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        organizationId: user.organizationId,
+        role: user.role,
+      },
+    };
+  },
+});
+
+export const consumeSignIn = internalMutation({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db
+      .query("signInMagicLinks")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+
+    if (!link) {
+      throw new Error("Invalid token");
+    }
+
+    if (link.usedAt) {
+      throw new Error("Token already used");
+    }
+
+    if (Date.now() > link.expiresAt) {
+      throw new Error("Token expired");
+    }
+
+    await ctx.db.patch(link._id, { usedAt: Date.now() });
+
+    const user = await ctx.db.get(link.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return {
+      userId: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      organizationId: user.organizationId,
+      role: user.role,
     };
   },
 });

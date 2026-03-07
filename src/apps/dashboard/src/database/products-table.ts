@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useGetProducts } from "./products";
 import { useGetSales } from "./sales";
-import { useGetOrders } from "./orders";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -96,7 +95,6 @@ export const useGetProductTableData = (
 ): ProductTableRow[] => {
   const { data: products = [] } = useGetProducts();
   const { data: sales = [] } = useGetSales();
-  const { data: orders = [] } = useGetOrders();
 
   return useMemo(() => {
     const fromTime = toAlgeriaDayStart(from);
@@ -114,10 +112,10 @@ export const useGetProductTableData = (
     >();
 
     for (const sale of sales) {
-      const saleTime = new Date(sale.saleTime).getTime();
-      if (saleTime < fromTime || saleTime > toTime) continue;
+      const saleTimestamp = new Date(sale.createdAt).getTime();
+      if (saleTimestamp < fromTime || saleTimestamp > toTime) continue;
 
-      for (const item of sale.order ?? []) {
+      for (const item of sale.items ?? []) {
         const pid = String(item.productId);
         const existing = productSales.get(pid) || {
           unitsSold: 0,
@@ -135,37 +133,8 @@ export const useGetProductTableData = (
         existing.cost += cost;
         existing.lastSaleTime =
           existing.lastSaleTime === null
-            ? saleTime
-            : Math.max(existing.lastSaleTime, saleTime);
-
-        productSales.set(pid, existing);
-      }
-    }
-
-    for (const order of orders) {
-      const orderTime = new Date(order.orderTime).getTime();
-      if (orderTime < fromTime || orderTime > toTime) continue;
-
-      for (const item of order.order ?? []) {
-        const pid = String(item.productId);
-        const existing = productSales.get(pid) || {
-          unitsSold: 0,
-          revenue: 0,
-          cost: 0,
-          lastSaleTime: null,
-        };
-
-        const units = item.quantity ?? 0;
-        const revenue = (item.price ?? 0) * units;
-        const cost = (item.cost ?? 0) * units;
-
-        existing.unitsSold += units;
-        existing.revenue += revenue;
-        existing.cost += cost;
-        existing.lastSaleTime =
-          existing.lastSaleTime === null
-            ? orderTime
-            : Math.max(existing.lastSaleTime, orderTime);
+            ? saleTimestamp
+            : Math.max(existing.lastSaleTime, saleTimestamp);
 
         productSales.set(pid, existing);
       }
@@ -242,7 +211,7 @@ export const useGetProductTableData = (
         sizeImbalance: checkSizeImbalance(product),
       };
     });
-  }, [products, sales, orders, from, to]);
+  }, [products, sales, from, to]);
 };
 
 export type FilterChip =

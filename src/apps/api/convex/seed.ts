@@ -402,7 +402,7 @@ export const seed = internalMutation({
     console.log("Starting unified seed...");
 
     console.log("Deleting existing data...");
-    await deleteAllPaginated(db, "orders");
+    await deleteAllPaginated(db, "saleItems");
     await deleteAllPaginated(db, "sales");
     await deleteAllPaginated(db, "skus");
     await deleteAllPaginated(db, "variantOptions");
@@ -522,18 +522,82 @@ export const seed = internalMutation({
       addressIds.push(addressId);
 
       const customerId = await db.insert("customers", {
+        storeId: STORE_ID,
         firstName,
         lastName,
         phoneNumber: generatePhoneNumber(),
-        lastestAdressId: addressId,
+        latestAddressId: addressId,
       });
       customerIds.push(customerId);
     }
 
-    console.log("Creating orders...");
+    const insertSaleWithItems = async ({
+      createdAt,
+      source,
+      status,
+      customerId,
+      addressId,
+      deliveryCost,
+      items,
+      shippingStatus,
+    }: {
+      createdAt: number;
+      source: "online" | "in_store";
+      status: "pending" | "confirmed" | "denied";
+      customerId?: Id<"customers">;
+      addressId?: Id<"addresses">;
+      deliveryCost: number;
+      items: {
+        quantity: number;
+        productId: Id<"products">;
+        skuId: Id<"skus">;
+        price: number;
+        cost?: number;
+      }[];
+      shippingStatus?:
+        | "pending"
+        | "prepared"
+        | "shipped"
+        | "delivered"
+        | "returned";
+    }) => {
+      const subTotalCost = items.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0,
+      );
+
+      const saleId = await db.insert("sales", {
+        storeId: STORE_ID,
+        createdAt,
+        source,
+        status,
+        shippingStatus,
+        customerId,
+        addressId,
+        deliveryCost,
+        subTotalCost,
+      });
+
+      for (const item of items) {
+        await db.insert("saleItems", {
+          saleId,
+          storeId: STORE_ID,
+          createdAt,
+          quantity: item.quantity,
+          productId: item.productId,
+          skuId: item.skuId,
+          price: item.price,
+          cost: item.cost,
+        });
+      }
+    };
+
+    console.log("Creating online commandes...");
     const monthsIn3Years = 36;
     const ordersPerMonth = 80;
-    const monthDistribution = [1.0, 0.9, 1.0, 1.0, 1.1, 1.2, 0.8, 0.9, 1.0, 1.3, 1.5, 1.6,];
+    const monthDistribution = [
+      1.0, 0.9, 1.0, 1.0, 1.1, 1.2, 0.8, 0.9, 1.0, 1.3, 1.5, 1.6,
+    ];
 
     const threeYearsAgo = now - 3 * 365 * dayMs;
     const msPerMonth = (now - threeYearsAgo) / monthsIn3Years;
@@ -548,8 +612,10 @@ export const seed = internalMutation({
       const monthEnd = monthStart + msPerMonth;
 
       for (let i = 0; i < ordersThisMonth; i++) {
-        const customerId = customerIds[Math.floor(Math.random() * customerIds.length)];
-        const addressId = addressIds[Math.floor(Math.random() * addressIds.length)];
+        const customerId =
+          customerIds[Math.floor(Math.random() * customerIds.length)];
+        const addressId =
+          addressIds[Math.floor(Math.random() * addressIds.length)];
 
         const numItems = getRandomQuantity(1, 3);
         const orderItems: {
@@ -595,27 +661,26 @@ export const seed = internalMutation({
         const status =
           orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
 
-        const orderTimeMs =
-          monthStart + Math.random() * (monthEnd - monthStart);
-        const orderTime = new Date(orderTimeMs).toISOString();
+        const orderTimeMs = Math.floor(
+          monthStart + Math.random() * (monthEnd - monthStart),
+        );
 
-        await db.insert("orders", {
-          orderTime,
+        await insertSaleWithItems({
+          createdAt: orderTimeMs,
+          source: "online",
+          status,
+          shippingStatus: "pending",
           customerId,
-          order: orderItems,
           addressId,
           deliveryCost,
-          subTotalCost,
-          status,
+          items: orderItems,
         });
 
         ordersCreated++;
       }
     }
 
-    console.log(`Seeded ${ordersCreated} orders`);
-
-    await deleteAllPaginated(db, "sales");
+    console.log(`Seeded ${ordersCreated} online commandes`);
 
     console.log("Creating sales with dead stock distribution...");
     const numProducts = productIds.length;
@@ -698,13 +763,16 @@ export const seed = internalMutation({
           subTotalCost += cost * quantity;
         }
 
-        const saleTimeMs = monthStart + Math.random() * (monthEnd - monthStart);
-        const saleTime = new Date(saleTimeMs).toISOString();
+        const saleTimeMs = Math.floor(
+          monthStart + Math.random() * (monthEnd - monthStart),
+        );
 
-        await db.insert("sales", {
-          saleTime,
-          order: saleItems,
-          subTotalCost,
+        await insertSaleWithItems({
+          createdAt: saleTimeMs,
+          source: "in_store",
+          status: "confirmed",
+          deliveryCost: 0,
+          items: saleItems,
         });
 
         salesCreated++;
@@ -714,13 +782,15 @@ export const seed = internalMutation({
     for (const productId of deadStock90Products) {
       const lastSaleTime =
         ninetyDaysAgo + Math.floor(Math.random() * 30 * dayMs);
-      const saleTime = new Date(lastSaleTime).toISOString();
       const price = getRandomQuantity(20, 220);
       const cost = Math.floor(price * 0.4);
 
-      await db.insert("sales", {
-        saleTime,
-        order: [
+      await insertSaleWithItems({
+        createdAt: lastSaleTime,
+        source: "in_store",
+        status: "confirmed",
+        deliveryCost: 0,
+        items: [
           {
             productId,
             skuId: skuIds[Math.floor(Math.random() * skuIds.length)],
@@ -729,20 +799,21 @@ export const seed = internalMutation({
             cost,
           },
         ],
-        subTotalCost: cost,
       });
     }
 
     for (const productId of deadStock60Products) {
       const lastSaleTime =
         sixtyDaysAgo + Math.floor(Math.random() * 30 * dayMs);
-      const saleTime = new Date(lastSaleTime).toISOString();
       const price = getRandomQuantity(20, 220);
       const cost = Math.floor(price * 0.4);
 
-      await db.insert("sales", {
-        saleTime,
-        order: [
+      await insertSaleWithItems({
+        createdAt: lastSaleTime,
+        source: "in_store",
+        status: "confirmed",
+        deliveryCost: 0,
+        items: [
           {
             productId,
             skuId: skuIds[Math.floor(Math.random() * skuIds.length)],
@@ -751,20 +822,21 @@ export const seed = internalMutation({
             cost,
           },
         ],
-        subTotalCost: cost,
       });
     }
 
     for (const productId of deadStock30Products) {
       const lastSaleTime =
         thirtyDaysAgo + Math.floor(Math.random() * 30 * dayMs);
-      const saleTime = new Date(lastSaleTime).toISOString();
       const price = getRandomQuantity(20, 220);
       const cost = Math.floor(price * 0.4);
 
-      await db.insert("sales", {
-        saleTime,
-        order: [
+      await insertSaleWithItems({
+        createdAt: lastSaleTime,
+        source: "in_store",
+        status: "confirmed",
+        deliveryCost: 0,
+        items: [
           {
             productId,
             skuId: skuIds[Math.floor(Math.random() * skuIds.length)],
@@ -773,7 +845,6 @@ export const seed = internalMutation({
             cost,
           },
         ],
-        subTotalCost: cost,
       });
     }
 
@@ -793,15 +864,16 @@ export const seed = internalMutation({
           : getRandomQuantity(1, 2);
 
         const randomHour = Math.floor(Math.random() * 24);
-        const saleTime = new Date(
-          saleDate + randomHour * 60 * 60 * 1000,
-        ).toISOString();
+        const saleTime = saleDate + randomHour * 60 * 60 * 1000;
         const price = getRandomQuantity(20, 220);
         const cost = Math.floor(price * 0.4);
 
-        await db.insert("sales", {
-          saleTime,
-          order: [
+        await insertSaleWithItems({
+          createdAt: saleTime,
+          source: "in_store",
+          status: "confirmed",
+          deliveryCost: 0,
+          items: [
             {
               productId,
               skuId: skuIds[Math.floor(Math.random() * skuIds.length)],
@@ -810,7 +882,6 @@ export const seed = internalMutation({
               cost,
             },
           ],
-          subTotalCost: cost * dailyQty,
         });
       }
     }

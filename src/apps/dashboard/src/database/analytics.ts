@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useGetCategories } from "./categories";
-import { useGetOrders } from "./orders";
 import { useGetProducts } from "./products";
 import { useGetSales } from "./sales";
 
@@ -20,7 +19,7 @@ type AnalyticsKpi = {
 
 type AnalyticsTransaction = {
   timestamp: number;
-  type?: "online" | "in-site";
+  type?: "online" | "in_store";
   items: Array<{
     productId: unknown;
     price: number;
@@ -242,7 +241,7 @@ const calculateTotals = (
       acc.transactions += 1;
       if (transaction.type === "online") {
         acc.onlineTransactions += 1;
-      } else if (transaction.type === "in-site") {
+      } else if (transaction.type === "in_store") {
         acc.inSiteTransactions += 1;
       }
       return acc;
@@ -258,7 +257,6 @@ const calculateTotals = (
 };
 
 export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
-  const { data: orders = [] } = useGetOrders();
   const { data: sales = [] } = useGetSales();
   const { data: products = [] } = useGetProducts();
   const { data: categories = [] } = useGetCategories();
@@ -275,28 +273,13 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       categories.map((category: any) => [String(category._id), category.name]),
     );
 
-    const allTransactions: AnalyticsTransaction[] = [
-      ...orders
-        .filter((order: any) => {
-          const ts = order?.orderTime;
-          return typeof ts === "number" || typeof ts === "string";
-        })
-        .map((order: any) => ({
-          timestamp: new Date(order.orderTime).getTime(),
-          type: "online" as const,
-          items: order.order ?? [],
-        })),
-      ...sales
-        .filter((sale: any) => {
-          const ts = sale?.saleTime;
-          return typeof ts === "number" || typeof ts === "string";
-        })
-        .map((sale: any) => ({
-          timestamp: new Date(sale.saleTime).getTime(),
-          type: "in-site" as const,
-          items: sale.order ?? [],
-        })),
-    ];
+    const allTransactions: AnalyticsTransaction[] = sales
+      .filter((sale: any) => typeof sale?.createdAt === "number")
+      .map((sale: any) => ({
+        timestamp: sale.createdAt,
+        type: sale.source === "online" ? "online" : "in_store",
+        items: sale.items ?? [],
+      }));
 
     const rangeTransactions = allTransactions.filter(
       (transaction) =>
@@ -952,7 +935,6 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       },
     };
   }, [
-    orders,
     sales,
     products,
     categories,

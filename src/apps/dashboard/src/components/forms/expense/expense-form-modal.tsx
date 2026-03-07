@@ -63,7 +63,7 @@ export function ExpenseFormModal({ open, onOpenChange, expense }: Props) {
       const dateTimestamp = new Date(value.date).getTime();
 
       if (isNew) {
-        await convex.mutation(api.expenses.createExpense, {
+        await convex.mutation(api.expenses.insert, {
           storeId: selectedStore._id,
           title: value.title,
           description: value.description || undefined,
@@ -72,7 +72,7 @@ export function ExpenseFormModal({ open, onOpenChange, expense }: Props) {
           categoryId: value.categoryId || undefined,
         });
       } else {
-        await convex.mutation(api.expenses.updateExpense, {
+        await convex.mutation(api.expenses.update, {
           id: expense._id,
           title: value.title,
           description: value.description || undefined,

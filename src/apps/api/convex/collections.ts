@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
-export const listCollections = authedQuery({
+export const listByProduct = authedQuery({
   resource: "collections",
   action: "read",
   args: {
@@ -21,21 +21,27 @@ export const listCollections = authedQuery({
   },
 });
 
-export const listAllCollections = authedQuery({
+export const list = authedQuery({
   resource: "collections",
   action: "read",
   args: {
     storeId: v.id("stores"),
+    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId }) => {
-    return await ctx.db
+  handler: async (ctx, { storeId, cursor }) => {
+    let query = ctx.db
       .query("collections")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
-      .collect();
+      .filter((e) => e.eq(e.field("storeId"), storeId));
+
+    if (cursor) {
+      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
+    }
+
+    return await query.collect();
   },
 });
 
-export const listSelectedCollectionsIds = authedQuery({
+export const listSelected = authedQuery({
   resource: "collections",
   action: "read",
   args: {
@@ -58,7 +64,7 @@ export const listSelectedCollectionsIds = authedQuery({
   },
 });
 
-export const createCollection = authedMutation({
+export const insert = authedMutation({
   resource: "collections",
   action: "create",
   args: {
@@ -77,9 +83,11 @@ export const createCollection = authedMutation({
           msg: "Collection already exists with this name.",
         };
     }
+    const now = Date.now();
     const id = await ctx.db.insert("collections", {
       storeId: args.storeId,
       title: args.title,
+      lastUpdate: now,
     });
     return {
       ok: true,

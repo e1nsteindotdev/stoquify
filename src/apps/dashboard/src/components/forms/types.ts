@@ -4,7 +4,7 @@ export type TypeDecodedVariant = {
   tempId: string;
   name: string;
   order: number;
-  options: { tempId: string; order: number; name: string }[];
+  options: { tempId: string; order: number | undefined; name: string }[];
 };
 
 export const decodeVariants = (
@@ -19,7 +19,7 @@ export const decodeVariants = (
       name: variant.name,
       order: variant.order,
       options: variant.options
-        .sort((a, b) => a.order - b.order)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((option) => ({
           tempId: option._id,
           order: option.order,
@@ -31,7 +31,7 @@ export const decodeVariants = (
 export type TypeDecodedSKU = {
   tempId: string;
   quantity: number;
-  options: { tempId: string; order: number; optionName: string }[];
+  options: { tempId: string; order: number | undefined; optionName: string }[];
 };
 
 export const decodeSKUs = (
@@ -42,7 +42,7 @@ export const decodeSKUs = (
     tempId: sku._id,
     quantity: sku.quantity,
     options: sku.options
-      .sort((a, b) => a.order - b.order)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((option) => ({
         tempId: option._id,
         order: option.order,

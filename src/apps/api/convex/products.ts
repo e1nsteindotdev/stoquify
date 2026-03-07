@@ -4,93 +4,114 @@ import {
   insertVariants,
   insertVariantsInventory,
 } from "./actions/product_actions";
-import { authedMutation, authedQuery } from "./customeFunction";
+import { authedMutation, authedQuery } from "./customFunctions";
 
-export const listProducts = authedQuery({
+export const list = authedQuery({
   resource: "products",
   action: "read",
   args: {
     storeId: v.id("stores"),
+    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId }) => {
-    let products = await ctx.db
+  handler: async (ctx, { storeId, cursor }) => {
+    let productsQuery = ctx.db
       .query("products")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
-      .collect();
+      .withIndex("by_store", (q) => q.eq("storeId", storeId));
 
-    const images = await ctx.db.query("images").collect();
-    const variants = await ctx.db.query("variants").collect();
-    const variantOptions = await ctx.db.query("variantOptions").collect();
-    const skus = await ctx.db.query("skus").collect();
+    if (cursor) {
+      productsQuery = productsQuery.filter((q) =>
+        q.gt(q.field("lastUpdate"), cursor),
+      );
+    }
+
+    const products = await productsQuery.collect();
 
     const collections = await ctx.db
       .query("collections")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
       .collect();
 
     const categories = await ctx.db
       .query("categories")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
       .collect();
 
-    return products.map((product) => {
-      return {
-        ...product,
-        category: categories.find((c) => c._id === product.categoryId),
-        images: images
-          .filter((img) => img.productId === product._id)
-          .sort((a, b) => a.order - b.order),
-        skus: skus
-          .filter((sku) => sku.productId === product._id)
-          .map((sku) => ({
-            ...sku,
-            options: variantOptions.filter((option) =>
-              sku.options.includes(option._id),
-            ),
-          })),
-        variants: variants
-          .filter((v) => v.productId === product._id)
-          .map((variant) => {
-            const options = variantOptions.filter(
-              (option) => option.variantId === variant._id,
+    return await Promise.all(
+      products.map(async (product) => {
+        const images = await ctx.db
+          .query("images")
+          .filter((q) => q.eq(q.field("productId"), product._id))
+          .collect();
+
+        const variants = await ctx.db
+          .query("variants")
+          .withIndex("productId", (q) => q.eq("productId", product._id))
+          .collect();
+
+        const skus = await ctx.db
+          .query("skus")
+          .withIndex("productId", (q) => q.eq("productId", product._id))
+          .collect();
+
+        const variantsWithOptions = await Promise.all(
+          variants.map(async (variant) => {
+            const options = await ctx.db
+              .query("variantOptions")
+              .filter((q) => q.eq(q.field("variantId"), variant._id))
+              .collect();
+            return { ...variant, options };
+          }),
+        );
+
+        const skusWithOptions = await Promise.all(
+          skus.map(async (sku) => {
+            const options = await Promise.all(
+              sku.options.map((optId) => ctx.db.get(optId)),
             );
             return {
-              ...variant,
-              options,
+              ...sku,
+              options: options.filter(
+                (o): o is NonNullable<typeof o> => o !== null,
+              ),
             };
           }),
-        collections: product.collections
-          .map((id) => collections.find((col) => col._id == id))
-          .filter((col): col is NonNullable<typeof col> => col != null),
-      };
-    });
+        );
+
+        return {
+          ...product,
+          category: categories.find((c) => c._id === product.categoryId),
+          images: images.sort((a, b) => a.order - b.order),
+          skus: skusWithOptions,
+          variants: variantsWithOptions,
+          collections: (product.collections || [])
+            .map((id) => collections.find((col) => col._id == id))
+            .filter((col): col is NonNullable<typeof col> => col != null),
+        };
+      }),
+    );
   },
 });
 
-export const getCatalog = query({
+export const catalog = query({
   args: {
     storeId: v.id("stores"),
   },
   handler: async (ctx, { storeId }) => {
-    let products = await ctx.db
+    const products = await ctx.db
       .query("products")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
-      .collect();
-
-    const images = await ctx.db.query("images").collect();
-    const variants = await ctx.db.query("variants").collect();
-    const variantOptions = await ctx.db.query("variantOptions").collect();
-    const skus = await ctx.db.query("skus").collect();
-    const categories = await ctx.db
-      .query("categories")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
-      .collect();
-    const collections = await ctx.db
-      .query("collections")
-      .filter((e) => e.eq(e.field("storeId"), storeId))
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
       .collect();
 
     const activeProducts = products.filter((p) => p.status === "active");
+
+    const categories = await ctx.db
+      .query("categories")
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .collect();
+    const collections = await ctx.db
+      .query("collections")
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .collect();
 
     const activeCategoryIds = new Set(
       activeProducts.map((p) => p.categoryId).filter((id) => id !== undefined),
@@ -107,32 +128,58 @@ export const getCatalog = query({
     const faqs = await ctx.db.query("faqs").collect();
     const wilayat = await ctx.db.query("wilayat").collect();
 
-    const data = {
-      products: activeProducts.map((product) => ({
-        ...product,
-        images: images
-          .filter((img) => img.productId === product._id)
-          .sort((a, b) => a.order - b.order),
-        skus: skus
-          .filter((sku) => sku.productId === product._id)
-          .map((sku) => ({
-            ...sku,
-            options: variantOptions.filter((option) =>
-              sku.options.includes(option._id),
-            ),
-          })),
-        variants: variants
-          .filter((v) => v.productId === product._id)
-          .map((variant) => {
-            const options = variantOptions.filter(
-              (option) => option.variantId === variant._id,
+    const resolvedProducts = await Promise.all(
+      activeProducts.map(async (product) => {
+        const images = await ctx.db
+          .query("images")
+          .filter((q) => q.eq(q.field("productId"), product._id))
+          .collect();
+
+        const variants = await ctx.db
+          .query("variants")
+          .withIndex("productId", (q) => q.eq("productId", product._id))
+          .collect();
+
+        const skus = await ctx.db
+          .query("skus")
+          .withIndex("productId", (q) => q.eq("productId", product._id))
+          .collect();
+
+        const variantsWithOptions = await Promise.all(
+          variants.map(async (variant) => {
+            const options = await ctx.db
+              .query("variantOptions")
+              .filter((q) => q.eq(q.field("variantId"), variant._id))
+              .collect();
+            return { ...variant, options };
+          }),
+        );
+
+        const skusWithOptions = await Promise.all(
+          skus.map(async (sku) => {
+            const options = await Promise.all(
+              sku.options.map((optId) => ctx.db.get(optId)),
             );
             return {
-              ...variant,
-              options,
+              ...sku,
+              options: options.filter(
+                (o): o is NonNullable<typeof o> => o !== null,
+              ),
             };
           }),
-      })),
+        );
+
+        return {
+          ...product,
+          images: images.sort((a, b) => a.order - b.order),
+          skus: skusWithOptions,
+          variants: variantsWithOptions,
+        };
+      }),
+    );
+
+    const data = {
+      products: resolvedProducts,
       categories: categories.filter((c) => activeCategoryIds.has(c._id)),
       collections: collections.filter((c) => activeCollectionIds.has(c._id)),
       settings: settings || null,
@@ -144,7 +191,7 @@ export const getCatalog = query({
   },
 });
 
-export const getProductById = authedQuery({
+export const get = authedQuery({
   resource: "products",
   action: "read",
   args: { id: v.id("products") },
@@ -189,16 +236,16 @@ export const getProductById = authedQuery({
   },
 });
 
-export const deleteProduct = authedMutation({
+export const remove = authedMutation({
   resource: "products",
   action: "delete",
   args: {
     id: v.id("products"),
   },
   handler: async (ctx, { id }) => {
-    await ctx.db.delete(id);
+    const now = Date.now();
+    await ctx.db.patch(id, { deleted: true, lastUpdate: now });
 
-    // loop through variants, variantOptions, skus, images that are attached to this product and remove them too.
     const images = await ctx.db
       .query("images")
       .filter((e) => e.eq(e.field("productId"), id))
@@ -217,11 +264,11 @@ export const deleteProduct = authedMutation({
       .collect();
 
     for (const image of images) {
-      await ctx.db.delete(image._id);
+      await ctx.db.patch(image._id, { deleted: true, lastUpdate: now });
     }
 
     for (const sku of skus) {
-      await ctx.db.delete(sku._id);
+      await ctx.db.patch(sku._id, { deleted: true, lastUpdate: now });
     }
 
     for (const variant of variants) {
@@ -229,14 +276,14 @@ export const deleteProduct = authedMutation({
         (option) => option.variantId === variant._id,
       );
       for (const option of relatedOptions) {
-        await ctx.db.delete(option._id);
+        await ctx.db.patch(option._id, { deleted: true, lastUpdate: now });
       }
-      await ctx.db.delete(variant._id);
+      await ctx.db.patch(variant._id, { deleted: true, lastUpdate: now });
     }
   },
 });
 
-export const sendImage = authedMutation({
+export const attachImage = authedMutation({
   resource: "products",
   action: "update",
   args: {
@@ -256,19 +303,22 @@ export const sendImage = authedMutation({
       console.log("failed to get url for storageId: ", args.storageId);
       return null;
     }
+    const now = Date.now();
     await ctx.db.insert("images", {
       productId: args.productId,
       url: args.storageId,
       order: args.order,
       hidden: false,
       indexedDBId: args.indexedDBId,
+      lastUpdate: now,
     });
+    await ctx.db.patch(args.productId, { lastUpdate: now });
     console.log("images attached succesffuly gonna return the url ", url);
     return url;
   },
 });
 
-export const getProductByCategory = authedQuery({
+export const listByCategory = authedQuery({
   resource: "products",
   action: "read",
   args: {
@@ -282,7 +332,7 @@ export const getProductByCategory = authedQuery({
   },
 });
 
-export const createProduct = authedMutation({
+export const insert = authedMutation({
   resource: "products",
   action: "create",
   args: {
@@ -353,12 +403,14 @@ export const createProduct = authedMutation({
         ...productData
       } = args;
 
+      const now = Date.now();
       const productId = await ctx.db.insert("products", {
         status: status ?? "incomplete",
         stockingStrategy: stockingStrategy ?? "by_variants",
         collections,
         ...productData,
         storeId: args.storeId,
+        lastUpdate: now,
       });
 
       if (images && images.length > 0) {
@@ -368,15 +420,16 @@ export const createProduct = authedMutation({
             url: img.storageId,
             order: img.order,
             hidden: img.hidden,
+            lastUpdate: now,
           });
         }
       }
 
       if (variants && variants.length > 0) {
-        insertVariants(ctx, variants, productId);
+        insertVariants(ctx, variants, productId, now);
       }
       if (variantsInventory && variantsInventory.length > 0) {
-        insertVariantsInventory(ctx, variantsInventory, productId);
+        insertVariantsInventory(ctx, variantsInventory, productId, now);
       }
 
       if (collections && collections.length > 0) {
@@ -385,6 +438,7 @@ export const createProduct = authedMutation({
           if (collection) {
             await ctx.db.patch(collectionId, {
               productIds: [...(collection.productIds ?? []), productId],
+              lastUpdate: now,
             });
           }
         }
@@ -396,7 +450,7 @@ export const createProduct = authedMutation({
   },
 });
 
-export const updateProductMetaData = authedMutation({
+export const update = authedMutation({
   resource: "products",
   action: "update",
   args: {
@@ -439,6 +493,7 @@ export const updateProductMetaData = authedMutation({
           cleanData[key] = value;
         }
       }
+      cleanData.lastUpdate = Date.now();
       await ctx.db.patch(productId, cleanData);
 
       return { ok: true };
@@ -448,19 +503,21 @@ export const updateProductMetaData = authedMutation({
   },
 });
 
-export const salesPerProduct = internalQuery({
+export const stats = internalQuery({
   handler: async (ctx) => {
     const products = await ctx.db.query("products").collect();
     const productIds = products.map((p) => p._id);
-    const sales = await ctx.db.query("sales").collect();
+    const saleItems = await ctx.db.query("saleItems").collect();
     const salesMap = new Map();
     for (const productId of productIds) {
-      const salesPerProduct = sales.filter((sale) => {
-        return sale.order.map((o) => o.productId).includes(productId);
-      });
+      const saleIds = new Set(
+        saleItems
+          .filter((item) => item.productId === productId)
+          .map((item) => item.saleId),
+      );
       salesMap.set(productId, {
         name: products.find((p) => p._id === productId)?.title,
-        size: salesPerProduct.length,
+        size: saleIds.size,
       });
     }
     console.log(salesMap);

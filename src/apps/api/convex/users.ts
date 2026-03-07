@@ -1,4 +1,5 @@
-import { authedQuery } from "./customeFunction";
+import { v } from "convex/values";
+import { authedQuery } from "./customFunctions";
 
 export const get = authedQuery({
   resource: "users",
@@ -10,7 +11,7 @@ export const get = authedQuery({
   },
 });
 
-export const getUserData = authedQuery({
+export const me = authedQuery({
   resource: "users",
   action: "read",
   args: {},
@@ -38,21 +39,28 @@ export const getUserData = authedQuery({
   },
 });
 
-export const getOrganizationUsers = authedQuery({
+export const listOrganization = authedQuery({
   resource: "users",
   action: "read",
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    cursor: v.optional(v.number()),
+  },
+  handler: async (ctx, { cursor }) => {
     const currentUser = await ctx.db.get(ctx.userId);
 
     if (!currentUser) return [];
 
-    const users = await ctx.db
+    let query = ctx.db
       .query("users")
       .filter((q) =>
         q.eq(q.field("organizationId"), currentUser.organizationId),
-      )
-      .collect();
+      );
+
+    if (cursor) {
+      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
+    }
+
+    const users = await query.collect();
 
     return users.map((user) => ({
       _id: user._id,

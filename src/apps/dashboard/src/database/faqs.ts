@@ -20,12 +20,12 @@ export const faqsCollection = createCollection(
     queryFn: async (): Promise<any[]> => {
       console.log("[faqs] queryFn running");
       try {
-        const faqs = await convex.query(api.settings.getFAQs);
-        idbRefresh("faqs", faqs);
+        const faqs = await convex.query(api.settings.listFaqs);
+        await idbRefresh("faqs", faqs);
         return faqs;
       } catch (e) {
-        const cachedFaqs = await idbGet("faqs");
-        return Array.isArray(cachedFaqs) ? (cachedFaqs as CachedFaq[]) : [];
+        const cachedFaqs = await idbGet<CachedFaq[]>("faqs");
+        return cachedFaqs || [];
       }
     },
     queryClient,

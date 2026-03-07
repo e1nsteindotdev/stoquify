@@ -3,11 +3,6 @@ import { DataTableColumnHeader } from "../data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
-import {
-  useDeleteOrder,
-  useConfirmOrder,
-  useDenyOrder,
-} from "@/hooks/use-convex-queries";
 import { Trash2, ChevronDown, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,15 +10,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ordersCollection } from "@/database/orders";
 import { salesCollection } from "@/database/sales";
 import { useState } from "react";
 import { PermissionGuard } from "@/components/permission-guard";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { useMutation } from "@tanstack/react-query";
+import type { Id } from "api/data-model";
 
-export type OrderRow = {
+export type CommandeRow = {
   _id: string;
   customerName: string;
   phoneNumber: number;
@@ -57,7 +55,7 @@ const statusLabels = {
   denied: "Refusée",
 };
 
-export const columns: ColumnDef<OrderRow>[] = [
+export const columns: ColumnDef<CommandeRow>[] = [
   {
     accessorKey: "customerName",
     enableSorting: false,
@@ -153,8 +151,14 @@ export const columns: ColumnDef<OrderRow>[] = [
       return value.includes(row.getValue(id));
     },
     cell: ({ row }) => {
-      const confirmOrder = useConfirmOrder();
-      const denyOrder = useDenyOrder();
+      const confirmCommande = useMutation({
+        mutationFn: (saleId: string) =>
+          convex.mutation(api.sales.confirm, { saleId: saleId as Id<"sales"> }),
+      });
+      const denyCommande = useMutation({
+        mutationFn: (saleId: string) =>
+          convex.mutation(api.sales.deny, { saleId: saleId as Id<"sales"> }),
+      });
       const currentStatus = row.original.status;
       const [isLoading, setIsLoading] = useState(false);
 
@@ -162,9 +166,7 @@ export const columns: ColumnDef<OrderRow>[] = [
         setIsLoading(true);
         try {
           if (newStatus === "confirmed") {
-            const result = await confirmOrder.mutateAsync({
-              orderId: row.original._id as any,
-            });
+            const result = await confirmCommande.mutateAsync(row.original._id);
             if (result.ok) {
               toast.success("Commande confirmée");
             } else if (result.error === "stock_not_sufficient") {
@@ -180,20 +182,16 @@ export const columns: ColumnDef<OrderRow>[] = [
               toast.error(result.error || "Erreur lors de la confirmation");
             }
           } else {
-            await denyOrder.mutateAsync({ orderId: row.original._id as any });
+            await denyCommande.mutateAsync(row.original._id);
             toast.success("Commande refusée");
           }
 
           const storeId = useAppStore.getState().selectedStore?._id;
           await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["orders"] }),
             queryClient.invalidateQueries({ queryKey: ["sales", storeId] }),
           ]);
 
-          await Promise.all([
-            ordersCollection.preload(),
-            salesCollection.preload(),
-          ]);
+          await salesCollection.preload();
         } catch (error) {
           toast.error("Une erreur est survenue");
         } finally {
@@ -203,7 +201,7 @@ export const columns: ColumnDef<OrderRow>[] = [
 
       return (
         <PermissionGuard
-          resource="orders"
+          resource="sales"
           action="write"
           fallback={
             <Badge
@@ -277,20 +275,19 @@ export const columns: ColumnDef<OrderRow>[] = [
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
-      const deleteOrder = useDeleteOrder();
-      const handleDelete = async () => {
+      const removeCommande = useMutation({
+        mutationFn: (saleId: string) =>
+          convex.mutation(api.sales.remove, { saleId: saleId as Id<"sales"> }),
+      });
+      const handleRemove = async () => {
         if (confirm("Êtes-vous sûr de vouloir supprimer cette commande ?")) {
           try {
-            await deleteOrder.mutateAsync({ orderId: row.original._id as any });
+            await removeCommande.mutateAsync(row.original._id);
             const storeId = useAppStore.getState().selectedStore?._id;
             await Promise.all([
-              queryClient.invalidateQueries({ queryKey: ["orders"] }),
               queryClient.invalidateQueries({ queryKey: ["sales", storeId] }),
             ]);
-            await Promise.all([
-              ordersCollection.preload(),
-              salesCollection.preload(),
-            ]);
+            await salesCollection.preload();
             toast.success("Commande supprimée");
           } catch (error) {
             toast.error("Erreur lors de la suppression");
@@ -304,12 +301,12 @@ export const columns: ColumnDef<OrderRow>[] = [
               Voir
             </Button>
           </Link>
-          <PermissionGuard resource="orders" action="write">
+          <PermissionGuard resource="sales" action="write">
             <Button
               size="sm"
               variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteOrder.isPending}
+              onClick={handleRemove}
+              disabled={removeCommande.isPending}
               className="rounded-none"
             >
               <Trash2 className="h-4 w-4" />
