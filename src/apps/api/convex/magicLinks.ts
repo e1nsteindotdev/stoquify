@@ -25,6 +25,7 @@ export const insert = mutation({
     const token = nanoid(32);
     const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
 
+    const now = Date.now();
     const magicLinkId = await ctx.db.insert("magicLinks", {
       email: args.email,
       token,
@@ -33,6 +34,7 @@ export const insert = mutation({
       organizationId: args.organizationId as Id<"organizations">,
       expiresAt,
       usedAt: undefined,
+      lastUpdate: now,
     });
 
     return { _id: magicLinkId, token, expiresAt };
@@ -120,6 +122,7 @@ export const update = mutation({
 
     await ctx.db.patch(args.invitationId, {
       permissions: args.permissions,
+      lastUpdate: Date.now(),
     });
 
     return { _id: args.invitationId };
@@ -190,6 +193,7 @@ export const verify = internalMutation({
       throw new Error("Name and phone are required");
     }
 
+    const now = Date.now();
     if (!user) {
       const newUserId = await ctx.db.insert("users", {
         name,
@@ -198,6 +202,7 @@ export const verify = internalMutation({
         organizationId: magicLink.organizationId,
         role: magicLink.role,
         permissions: magicLink.permissions,
+        lastUpdate: now,
       });
       user = await ctx.db.get(newUserId);
     } else {
@@ -205,13 +210,17 @@ export const verify = internalMutation({
         organizationId: magicLink.organizationId,
         role: magicLink.role,
         permissions: magicLink.permissions,
+        lastUpdate: now,
       });
       user = await ctx.db.get(user._id);
     }
 
     if (!user) throw new Error("Failed to get user");
 
-    await ctx.db.patch(magicLink._id, { usedAt: Date.now() });
+    await ctx.db.patch(magicLink._id, {
+      usedAt: Date.now(),
+      lastUpdate: now,
+    });
 
     return {
       userId: user._id,
@@ -249,6 +258,7 @@ export const insertSignIn = mutation({
       expiresAt,
       createdAt,
       usedAt: undefined,
+      lastUpdate: createdAt,
     });
 
     return { _id: signInMagicLinkId, token, expiresAt, createdAt };
@@ -361,7 +371,10 @@ export const consumeSignIn = internalMutation({
       throw new Error("Token expired");
     }
 
-    await ctx.db.patch(link._id, { usedAt: Date.now() });
+    await ctx.db.patch(link._id, {
+      usedAt: Date.now(),
+      lastUpdate: Date.now(),
+    });
 
     const user = await ctx.db.get(link.userId);
     if (!user) {

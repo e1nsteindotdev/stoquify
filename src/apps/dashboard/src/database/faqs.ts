@@ -20,7 +20,7 @@ export const faqsCollection = createCollection(
     queryFn: async (): Promise<any[]> => {
       console.log("[faqs] queryFn running");
       try {
-        const faqs = await convex.query(api.settings.listFaqs);
+        const faqs = await convex.query(api.settings.listFaqs, {});
         await idbRefresh("faqs", faqs);
         return faqs;
       } catch (e) {
@@ -31,7 +31,7 @@ export const faqsCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );
 

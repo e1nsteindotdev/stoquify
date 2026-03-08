@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@tanstack/react-router";
 import { ClipLoader } from "react-spinners";
-import { convex } from "@/lib/convex-client";
-import { api } from "api/convex";
-import { queryClient } from "@/lib/ts-query-client";
 import {
   useGetProductTableData,
   filterProducts,
@@ -102,18 +99,6 @@ export function ProductsTable() {
     );
   };
 
-  const onClick = async (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const button = target.closest(
-      "button[data-product-id]",
-    ) as HTMLButtonElement | null;
-    if (button) {
-      const id = button.getAttribute("data-product-id") as any;
-      await convex.mutation(api.products.remove, { id });
-      queryClient.refetchQueries({ queryKey: ["products"] });
-    }
-  };
-
   const isLoading = !products;
 
   if (isLoading) {
@@ -125,7 +110,7 @@ export function ProductsTable() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-4" onClick={onClick}>
+    <div className="container mx-auto py-6 space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Produits</h1>

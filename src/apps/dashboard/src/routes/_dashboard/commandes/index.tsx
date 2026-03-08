@@ -1,13 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CommandesTable } from "@/components/tables/commandes/table";
-import { salesCollection } from "@/database/sales";
 import { useTransition, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_dashboard/commandes/")({
-  loader: () => {
-    salesCollection.preload();
-  },
   component: Page,
 });
 

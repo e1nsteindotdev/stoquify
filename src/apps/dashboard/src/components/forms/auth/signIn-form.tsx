@@ -9,11 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { convex } from "@/lib/convex-client";
-import { api } from "api/convex";
-import { useAppStore } from "@/lib/store";
-
 import { useForm, type AnyFieldApi } from "@tanstack/react-form";
 import { useAuthActions } from "@convex-dev/auth/react";
 import type { Dispatch, SetStateAction } from "react";
@@ -30,8 +25,6 @@ export function SignInForm({
   setStep: Dispatch<SetStateAction<string>>;
 } & React.ComponentProps<"div">) {
   const { signIn } = useAuthActions();
-  const setStores = useAppStore((state) => state.setStores);
-  const setUser = useAppStore((state) => state.setUser);
 
   const form = useForm({
     defaultValues: {
@@ -57,6 +50,7 @@ export function SignInForm({
         }
 
         toast.success("Connexion réussie");
+        window.location.href = "/";
       } catch (error) {
         console.error("error while trying to sign in :", error);
         const errorMessage =

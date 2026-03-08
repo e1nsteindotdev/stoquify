@@ -9,11 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PosRouteImport } from './routes/pos'
 import { Route as MobileSigninRouteImport } from './routes/mobile-signin'
 import { Route as MagicLinkRouteImport } from './routes/magic-link'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardProduitsIndexRouteImport } from './routes/_dashboard/produits/index'
+import { Route as DashboardPosIndexRouteImport } from './routes/_dashboard/pos/index'
 import { Route as DashboardParametresIndexRouteImport } from './routes/_dashboard/parametres/index'
 import { Route as DashboardEmployesIndexRouteImport } from './routes/_dashboard/employes/index'
 import { Route as DashboardDepensesIndexRouteImport } from './routes/_dashboard/depenses/index'
@@ -25,11 +25,6 @@ import { Route as DashboardProduitsSlugRouteImport } from './routes/_dashboard/p
 import { Route as DashboardCommandesSlugRouteImport } from './routes/_dashboard/commandes/$slug'
 import { Route as DashboardClientsSlugRouteImport } from './routes/_dashboard/clients/$slug'
 
-const PosRoute = PosRouteImport.update({
-  id: '/pos',
-  path: '/pos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MobileSigninRoute = MobileSigninRouteImport.update({
   id: '/mobile-signin',
   path: '/mobile-signin',
@@ -47,6 +42,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DashboardProduitsIndexRoute = DashboardProduitsIndexRouteImport.update({
   id: '/produits/',
   path: '/produits/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPosIndexRoute = DashboardPosIndexRouteImport.update({
+  id: '/pos/',
+  path: '/pos/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardParametresIndexRoute =
@@ -104,7 +104,6 @@ const DashboardClientsSlugRoute = DashboardClientsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/magic-link': typeof MagicLinkRoute
   '/mobile-signin': typeof MobileSigninRoute
-  '/pos': typeof PosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -115,12 +114,12 @@ export interface FileRoutesByFullPath {
   '/depenses': typeof DashboardDepensesIndexRoute
   '/employes': typeof DashboardEmployesIndexRoute
   '/parametres': typeof DashboardParametresIndexRoute
+  '/pos': typeof DashboardPosIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesByTo {
   '/magic-link': typeof MagicLinkRoute
   '/mobile-signin': typeof MobileSigninRoute
-  '/pos': typeof PosRoute
   '/clients/$slug': typeof DashboardClientsSlugRoute
   '/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -131,6 +130,7 @@ export interface FileRoutesByTo {
   '/depenses': typeof DashboardDepensesIndexRoute
   '/employes': typeof DashboardEmployesIndexRoute
   '/parametres': typeof DashboardParametresIndexRoute
+  '/pos': typeof DashboardPosIndexRoute
   '/produits': typeof DashboardProduitsIndexRoute
 }
 export interface FileRoutesById {
@@ -138,7 +138,6 @@ export interface FileRoutesById {
   '/_dashboard': typeof DashboardRouteWithChildren
   '/magic-link': typeof MagicLinkRoute
   '/mobile-signin': typeof MobileSigninRoute
-  '/pos': typeof PosRoute
   '/_dashboard/clients/$slug': typeof DashboardClientsSlugRoute
   '/_dashboard/commandes/$slug': typeof DashboardCommandesSlugRoute
   '/_dashboard/produits/$slug': typeof DashboardProduitsSlugRoute
@@ -149,6 +148,7 @@ export interface FileRoutesById {
   '/_dashboard/depenses/': typeof DashboardDepensesIndexRoute
   '/_dashboard/employes/': typeof DashboardEmployesIndexRoute
   '/_dashboard/parametres/': typeof DashboardParametresIndexRoute
+  '/_dashboard/pos/': typeof DashboardPosIndexRoute
   '/_dashboard/produits/': typeof DashboardProduitsIndexRoute
 }
 export interface FileRouteTypes {
@@ -156,7 +156,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/magic-link'
     | '/mobile-signin'
-    | '/pos'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -167,12 +166,12 @@ export interface FileRouteTypes {
     | '/depenses'
     | '/employes'
     | '/parametres'
+    | '/pos'
     | '/produits'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/magic-link'
     | '/mobile-signin'
-    | '/pos'
     | '/clients/$slug'
     | '/commandes/$slug'
     | '/produits/$slug'
@@ -183,13 +182,13 @@ export interface FileRouteTypes {
     | '/depenses'
     | '/employes'
     | '/parametres'
+    | '/pos'
     | '/produits'
   id:
     | '__root__'
     | '/_dashboard'
     | '/magic-link'
     | '/mobile-signin'
-    | '/pos'
     | '/_dashboard/clients/$slug'
     | '/_dashboard/commandes/$slug'
     | '/_dashboard/produits/$slug'
@@ -200,6 +199,7 @@ export interface FileRouteTypes {
     | '/_dashboard/depenses/'
     | '/_dashboard/employes/'
     | '/_dashboard/parametres/'
+    | '/_dashboard/pos/'
     | '/_dashboard/produits/'
   fileRoutesById: FileRoutesById
 }
@@ -207,18 +207,10 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   MagicLinkRoute: typeof MagicLinkRoute
   MobileSigninRoute: typeof MobileSigninRoute
-  PosRoute: typeof PosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/pos': {
-      id: '/pos'
-      path: '/pos'
-      fullPath: '/pos'
-      preLoaderRoute: typeof PosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/mobile-signin': {
       id: '/mobile-signin'
       path: '/mobile-signin'
@@ -245,6 +237,13 @@ declare module '@tanstack/react-router' {
       path: '/produits'
       fullPath: '/produits'
       preLoaderRoute: typeof DashboardProduitsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/pos/': {
+      id: '/_dashboard/pos/'
+      path: '/pos'
+      fullPath: '/pos'
+      preLoaderRoute: typeof DashboardPosIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/parametres/': {
@@ -331,6 +330,7 @@ interface DashboardRouteChildren {
   DashboardDepensesIndexRoute: typeof DashboardDepensesIndexRoute
   DashboardEmployesIndexRoute: typeof DashboardEmployesIndexRoute
   DashboardParametresIndexRoute: typeof DashboardParametresIndexRoute
+  DashboardPosIndexRoute: typeof DashboardPosIndexRoute
   DashboardProduitsIndexRoute: typeof DashboardProduitsIndexRoute
 }
 
@@ -345,6 +345,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardDepensesIndexRoute: DashboardDepensesIndexRoute,
   DashboardEmployesIndexRoute: DashboardEmployesIndexRoute,
   DashboardParametresIndexRoute: DashboardParametresIndexRoute,
+  DashboardPosIndexRoute: DashboardPosIndexRoute,
   DashboardProduitsIndexRoute: DashboardProduitsIndexRoute,
 }
 
@@ -356,7 +357,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   MagicLinkRoute: MagicLinkRoute,
   MobileSigninRoute: MobileSigninRoute,
-  PosRoute: PosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

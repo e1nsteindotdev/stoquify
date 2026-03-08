@@ -3,31 +3,21 @@ import { queryCollectionOptions } from "@tanstack/query-db-collection";
 import { api } from "api/convex";
 import { createCollection } from "@tanstack/db";
 import { queryClient } from "@/lib/ts-query-client";
-import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
-import { computeNewCursor, mergeRows } from "@/lib/cursor-utils";
+import { idbGet, idbRefresh } from "@/lib/idb";
 
 export const usersCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["users"],
     queryFn: async (): Promise<any[]> => {
-      const cursor = await idbGetCursor("users");
+      console.log("[users] queryFn running");
 
       try {
         const user = await convex.query(api.users.get);
         const normalizedUsers = user ? [user] : [];
 
-        const cachedUsers = await idbGet<any[]>("users");
-        const mergedUsers = mergeRows(normalizedUsers, cachedUsers || []);
-
-        await idbRefresh("users", mergedUsers);
+        await idbRefresh("users", normalizedUsers);
         await idbRefresh("user", user ?? null);
-
-        if (normalizedUsers.length > 0) {
-          const newCursor = computeNewCursor(normalizedUsers);
-          await idbSetCursor("users", newCursor);
-        }
-
-        return mergedUsers;
+        return normalizedUsers;
       } catch (e) {
         const cachedUsers = await idbGet<any[]>("users");
         if (cachedUsers) {
@@ -40,6 +30,6 @@ export const usersCollection = createCollection(
     queryClient,
     getKey: (item: any) => item._id ?? item.subject,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );

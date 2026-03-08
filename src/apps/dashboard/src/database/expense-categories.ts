@@ -5,8 +5,7 @@ import { createCollection, eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import { queryClient } from "@/lib/ts-query-client";
 import { useAppStore } from "@/lib/store";
-import { idbGet, idbRefresh, idbGetCursor, idbSetCursor } from "@/lib/idb";
-import { computeNewCursor, mergeRowsWithStoreScope } from "@/lib/cursor-utils";
+import { idbGet, idbRefresh } from "@/lib/idb";
 import type { Id } from "api/data-model";
 
 export type ExpenseCategory = {
@@ -25,35 +24,17 @@ export const expenseCategoriesCollection = createCollection(
       return ["expenseCategories", storeId];
     },
     queryFn: async (): Promise<any[]> => {
+      console.log("[expenseCategories] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
-
-      const cursor = await idbGetCursor("expenseCategories", storeId);
 
       try {
         const categories = await convex.query(api.expenses.listCategories, {
           storeId,
-          cursor: cursor ?? undefined,
         });
 
-        const cachedCategories = await idbGet<ExpenseCategory[]>(
-          "expenseCategories",
-          storeId,
-        );
-        const mergedCategories = mergeRowsWithStoreScope(
-          categories,
-          cachedCategories || [],
-          storeId,
-        );
-
-        await idbRefresh("expenseCategories", mergedCategories, storeId);
-
-        if (categories.length > 0) {
-          const newCursor = computeNewCursor(categories);
-          await idbSetCursor("expenseCategories", newCursor, storeId);
-        }
-
-        return mergedCategories;
+        await idbRefresh("expenseCategories", categories, storeId);
+        return categories;
       } catch (e) {
         const cachedExpenseCategories = await idbGet<ExpenseCategory[]>(
           "expenseCategories",
@@ -65,7 +46,7 @@ export const expenseCategoriesCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );
 

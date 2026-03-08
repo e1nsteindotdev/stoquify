@@ -14,6 +14,11 @@ import type { ProductTableRow } from "@/database/products-table";
 import { DataTableColumnHeader } from "../data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { PermissionGuard } from "@/components/permission-guard";
+import { toast } from "sonner";
+import { convex } from "@/lib/convex-client";
+import { api } from "api/convex";
+import { queryClient } from "@/lib/ts-query-client";
+import { useAppStore } from "@/lib/store";
 
 const formatMoney = (value: number) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -403,23 +408,44 @@ export const columns: ColumnDef<ProductTableRow>[] = [
     id: "actions",
     header: "Actions",
     enableSorting: false,
-    cell: ({ row }) => (
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-        <PermissionGuard resource="products" action="write">
-          <Link to="/produits/$slug" params={{ slug: row.original._id }}>
-            <Button size="sm" variant="outline">
-              Modifier
+    cell: ({ row }) => {
+      const selectedStore = useAppStore((state) => state.selectedStore);
+      const storeId = selectedStore?._id;
+
+      const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+          await convex.mutation(api.products.remove, {
+            id: row.original._id as any,
+          });
+          await queryClient.refetchQueries({
+            queryKey: ["products", storeId],
+          });
+          toast.success("Produit supprimé avec succès");
+        } catch (error) {
+          toast.error("Erreur lors de la suppression du produit");
+          console.error(error);
+        }
+      };
+
+      return (
+        <div className="flex gap-2">
+          <PermissionGuard resource="products" action="write">
+            <Link
+              to="/produits/$slug"
+              params={{ slug: row.original._id }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button size="sm" variant="outline">
+                Modifier
+              </Button>
+            </Link>
+            <Button size="sm" variant="destructive" onClick={handleDelete}>
+              Supprimer
             </Button>
-          </Link>
-          <Button
-            size="sm"
-            variant="destructive"
-            data-product-id={row.original._id}
-          >
-            Supprimer
-          </Button>
-        </PermissionGuard>
-      </div>
-    ),
+          </PermissionGuard>
+        </div>
+      );
+    },
   },
 ];

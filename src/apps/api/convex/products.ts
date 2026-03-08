@@ -11,20 +11,12 @@ export const list = authedQuery({
   action: "read",
   args: {
     storeId: v.id("stores"),
-    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId, cursor }) => {
-    let productsQuery = ctx.db
+  handler: async (ctx, { storeId }) => {
+    const products = await ctx.db
       .query("products")
-      .withIndex("by_store", (q) => q.eq("storeId", storeId));
-
-    if (cursor) {
-      productsQuery = productsQuery.filter((q) =>
-        q.gt(q.field("lastUpdate"), cursor),
-      );
-    }
-
-    const products = await productsQuery.collect();
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .collect();
 
     const collections = await ctx.db
       .query("collections")
@@ -243,8 +235,7 @@ export const remove = authedMutation({
     id: v.id("products"),
   },
   handler: async (ctx, { id }) => {
-    const now = Date.now();
-    await ctx.db.patch(id, { deleted: true, lastUpdate: now });
+    await ctx.db.delete(id);
 
     const images = await ctx.db
       .query("images")
@@ -264,11 +255,11 @@ export const remove = authedMutation({
       .collect();
 
     for (const image of images) {
-      await ctx.db.patch(image._id, { deleted: true, lastUpdate: now });
+      await ctx.db.delete(image._id);
     }
 
     for (const sku of skus) {
-      await ctx.db.patch(sku._id, { deleted: true, lastUpdate: now });
+      await ctx.db.delete(sku._id);
     }
 
     for (const variant of variants) {
@@ -276,9 +267,9 @@ export const remove = authedMutation({
         (option) => option.variantId === variant._id,
       );
       for (const option of relatedOptions) {
-        await ctx.db.patch(option._id, { deleted: true, lastUpdate: now });
+        await ctx.db.delete(option._id);
       }
-      await ctx.db.patch(variant._id, { deleted: true, lastUpdate: now });
+      await ctx.db.delete(variant._id);
     }
   },
 });
@@ -303,16 +294,13 @@ export const attachImage = authedMutation({
       console.log("failed to get url for storageId: ", args.storageId);
       return null;
     }
-    const now = Date.now();
     await ctx.db.insert("images", {
       productId: args.productId,
       url: args.storageId,
       order: args.order,
       hidden: false,
       indexedDBId: args.indexedDBId,
-      lastUpdate: now,
     });
-    await ctx.db.patch(args.productId, { lastUpdate: now });
     console.log("images attached succesffuly gonna return the url ", url);
     return url;
   },
@@ -403,14 +391,12 @@ export const insert = authedMutation({
         ...productData
       } = args;
 
-      const now = Date.now();
       const productId = await ctx.db.insert("products", {
         status: status ?? "incomplete",
         stockingStrategy: stockingStrategy ?? "by_variants",
         collections,
         ...productData,
         storeId: args.storeId,
-        lastUpdate: now,
       });
 
       if (images && images.length > 0) {
@@ -420,16 +406,15 @@ export const insert = authedMutation({
             url: img.storageId,
             order: img.order,
             hidden: img.hidden,
-            lastUpdate: now,
           });
         }
       }
 
       if (variants && variants.length > 0) {
-        insertVariants(ctx, variants, productId, now);
+        insertVariants(ctx, variants, productId);
       }
       if (variantsInventory && variantsInventory.length > 0) {
-        insertVariantsInventory(ctx, variantsInventory, productId, now);
+        insertVariantsInventory(ctx, variantsInventory, productId);
       }
 
       if (collections && collections.length > 0) {
@@ -438,7 +423,6 @@ export const insert = authedMutation({
           if (collection) {
             await ctx.db.patch(collectionId, {
               productIds: [...(collection.productIds ?? []), productId],
-              lastUpdate: now,
             });
           }
         }
@@ -493,7 +477,6 @@ export const update = authedMutation({
           cleanData[key] = value;
         }
       }
-      cleanData.lastUpdate = Date.now();
       await ctx.db.patch(productId, cleanData);
 
       return { ok: true };

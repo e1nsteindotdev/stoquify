@@ -25,7 +25,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   isInitialized: false,
 
   setStores: (stores) => {
-    set({ stores });
+    const { selectedStore } = get();
+    set({
+      stores,
+      selectedStore: selectedStore === null && stores.length > 0 ? stores[0] : selectedStore,
+    });
     idbRefresh("stores", stores);
   },
 

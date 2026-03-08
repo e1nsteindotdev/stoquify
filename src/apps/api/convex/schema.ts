@@ -183,7 +183,6 @@ const schema = defineSchema({
   }),
 
   sales: defineTable({
-    lastUpdate: v.optional(v.number()),
     deleted: v.optional(v.boolean()),
     storeId: v.id("stores"),
     createdAt: v.number(),

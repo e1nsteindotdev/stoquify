@@ -1,24 +1,26 @@
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
   const isMobile = useIsMobile();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
-      richColors
       position={isMobile ? "top-center" : "bottom-right"}
-      style={
-        {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-        } as React.CSSProperties
-      }
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-white group-[.toaster]:text-primary group-[.toaster]:border-border group-[.toaster]:shadow-lg group-[.toaster]:rounded-none",
+          description: "group-[.toast]:text-primary",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          icon: "group-[.toast]:text-primary",
+        },
+      }}
       {...props}
     />
   );

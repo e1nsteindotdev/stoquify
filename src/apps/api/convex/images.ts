@@ -38,6 +38,7 @@ export const insert = authedMutation({
       order: args.order,
       hidden: args.hidden,
       indexedDBId: args.indexedDBId,
+      lastUpdate: Date.now(),
     });
   },
 });
@@ -53,7 +54,7 @@ export const update = authedMutation({
   },
   handler: async (ctx, args) => {
     const { imageId, ...updates } = args;
-    await ctx.db.patch(imageId, updates);
+    await ctx.db.patch(imageId, { ...updates, lastUpdate: Date.now() });
     return imageId;
   },
 });
@@ -95,13 +96,14 @@ export const sync = authedMutation({
   },
   handler: async (ctx, args) => {
     try {
+      const now = Date.now();
       for (const image of args.toDelete) {
         await ctx.db.delete(image);
       }
 
       for (const image of args.toUpdate) {
         const { imageId, ...updates } = image;
-        await ctx.db.patch(imageId, updates);
+        await ctx.db.patch(imageId, { ...updates, lastUpdate: now });
       }
 
       for (const image of args.toCreate) {
@@ -118,6 +120,7 @@ export const sync = authedMutation({
           order: image.order,
           hidden: image.hidden,
           indexedDBId: image.indexedDBId,
+          lastUpdate: now,
         });
       }
       return { ok: true };

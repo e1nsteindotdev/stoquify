@@ -11,6 +11,7 @@ export const storesCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["stores"],
     queryFn: async (): Promise<any[]> => {
+      console.log("[stores] queryFn running");
       const cursor = await idbGetCursor("stores");
 
       try {
@@ -18,17 +19,21 @@ export const storesCollection = createCollection(
           cursor: cursor ?? undefined,
         });
 
-        const cachedStores = await idbGet<any[]>("stores");
-        const mergedStores = mergeRows(stores, cachedStores || []);
-
-        await idbRefresh("stores", mergedStores);
-
         if (stores.length > 0) {
           const newCursor = computeNewCursor(stores);
           await idbSetCursor("stores", newCursor);
         }
 
-        return mergedStores;
+        if (cursor) {
+          const cachedStores = await idbGet<any[]>("stores");
+          const mergedStores = mergeRows(stores, cachedStores || []);
+
+          await idbRefresh("stores", mergedStores);
+          return mergedStores;
+        } else {
+          await idbRefresh("stores", stores);
+          return stores;
+        }
       } catch (e) {
         const cachedStores = await idbGet<any[]>("stores");
         return cachedStores || [];
@@ -37,7 +42,7 @@ export const storesCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );
 

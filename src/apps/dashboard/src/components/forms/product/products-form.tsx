@@ -132,14 +132,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
   const router = useRouter();
   const selectedStore = useAppStore((state) => state.selectedStore);
 
-  const [isReady, setIsReady] = useState(false);
-  const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    startTransition(() => {
-      setIsReady(true);
-    });
-  }, []);
+  const [isReady, setIsReady] = useState(true);
 
   const defaultImages = useMemo(
     () => decodeImages(product?.images),
@@ -178,7 +171,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
       const imageChanges = getImageChanges(defaultImages, images);
       const variantChanges = getVariantChanges(defaultVariants, variants);
 
-      const program = Effect.gen(function* () {
+      const program = Effect.gen(function*() {
         // upload new images to the cloud
         const imageService = yield* Images;
         let ensuredProductId = productId;
@@ -199,7 +192,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         }
         if (!ensuredProductId) return;
 
-        const updateProductMetaData = Effect.gen(function* () {
+        const updateProductMetaData = Effect.gen(function*() {
           if (!isNew) {
             const productChanges = getProductChanges(product, {
               categoryId: newProduct.categoryId,
@@ -224,12 +217,12 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           } else return yield* Effect.succeed(null);
         });
 
-        const uploadImages = Effect.gen(function* () {
+        const uploadImages = Effect.gen(function*() {
           const result = { ok: false };
           imageChanges.toCreate = yield* Effect.forEach(
             imageChanges.toCreate,
             (image) =>
-              Effect.gen(function* () {
+              Effect.gen(function*() {
                 let compressedfile = image.compressedFile;
                 if (!compressedfile) {
                   const { file } = yield* imageService.compressImageWithWorker(
@@ -248,10 +241,10 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           return result;
         });
 
-        const handleImages = Effect.gen(function* () {
+        const handleImages = Effect.gen(function*() {
           yield* uploadImages;
           yield* Effect.forEach(imageChanges.toCreate, (img) =>
-            Effect.gen(function* () {
+            Effect.gen(function*() {
               if (!img.compressedFile) return null;
               const indexedDBId = yield* imageService.saveImageLocally(
                 img.compressedFile,
@@ -286,7 +279,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
           );
         });
 
-        const handleVariants = Effect.gen(function* () {
+        const handleVariants = Effect.gen(function*() {
           if (!variantChanges)
             return yield* Effect.succeed({
               ok: true,
@@ -331,7 +324,7 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
         });
 
         const handleSKUs = (options: Map<string, Id<"variantOptions">>) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             return yield* Effect.promise(() =>
               convex.mutation(api.skus.replace, {
                 productId: ensuredProductId as Id<"products">,
@@ -414,9 +407,9 @@ export function ProductForm({ slug }: { slug?: Id<"products"> | "new" }) {
 
   const isCompleted =
     form.getFieldValue("images") &&
-    form.getFieldValue("price") !== 0 &&
-    form.getFieldValue("title") &&
-    form.getFieldValue("categoryId")
+      form.getFieldValue("price") !== 0 &&
+      form.getFieldValue("title") &&
+      form.getFieldValue("categoryId")
       ? true
       : false;
 

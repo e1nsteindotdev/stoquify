@@ -19,7 +19,7 @@ export function useGetUser() {
         return cachedUser;
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 

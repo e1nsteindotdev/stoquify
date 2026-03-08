@@ -16,18 +16,12 @@ export const list = authedQuery({
   action: "read",
   args: {
     storeId: v.id("stores"),
-    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId, cursor }) => {
-    let query = ctx.db
+  handler: async (ctx, { storeId }) => {
+    const customers = await ctx.db
       .query("customers")
-      .withIndex("by_store", (q) => q.eq("storeId", storeId));
-
-    if (cursor) {
-      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
-    }
-
-    const customers = await query.collect();
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .collect();
 
     return await Promise.all(
       customers.map(async (customer) => {

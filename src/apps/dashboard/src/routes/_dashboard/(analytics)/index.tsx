@@ -10,9 +10,6 @@ import { StockCoverCard } from "./components/stock-cover-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_dashboard/(analytics)/")({
-  loader: () => {
-    // salesCollection.preload();
-  },
   component: Page,
 });
 

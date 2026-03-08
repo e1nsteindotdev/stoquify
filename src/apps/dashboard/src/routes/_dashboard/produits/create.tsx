@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_dashboard/produits/create")({
       }
     }, [isInitialized, user, storeId, navigate]);
 
-    if (!isInitialized) return null;
+    // if (!isInitialized) return null;
 
     return <ProductForm slug="new" />;
   },

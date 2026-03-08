@@ -3,11 +3,13 @@ import { Toaster as Sonner, type ToasterProps } from "sonner";
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
+      theme="light"
       className="toaster group"
       position="bottom-right"
       toastOptions={{
         classNames: {
-          error: "bg-red-500 text-white border-red-600",
+          toast: "rounded-none",
+          error: "bg-red-500 text-white border-red-600 rounded-none",
         },
       }}
       style={

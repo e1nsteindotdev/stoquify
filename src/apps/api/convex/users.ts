@@ -42,25 +42,18 @@ export const me = authedQuery({
 export const listOrganization = authedQuery({
   resource: "users",
   action: "read",
-  args: {
-    cursor: v.optional(v.number()),
-  },
-  handler: async (ctx, { cursor }) => {
+  args: {},
+  handler: async (ctx) => {
     const currentUser = await ctx.db.get(ctx.userId);
 
     if (!currentUser) return [];
 
-    let query = ctx.db
+    const users = await ctx.db
       .query("users")
       .filter((q) =>
         q.eq(q.field("organizationId"), currentUser.organizationId),
-      );
-
-    if (cursor) {
-      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
-    }
-
-    const users = await query.collect();
+      )
+      .collect();
 
     return users.map((user) => ({
       _id: user._id,

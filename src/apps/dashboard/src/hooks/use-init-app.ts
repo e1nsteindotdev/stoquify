@@ -1,109 +1,31 @@
-import { convex } from "@/lib/convex-client";
 import { idbGet } from "@/lib/idb";
 import { useAppStore } from "@/lib/store";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { api } from "api/convex";
 import { useEffect, useState } from "react";
-import { useGetUser } from "./use-get-user";
-import {
-  preloadAllCollections,
-  setCollectionsData,
-} from "@/database/initialize";
-import { TypeUser } from "api/types";
+import { categoriesCollection } from "@/database/categories";
+import { productsCollection } from "@/database/products";
+import { customersCollection } from "@/database/customers";
+import { salesCollection } from "@/database/sales";
+import { saleItemsCollection } from "@/database/sale-items";
+import { storesCollection } from "@/database/stores";
+import { queryClient } from "@/lib/ts-query-client";
 
 let hasBootstrapped = false;
-
-const normalizeUser = (rawUser: unknown): TypeUser | null => {
-  if (!rawUser || Array.isArray(rawUser) || typeof rawUser !== "object") {
-    return null;
-  }
-  return rawUser as TypeUser;
-};
 
 export const useInitApp = () => {
   const [initLoading, setInitLoading] = useState(!hasBootstrapped);
   const [authResolved, setAuthResolved] = useState(false);
   const { signOut } = useAuthActions();
-  const setUser = useAppStore((state) => state.setUser);
-  const { isPending, data: user } = useGetUser();
+  const user = useAppStore(state => state.user)
+  const setInitialized = useAppStore(state => state.setInitialized)
 
   useEffect(() => {
     if (hasBootstrapped) return;
-
     let mounted = true;
 
     async function init() {
-      const [
-        analytics,
-        categories,
-        collections,
-        customers,
-        expenses,
-        expenseCategories,
-        faqs,
-        products,
-        sales,
-        settings,
-        users,
-        stores,
-        localUser,
-      ] = await Promise.all([
-        idbGet("analytics"),
-        idbGet("categories"),
-        idbGet("collections"),
-        idbGet("customers"),
-        idbGet("expenses"),
-        idbGet("expenseCategories"),
-        idbGet("faqs"),
-        idbGet("products"),
-        idbGet("sales"),
-        idbGet("settings"),
-        idbGet("users"),
-        idbGet("stores"),
-        idbGet("user"),
-      ]);
-
-      const normalizedStores = Array.isArray(stores) ? stores : [];
-
-      if (normalizedStores.length > 0) {
-        useAppStore.getState().setStores(normalizedStores);
-        const selectedStore = useAppStore.getState().selectedStore;
-        if (!selectedStore) {
-          useAppStore.getState().setStore(normalizedStores[0]);
-        }
-      } else {
-        try {
-          const remoteStores = await convex.query(api.stores.list);
-          useAppStore.getState().setStores(remoteStores);
-          if (
-            !useAppStore.getState().selectedStore &&
-            remoteStores.length > 0
-          ) {
-            useAppStore.getState().setStore(remoteStores[0]);
-          }
-        } catch (e) {
-          useAppStore.getState().setStores([]);
-        }
-      }
-
-      setCollectionsData({
-        analytics,
-        categories,
-        collections,
-        customers,
-        expenses,
-        expenseCategories,
-        faqs,
-        products,
-        sales,
-        settings,
-        users,
-        stores: useAppStore.getState().stores,
-        selectedStoreId: useAppStore.getState().selectedStore?._id,
-      });
-
-      const selectedStoreId = useAppStore.getState().selectedStore?._id;
-      preloadAllCollections(selectedStoreId);
+      setCollectionsData()
+      preloadAllCollections();
 
       if (!mounted) return;
       hasBootstrapped = true;
@@ -118,23 +40,72 @@ export const useInitApp = () => {
   }, []);
 
   useEffect(() => {
-    if (isPending) return;
-
-    const normalizedUser = normalizeUser(user);
-    if (!normalizedUser) {
-      setUser(null);
-      signOut();
+    if (!user) signOut();
+    if (user) {
       setAuthResolved(true);
       return;
     }
-
-    setUser(normalizedUser);
+    setInitialized(true);
     setAuthResolved(true);
-    useAppStore.getState().setInitialized(true);
-  }, [isPending]);
+  }, []);
 
   return {
     isLoading: initLoading || !authResolved,
     user,
   };
 };
+
+
+export function preloadAllCollections() {
+  console.log("preloading all collections");
+  productsCollection.preload();
+  categoriesCollection.preload();
+  customersCollection.preload();
+  salesCollection.preload();
+  saleItemsCollection.preload();
+  storesCollection.preload();
+  //usersCollection.preload();
+  //collectionsCollection.preload();
+  //expensesCollection.preload();
+  //settingsCollection.preload();
+  //expenseCategoriesCollection.preload();
+  //faqsCollection.preload();
+}
+
+async function setCollectionsData() {
+  const storeId = useAppStore.getState().selectedStore?._id;
+  const [
+    categories,
+    collections,
+    customers,
+    expenses,
+    expenseCategories,
+    faqs,
+    products,
+    sales,
+    settings,
+    users,
+  ] = await Promise.all([
+    idbGet("categories"),
+    idbGet("collections"),
+    idbGet("customers"),
+    idbGet("expenses"),
+    idbGet("expenseCategories"),
+    idbGet("faqs"),
+    idbGet("products"),
+    idbGet("sales"),
+    idbGet("settings"),
+    idbGet("users"),
+  ]);
+
+  queryClient.setQueryData(["categories", storeId], categories);
+  queryClient.setQueryData(["collections", storeId], collections);
+  queryClient.setQueryData(["customers", storeId], customers);
+  queryClient.setQueryData(["expenses", storeId], expenses);
+  queryClient.setQueryData(["expenseCategories", storeId], expenseCategories);
+  queryClient.setQueryData(["faqs", storeId], faqs);
+  queryClient.setQueryData(["products", storeId], products);
+  queryClient.setQueryData(["sales", storeId], sales);
+  queryClient.setQueryData(["settings", storeId], settings);
+  queryClient.setQueryData(["users", storeId], users);
+}

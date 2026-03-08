@@ -26,6 +26,7 @@ export const collectionsCollection = createCollection(
       return ["collections", storeId];
     },
     queryFn: async (): Promise<any[]> => {
+      console.log("[collections] queryFn running");
       const storeId = useAppStore.getState().selectedStore?._id;
       if (!storeId) return [];
 
@@ -37,24 +38,28 @@ export const collectionsCollection = createCollection(
           cursor: cursor ?? undefined,
         });
 
-        const cachedCollections = await idbGet<CachedCollection[]>(
-          "collections",
-          storeId,
-        );
-        const mergedCollections = mergeRowsWithStoreScope(
-          collections,
-          cachedCollections || [],
-          storeId,
-        );
-
-        await idbRefresh("collections", mergedCollections, storeId);
-
         if (collections.length > 0) {
           const newCursor = computeNewCursor(collections);
           await idbSetCursor("collections", newCursor, storeId);
         }
 
-        return mergedCollections;
+        if (cursor) {
+          const cachedCollections = await idbGet<CachedCollection[]>(
+            "collections",
+            storeId,
+          );
+          const mergedCollections = mergeRowsWithStoreScope(
+            collections,
+            cachedCollections || [],
+            storeId,
+          );
+
+          await idbRefresh("collections", mergedCollections, storeId);
+          return mergedCollections;
+        } else {
+          await idbRefresh("collections", collections, storeId);
+          return collections;
+        }
       } catch (e) {
         const cachedCollections = await idbGet<CachedCollection[]>(
           "collections",
@@ -66,7 +71,7 @@ export const collectionsCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );
 

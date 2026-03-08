@@ -6,18 +6,13 @@ export const list = authedQuery({
   action: "read",
   args: {
     storeId: v.id("stores"),
-    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId, cursor }) => {
-    let query = ctx.db
+  handler: async (ctx, { storeId }) => {
+    const expenses = await ctx.db
       .query("expenses")
-      .withIndex("by_store", (q) => q.eq("storeId", storeId));
-
-    if (cursor) {
-      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
-    }
-
-    const expenses = await query.order("desc").collect();
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .order("desc")
+      .collect();
 
     const categories = await ctx.db
       .query("expenseCategories")
@@ -47,7 +42,6 @@ export const insert = authedMutation({
     categoryId: v.optional(v.id("expenseCategories")),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
     return await ctx.db.insert("expenses", {
       storeId: args.storeId,
       title: args.title,
@@ -55,7 +49,6 @@ export const insert = authedMutation({
       cost: args.cost,
       date: args.date,
       categoryId: args.categoryId,
-      lastUpdate: now,
     });
   },
 });
@@ -73,7 +66,7 @@ export const update = authedMutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    await ctx.db.patch(id, { ...updates, lastUpdate: Date.now() });
+    await ctx.db.patch(id, { ...updates });
   },
 });
 
@@ -84,7 +77,7 @@ export const remove = authedMutation({
     id: v.id("expenses"),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, { deleted: true, lastUpdate: Date.now() });
+    await ctx.db.delete(args.id);
   },
 });
 
@@ -93,18 +86,12 @@ export const listCategories = authedQuery({
   action: "read",
   args: {
     storeId: v.id("stores"),
-    cursor: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId, cursor }) => {
-    let query = ctx.db
+  handler: async (ctx, { storeId }) => {
+    return await ctx.db
       .query("expenseCategories")
-      .withIndex("by_store", (q) => q.eq("storeId", storeId));
-
-    if (cursor) {
-      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
-    }
-
-    return await query.collect();
+      .withIndex("by_store", (q) => q.eq("storeId", storeId))
+      .collect();
   },
 });
 
@@ -124,11 +111,9 @@ export const insertCategory = authedMutation({
 
     if (existing) return existing._id;
 
-    const now = Date.now();
     return await ctx.db.insert("expenseCategories", {
       name: args.name,
       storeId: args.storeId,
-      lastUpdate: now,
     });
   },
 });
@@ -140,6 +125,6 @@ export const removeCategory = authedMutation({
     id: v.id("expenseCategories"),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, { deleted: true, lastUpdate: Date.now() });
+    await ctx.db.delete(args.id);
   },
 });

@@ -1,6 +1,14 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./customFunctions";
-import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
+
+const saleItemSchema = v.object({
+  quantity: v.number(),
+  productId: v.id("products"),
+  skuId: v.id("skus"),
+  price: v.number(),
+  cost: v.optional(v.number()),
+});
 
 async function getSaleItemsWithDetails(ctx: any, saleId: any) {
   const items = await ctx.db
@@ -30,15 +38,9 @@ async function getSaleItemsWithDetails(ctx: any, saleId: any) {
   );
 }
 
-const saleItemSchema = v.object({
-  quantity: v.number(),
-  productId: v.id("products"),
-  skuId: v.id("skus"),
-  price: v.number(),
-  cost: v.optional(v.number()),
-});
-
-export const insert = mutation({
+export const insert = authedMutation({
+  resource: "sales",
+  action: "write",
   args: v.object({
     source: v.union(v.literal("online"), v.literal("in_store")),
     order: v.array(saleItemSchema),
@@ -64,6 +66,7 @@ export const insert = mutation({
     const products = await Promise.all(
       args.order.map((item) => ctx.db.get(item.productId)),
     );
+
     const validProducts = products.filter(
       (product): product is NonNullable<(typeof products)[number]> =>
         product !== null,
@@ -82,8 +85,8 @@ export const insert = mutation({
       throw new Error("all sale items must belong to the same store");
     }
 
-    let customerId: any;
-    let addressId: any;
+    let customerId: Id<"customers"> | undefined;
+    let addressId: Id<"addresses"> | undefined;
     let deliveryCost = 0;
     let shippingStatus:
       | "pending"
@@ -134,6 +137,10 @@ export const insert = mutation({
       addressId = newAddressId;
       deliveryCost = fullWilaya.deliveryCost;
       shippingStatus = "pending";
+    } else {
+      customerId = undefined;
+      addressId = undefined;
+      shippingStatus = undefined;
     }
 
     const createdAt = Date.now();
@@ -169,10 +176,24 @@ export const insert = mutation({
       });
 
       if (args.source === "in_store") {
-        const sku = await ctx.db.get(item.skuId);
-        if (sku) {
-          const newQuantity = Math.max(0, sku.quantity - item.quantity);
-          await ctx.db.patch(item.skuId, { quantity: newQuantity });
+        if (product) {
+          if (product.stockingStrategy === "by_variants") {
+            const sku = await ctx.db.get(item.skuId);
+            if (sku) {
+              const newQuantity = Math.max(0, sku.quantity - item.quantity);
+              await ctx.db.patch(item.skuId, {
+                quantity: newQuantity,
+              });
+            }
+          } else if (product.stockingStrategy === "by_number") {
+            const newQuantity = Math.max(
+              0,
+              (product.quantity ?? 0) - item.quantity,
+            );
+            await ctx.db.patch(item.productId, {
+              quantity: newQuantity,
+            });
+          }
         }
       }
     }
@@ -181,10 +202,17 @@ export const insert = mutation({
   },
 });
 
-export const listWilayat = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("wilayat").collect();
+export const listSaleItems = authedQuery({
+  resource: "sales",
+  action: "read",
+  args: {
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, { storeId }) => {
+    return await ctx.db
+      .query("saleItems")
+      .withIndex("by_store_createdAt", (q) => q.eq("storeId", storeId))
+      .collect();
   },
 });
 
@@ -194,75 +222,16 @@ export const list = authedQuery({
   args: {
     storeId: v.id("stores"),
     source: v.optional(v.union(v.literal("online"), v.literal("in_store"))),
-    cursor: v.optional(v.number()),
+    count: v.optional(v.number()),
   },
-  handler: async (ctx, { storeId, source, cursor }) => {
-    let query = ctx.db
+  handler: async (ctx, { storeId, source }) => {
+    const sales = await ctx.db
       .query("sales")
-      .withIndex("by_store_createdAt", (q) => q.eq("storeId", storeId));
+      .withIndex("by_store_createdAt", (q) => q.eq("storeId", storeId))
+      .collect();
 
-    if (cursor) {
-      query = query.filter((q) => q.gt(q.field("lastUpdate"), cursor));
-    }
-
-    const allSales = await query.collect();
-    const filteredSales = source
-      ? allSales.filter((sale) => sale.source === source)
-      : allSales;
-    const sortedSales = filteredSales.sort((a, b) => b.createdAt - a.createdAt);
-
-    const phoneNumberCounts = new Map<string, number>();
-    for (const sale of filteredSales) {
-      if (!sale.customerId) continue;
-      const customer = await ctx.db.get(sale.customerId);
-      if (customer?.phoneNumber) {
-        const phoneKey = customer.phoneNumber.toString();
-        phoneNumberCounts.set(
-          phoneKey,
-          (phoneNumberCounts.get(phoneKey) || 0) + 1,
-        );
-      }
-    }
-
-    return await Promise.all(
-      sortedSales.map(async (sale) => {
-        const customer = sale.customerId
-          ? await ctx.db.get(sale.customerId)
-          : null;
-        const address = sale.addressId
-          ? await ctx.db.get(sale.addressId)
-          : null;
-        const wilaya = address ? await ctx.db.get(address.wilayaId) : null;
-
-        const items = await ctx.db
-          .query("saleItems")
-          .withIndex("by_sale", (q) => q.eq("saleId", sale._id))
-          .collect();
-
-        const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-        const profit = items.reduce((sum, item) => {
-          const itemCost = item.cost || 0;
-          return sum + (item.price - itemCost) * item.quantity;
-        }, 0);
-
-        return {
-          ...sale,
-          items,
-          customer,
-          address: address
-            ? {
-                ...address,
-                wilaya,
-              }
-            : null,
-          itemCount,
-          profit,
-          customerOrderCount: customer?.phoneNumber
-            ? phoneNumberCounts.get(customer.phoneNumber.toString()) || 0
-            : 0,
-        };
-      }),
-    );
+    if (source) return sales.filter((sale) => sale.source === source);
+    else return sales;
   },
 });
 
@@ -316,13 +285,26 @@ export const confirm = authedMutation({
     }> = [];
 
     for (const item of items) {
-      const sku = await ctx.db.get(item.skuId);
-      if (sku && sku.quantity < item.quantity) {
-        insufficientStockItems.push({
-          skuId: item.skuId,
-          requested: item.quantity,
-          available: sku.quantity,
-        });
+      const product = await ctx.db.get(item.productId);
+      if (product) {
+        if (product.stockingStrategy === "by_variants") {
+          const sku = await ctx.db.get(item.skuId);
+          if (sku && sku.quantity < item.quantity) {
+            insufficientStockItems.push({
+              skuId: item.skuId,
+              requested: item.quantity,
+              available: sku.quantity,
+            });
+          }
+        } else if (product.stockingStrategy === "by_number") {
+          if ((product.quantity ?? 0) < item.quantity) {
+            insufficientStockItems.push({
+              skuId: item.skuId,
+              requested: item.quantity,
+              available: product.quantity ?? 0,
+            });
+          }
+        }
       }
     }
 
@@ -335,10 +317,25 @@ export const confirm = authedMutation({
     }
 
     for (const item of items) {
-      const sku = await ctx.db.get(item.skuId);
-      if (sku) {
-        const newQuantity = Math.max(0, sku.quantity - item.quantity);
-        await ctx.db.patch(item.skuId, { quantity: newQuantity });
+      const product = await ctx.db.get(item.productId);
+      if (product) {
+        if (product.stockingStrategy === "by_variants") {
+          const sku = await ctx.db.get(item.skuId);
+          if (sku) {
+            const newQuantity = Math.max(0, sku.quantity - item.quantity);
+            await ctx.db.patch(item.skuId, {
+              quantity: newQuantity,
+            });
+          }
+        } else if (product.stockingStrategy === "by_number") {
+          const newQuantity = Math.max(
+            0,
+            (product.quantity ?? 0) - item.quantity,
+          );
+          await ctx.db.patch(item.productId, {
+            quantity: newQuantity,
+          });
+        }
       }
     }
 
@@ -372,6 +369,7 @@ export const remove = authedMutation({
     }
 
     await ctx.db.delete(saleId);
+    console.log("removed sale");
     return "success";
   },
 });

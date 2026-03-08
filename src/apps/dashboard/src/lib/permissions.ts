@@ -40,11 +40,19 @@ export function hasStorePermission(
   resource: string,
   action: PermissionAction,
 ): boolean {
-  if (!user?.permissions || !selectedStoreId) return false;
+  if (user?.role === "founder") return true;
+  if (!user?.permissions) return false;
+
+  // Account for global wildcard (ultimate permission)
+  const isGlobalWildcard = user.permissions.some(
+    (p) => !p.storeId && p.resource === "*" && p.action === "*",
+  );
+
+  if (isGlobalWildcard) return true;
 
   return user.permissions.some(
     (p) =>
-      p.storeId === selectedStoreId &&
+      (!p.storeId || p.storeId === selectedStoreId) &&
       (p.resource === "*" || p.resource === resource) &&
       (p.action === "*" || p.action === action),
   );
@@ -55,6 +63,7 @@ export function hasGlobalPermission(
   resource: string,
   action: PermissionAction,
 ): boolean {
+  if (user?.role === "founder") return true;
   if (!user?.permissions) return false;
 
   return user.permissions.some(

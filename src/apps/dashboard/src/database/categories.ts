@@ -27,21 +27,25 @@ export const categoriesCollection = createCollection(
           cursor: cursor ?? undefined,
         });
 
-        const cachedCategories = await idbGet<any[]>("categories", storeId);
-        const mergedCategories = mergeRowsWithStoreScope(
-          categories,
-          cachedCategories || [],
-          storeId,
-        );
-
-        await idbRefresh("categories", mergedCategories, storeId);
-
         if (categories.length > 0) {
           const newCursor = computeNewCursor(categories);
           await idbSetCursor("categories", newCursor, storeId);
         }
 
-        return mergedCategories;
+        if (cursor) {
+          const cachedCategories = await idbGet<any[]>("categories", storeId);
+          const mergedCategories = mergeRowsWithStoreScope(
+            categories,
+            cachedCategories || [],
+            storeId,
+          );
+
+          await idbRefresh("categories", mergedCategories, storeId);
+          return mergedCategories;
+        } else {
+          await idbRefresh("categories", categories, storeId);
+          return categories;
+        }
       } catch (e) {
         const cachedCategories = await idbGet<any[]>("categories", storeId);
         return cachedCategories || [];
@@ -50,7 +54,7 @@ export const categoriesCollection = createCollection(
     queryClient,
     getKey: (item) => item._id,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   IconArrowLeft,
@@ -22,6 +23,9 @@ import type { Id } from "api/data-model";
 import { useMutation } from "@tanstack/react-query";
 import { convex } from "@/lib/convex-client";
 import { api } from "api/convex";
+import { salesCollection } from "@/database/sales";
+import { queryClient } from "@/lib/ts-query-client";
+import { useAppStore } from "@/lib/store";
 
 interface CartItem {
   productId: string;
@@ -37,7 +41,11 @@ interface CartItem {
   }[];
 }
 
-export default function POSPage() {
+export const Route = createFileRoute("/_dashboard/pos/")({
+  component: RouteComponent,
+});
+
+export default function RouteComponent() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -45,6 +53,7 @@ export default function POSPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showVariantModal, setShowVariantModal] = useState(false);
 
+  const storeId = useAppStore((state) => state.selectedStore?._id);
   const categoriesResult = useGetCategories();
   const productsResult = useGetProducts();
   const categories = categoriesResult?.data ?? [];
@@ -68,7 +77,11 @@ export default function POSPage() {
     ? products?.filter((p) => p.categoryId === selectedCategory)
     : products;
 
-  const addToCart = (product: any, selection: any[] = []) => {
+  const addToCart = (
+    product: any,
+    selection: any[] = [],
+    quantity: number = 1,
+  ) => {
     // Find matching SKU
     const sku = product.skus?.find((s: any) => {
       if (selection.length === 0) {
@@ -97,7 +110,7 @@ export default function POSPage() {
 
     if (existingIndex > -1) {
       const newCart = [...cart];
-      newCart[existingIndex].quantity += 1;
+      newCart[existingIndex].quantity += quantity;
       setCart(newCart);
     } else {
       setCart([
@@ -107,7 +120,7 @@ export default function POSPage() {
           skuId,
           title: product.title || "Produit sans titre",
           price: product.price || 0,
-          quantity: 1,
+          quantity: quantity,
           selection,
         },
       ]);
@@ -138,6 +151,8 @@ export default function POSPage() {
           quantity: item.quantity,
         })),
       );
+      await queryClient.refetchQueries({ queryKey: ["sales", storeId] });
+      await queryClient.refetchQueries({ queryKey: ["products", storeId] });
       toast.success("Vente confirmée !");
       setCart([]);
     } catch (error) {
@@ -165,7 +180,6 @@ export default function POSPage() {
           </Button>
         </div>
       </header>
-
       <div className="flex-1 flex overflow-hidden relative">
         {/* Cart Side */}
         <div className="w-full md:w-1/3 border-r flex flex-col bg-muted/30">
@@ -243,7 +257,7 @@ export default function POSPage() {
             </div>
 
             <Button
-              className="w-full py-6 text-lg"
+              className="w-full py-6 text-lg border-2 border-dashed border-primary/50 hover:border-primary transition-colors"
               variant="secondary"
               onClick={() => setShowProductSelector(true)}
             >
@@ -322,15 +336,15 @@ export default function POSPage() {
                 <div className="flex-1 overflow-auto">
                   <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredProducts?.map((product) => (
-                      <Card
+                      <div
                         key={product._id}
-                        className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all group"
+                        className="overflow-hidden cursor-pointer transition-all group flex flex-col border-border border"
                         onClick={() => {
                           setSelectedProduct(product);
                           setShowVariantModal(true);
                         }}
                       >
-                        <div className="aspect-square bg-muted relative">
+                        <div className="h-40 bg-muted relative shrink-0">
                           {product.images?.[0]?.url ? (
                             <img
                               src={product.images[0].url}
@@ -338,20 +352,20 @@ export default function POSPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
                               Aucune image
                             </div>
                           )}
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold truncate">
+                        <div className="p-2 flex flex-col justify-between flex-1 border-t border-border">
+                          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
                             {product.title}
                           </h3>
-                          <p className="text-primary font-bold mt-1 text-lg">
+                          <p className="text-primary font-bold text-sm">
                             {product.price} DA
                           </p>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -360,7 +374,6 @@ export default function POSPage() {
           )}
         </div>
       </div>
-
       {/* Variant Modal */}
       <VariantSelectionModal
         product={selectedProduct}
@@ -369,17 +382,40 @@ export default function POSPage() {
           setShowVariantModal(false);
           setSelectedProduct(null);
         }}
-        onConfirm={(selection) => addToCart(selectedProduct, selection)}
+        onConfirm={(selection: any, quantity: number) =>
+          addToCart(selectedProduct, selection, quantity)
+        }
       />
     </div>
   );
 }
 
+export function getSkuQuantityByOptionNames(
+  product: any,
+  optionNames: string[],
+): number | null {
+  if (!product || !product.skus) return null;
+
+  const sku = product.skus.find((s: any) => {
+    if (!s.options || s.options.length !== optionNames.length) return false;
+    const sOptionNames = s.options.map((opt: any) => opt?.name);
+    return optionNames.every((name) => sOptionNames.includes(name));
+  });
+
+  return sku ? sku.quantity : null;
+}
+
 function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
-  const productWithVariants: any = useGetProductById(
-    product?._id as Id<"products">,
-  );
   const [selections, setSelections] = useState<any[]>([]);
+  const [quantity, setQuantity] = useState(1);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setSelections([]);
+      setQuantity(1);
+    }
+  }, [open]);
 
   if (!product) return null;
 
@@ -404,21 +440,41 @@ function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
     setSelections(newSelections);
   };
 
-  const isComplete =
-    productWithVariants?.variants?.every((v: any) =>
-      selections.find((s) => s.variantId === v._id),
-    ) ?? true;
+  const hasVariants = product.variants && product.variants.length > 0;
 
-  if (
-    productWithVariants &&
-    (!productWithVariants.variants || productWithVariants.variants.length === 0)
-  ) {
-    // If no variants, just confirm directly
-    setTimeout(() => {
-      onConfirm([]);
-    }, 0);
-    return null;
-  }
+  const isComplete = hasVariants
+    ? (product.variants?.every((v: any) =>
+        selections.find((s) => s.variantId === v._id),
+      ) ?? true)
+    : true;
+
+  const selectedOptionNames = selections.map((s) => s.optionName);
+
+  const currentSkuQuantity = hasVariants
+    ? getSkuQuantityByOptionNames(product, selectedOptionNames)
+    : (product.skus?.[0]?.quantity ?? null);
+
+  const maxAvailableQuantity = (() => {
+    if (!product) return 100;
+    if (product.stockingStrategy === "by_demand") return 100;
+    if (product.stockingStrategy === "by_number") return product.quantity ?? 0;
+    return currentSkuQuantity ?? 0;
+  })();
+
+  const isOutOfStock = (() => {
+    if (!product) return false;
+    if (product.stockingStrategy === "by_demand") return false;
+    if (product.stockingStrategy === "by_number") {
+      console.log("product quant : ", product.quantity);
+
+      return (product.quantity ?? 0) <= 0;
+    }
+    // by_variants
+    if (isComplete) {
+      return currentSkuQuantity === null || currentSkuQuantity <= 0;
+    }
+    return product.skus?.every((sku: any) => sku.quantity <= 0);
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -427,35 +483,82 @@ function VariantSelectionModal({ product, open, onClose, onConfirm }: any) {
           <DialogTitle>{product.title} - Options</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
-          {productWithVariants?.variants?.map((variant: any) => (
-            <div key={variant._id} className="space-y-3">
-              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
-                {variant.name}
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {variant.options?.map((option: any) => {
-                  const isSelected = selections.find(
-                    (s) => s.variantOptionId === option._id,
-                  );
-                  return (
-                    <Button
-                      key={option._id}
-                      variant={isSelected ? "default" : "outline"}
-                      onClick={() => handleSelect(variant, option)}
-                    >
-                      {option.name}
-                    </Button>
-                  );
-                })}
+          {hasVariants &&
+            product.variants?.map((variant: any) => (
+              <div key={variant._id} className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                  {variant.name}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {variant.options?.map((option: any) => {
+                    const isSelected = selections.find(
+                      (s) => s.variantOptionId === option._id,
+                    );
+                    return (
+                      <Button
+                        key={option._id}
+                        variant={isSelected ? "default" : "outline"}
+                        onClick={() => handleSelect(variant, option)}
+                      >
+                        {option.name}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
+            ))}
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                Quantité
+              </h4>
+              {isComplete && !isOutOfStock && maxAvailableQuantity !== 100 && (
+                <span className="text-xs text-muted-foreground">
+                  {maxAvailableQuantity} en stock
+                </span>
+              )}
             </div>
-          ))}
+
+            {isOutOfStock ? (
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium text-center">
+                Rupture de stock
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={quantity <= 1}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                >
+                  <IconMinus className="size-4" />
+                </Button>
+                <span className="w-12 text-center font-medium text-lg">
+                  {quantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={quantity >= maxAvailableQuantity}
+                  onClick={() =>
+                    setQuantity((q) => Math.min(maxAvailableQuantity, q + 1))
+                  }
+                >
+                  <IconPlus className="size-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Annuler
           </Button>
-          <Button disabled={!isComplete} onClick={() => onConfirm(selections)}>
+          <Button
+            disabled={!isComplete || isOutOfStock}
+            onClick={() => onConfirm(selections, quantity)}
+          >
             Ajouter au panier
           </Button>
         </div>

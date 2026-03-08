@@ -71,13 +71,16 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           );
         }
 
+        const now = Date.now();
         const organizationId = await ctx.db.insert("organizations", {
           name: undefined,
+          lastUpdate: now,
         });
 
         const storeId = await ctx.db.insert("stores", {
           name: storeName as string,
           organizationId: organizationId as any,
+          lastUpdate: now,
         });
 
         const userId = await ctx.db.insert("users", {
@@ -90,6 +93,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
             { storeId: storeId as any, resource: "*", action: "*" },
             { resource: "*", action: "*" },
           ],
+          lastUpdate: now,
         });
 
         return userId;
@@ -113,6 +117,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           .filter((q) => q.eq(q.field("phone"), args.profile.phone))
           .unique();
 
+        const now = Date.now();
         if (!user) {
           const newUserId = await ctx.db.insert("users", {
             name: args.profile.name || "",
@@ -121,6 +126,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
             organizationId: magicLink.organizationId,
             role: magicLink.role,
             permissions: magicLink.permissions,
+            lastUpdate: now,
           });
           user = await ctx.db.get(newUserId);
         } else {
@@ -128,12 +134,16 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
             organizationId: magicLink.organizationId,
             role: magicLink.role,
             permissions: magicLink.permissions,
+            lastUpdate: now,
           });
         }
 
         if (!user) throw new Error("Failed to create user");
 
-        await ctx.db.patch(magicLinkId as any, { usedAt: Date.now() });
+        await ctx.db.patch(magicLinkId as any, {
+          usedAt: Date.now(),
+          lastUpdate: now,
+        });
 
         return user._id;
       }
@@ -144,6 +154,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           email: (args.profile as any).actualEmail || undefined,
           name: args.profile.name,
           phone: args.profile.phone,
+          lastUpdate: Date.now(),
         });
         return args.existingUserId;
       }

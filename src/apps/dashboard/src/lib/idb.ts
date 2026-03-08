@@ -17,18 +17,20 @@ const DATA_STORES = [
   "expenseCategories",
   "todos",
   "stores",
+  "saleItems",
+  "wilayat",
 ];
 
 const STORES = [...DATA_STORES, "metadata"];
 
 const DB_NAME = "app-db";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 export const idbPromise = (): Promise<IDBPDatabase> => {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion) {
-        if (oldVersion < 5) {
+        if (oldVersion < 6) {
           for (const store of STORES) {
             if (!db.objectStoreNames.contains(store)) {
               db.createObjectStore(store);
@@ -53,7 +55,7 @@ export async function idbGet<T = any>(
     const db = await idbPromise();
     const key = buildKey("all", scope);
     const data = await db.get(store, key);
-    return data ?? null;
+    return data ?? [];
   } catch (e) {
     console.warn(`[idb] Failed to get from ${store}:`, String(e));
     return null;

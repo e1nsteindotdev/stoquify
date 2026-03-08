@@ -127,7 +127,6 @@ export async function insertVariants(
   ctx: MutationCtx,
   variants: TVariant,
   productId: Id<"products">,
-  lastUpdate: number,
 ) {
   variants = variants.sort((a, b) => a.order - b.order);
   for (let v of variants) {
@@ -135,7 +134,6 @@ export async function insertVariants(
       productId: productId,
       name: v.name,
       order: v.order,
-      lastUpdate,
     });
 
     await Promise.all(
@@ -144,7 +142,6 @@ export async function insertVariants(
           name: o.optionName,
           order: ix,
           variantId: newVariantId,
-          lastUpdate,
         }),
       ),
     );
@@ -155,7 +152,6 @@ export async function insertVariantsInventory(
   ctx: MutationCtx,
   variantsInventory: TVariantInventory,
   productId: Id<"products">,
-  lastUpdate: number,
 ) {
   for (let v of variantsInventory) {
     const optionsArray = v.options.map((o) => o.optionId);
@@ -163,7 +159,6 @@ export async function insertVariantsInventory(
       productId: productId,
       quantity: v.quantity ?? 0,
       options: optionsArray,
-      lastUpdate,
     });
   }
 }

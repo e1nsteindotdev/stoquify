@@ -30,16 +30,12 @@ export function SignUpForm({
   setStep: Dispatch<SetStateAction<string>>;
 } & React.ComponentProps<"div">) {
   const { signIn } = useAuthActions();
-
-  const setStores = useAppStore((state) => state.setStores);
-  const setUser = useAppStore((state) => state.setUser);
-
   const form = useForm({
     defaultValues: {
-      storeName: "Ma Boutique",
-      email: "einstein@gmail.com",
+      storeName: "Ahmed Boutique",
+      email: "ahmed@gmail.com",
       phone: "0550000000",
-      name: "Founder",
+      name: "Ahmed Hassaine",
       password: "&c_jJC}<Tw!&_)4g",
     },
     onSubmit: async ({ value }) => {
@@ -59,13 +55,8 @@ export function SignUpForm({
           toast.error(errorMsg || "Erreur lors de la création du compte");
           return;
         }
-
-        const stores = await convex.query(api.stores.list);
-        const user = await convex.query(api.users.me);
-        setStores(stores);
-        setUser(user);
-
         toast.success("Compte créé avec succès");
+        window.location.href = "/";
       } catch (error) {
         console.error("error while trying to sign up :", error);
         const errorMessage =

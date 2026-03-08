@@ -19,21 +19,25 @@ export const insert = authedMutation({
       );
     }
 
+    const now = Date.now();
     // Create organization
     const org = await ctx.db.insert("organizations", {
       name: args.organizationName,
       owner: user._id,
+      lastUpdate: now,
     });
 
     // Create first store
     const store = await ctx.db.insert("stores", {
       name: args.storeName,
       organizationId: org,
+      lastUpdate: now,
     });
 
     // Update user with org
     await ctx.db.patch(user._id, {
       organizationId: org,
+      lastUpdate: now,
     });
 
     return { organizationId: org, storeId: store };

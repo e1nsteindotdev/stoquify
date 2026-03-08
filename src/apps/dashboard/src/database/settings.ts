@@ -11,6 +11,7 @@ export const settingsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["settings"],
     queryFn: async (): Promise<any[]> => {
+      console.log("[settings] queryFn running");
       const cursor = await idbGetCursor("settings");
 
       try {
@@ -21,20 +22,24 @@ export const settingsCollection = createCollection(
             ? [settings]
             : [];
 
-        const cachedSettings = await idbGet<any[]>("settings");
-        const mergedSettings = mergeRows(
-          normalizedSettings,
-          cachedSettings || [],
-        );
-
-        await idbRefresh("settings", mergedSettings);
-
         if (normalizedSettings.length > 0) {
           const newCursor = computeNewCursor(normalizedSettings);
           await idbSetCursor("settings", newCursor);
         }
 
-        return mergedSettings;
+        if (cursor) {
+          const cachedSettings = await idbGet<any[]>("settings");
+          const mergedSettings = mergeRows(
+            normalizedSettings,
+            cachedSettings || [],
+          );
+
+          await idbRefresh("settings", mergedSettings);
+          return mergedSettings;
+        } else {
+          await idbRefresh("settings", normalizedSettings);
+          return normalizedSettings;
+        }
       } catch (e) {
         const cachedSettings = await idbGet<any[]>("settings");
         return cachedSettings || [];
@@ -43,7 +48,7 @@ export const settingsCollection = createCollection(
     queryClient: queryClient,
     getKey: (item) => item?._id,
     syncMode: "eager",
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 0,
   }),
 );
 

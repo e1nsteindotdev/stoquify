@@ -37,11 +37,13 @@ export const replace = authedMutation({
           .collect()
       ).map((sku) => ctx.db.delete(sku._id));
 
+      const now = Date.now();
       const insertSKUsPromises = args.skus.map((sku) =>
         ctx.db.insert("skus", {
           productId: args.productId,
           quantity: sku.quantity,
           options: sku.options,
+          lastUpdate: now,
         }),
       );
 

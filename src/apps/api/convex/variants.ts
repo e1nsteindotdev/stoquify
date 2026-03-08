@@ -35,6 +35,7 @@ export const sync = authedMutation({
   },
   handler: async (ctx, args) => {
     try {
+      const now = Date.now();
       for (const variantId of args.toDelete) {
         const variantOptions = await ctx.db
           .query("variantOptions")
@@ -51,6 +52,7 @@ export const sync = authedMutation({
         await ctx.db.patch(variantId, {
           name: update.name,
           order: update.order,
+          lastUpdate: now,
         });
 
         const oldOptions = await ctx.db
@@ -65,6 +67,7 @@ export const sync = authedMutation({
           if (existingOption) {
             await ctx.db.patch(existingOption._id, {
               order: option.order,
+              lastUpdate: now,
             });
             oldOptionMap.delete(option.name);
           } else {
@@ -72,6 +75,7 @@ export const sync = authedMutation({
               variantId,
               order: option.order,
               name: option.name,
+              lastUpdate: now,
             });
           }
         }
@@ -86,6 +90,7 @@ export const sync = authedMutation({
           productId: args.productId,
           name: variant.name,
           order: variant.order,
+          lastUpdate: now,
         });
 
         for (const option of variant.options) {
@@ -93,6 +98,7 @@ export const sync = authedMutation({
             variantId: newVariantId,
             order: option.order,
             name: option.name,
+            lastUpdate: now,
           });
         }
       }
