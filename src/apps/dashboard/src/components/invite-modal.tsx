@@ -47,7 +47,10 @@ export function InviteStaffModal() {
     });
 
     // const link = `${base_url}/magic-link?magicLinkId=${result._id}`;
-    const link = `http://localhost:3000/magic-link?magicLinkId=${result._id}`;
+    const baseUrl = (
+      import.meta.env.VITE_BASE_URL || window.location.origin
+    ).replace(/\/$/, "");
+    const link = `${baseUrl}/magic-link?magicLinkId=${result._id}`;
     setGeneratedLink(link);
   };
 

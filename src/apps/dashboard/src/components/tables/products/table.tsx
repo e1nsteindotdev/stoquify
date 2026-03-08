@@ -1,4 +1,4 @@
-import { useState, useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue, useEffect } from "react";
 import { columns } from "./columns";
 import { DataTable } from "@/components/tables/data-table";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import {
   useGetProductTableData,
   filterProducts,
   type FilterChip,
+  type FilterThresholds,
+  DEFAULT_THRESHOLDS,
 } from "@/database/products-table";
 import {
   DateController,
@@ -29,6 +31,7 @@ import {
 import Fuse from "fuse.js";
 import { useDebounce } from "use-debounce";
 import { PermissionGuard } from "@/components/permission-guard";
+import { FilterSettingsModal } from "./filter-settings-modal";
 
 const filterChipConfig: {
   id: FilterChip;
@@ -60,6 +63,21 @@ export function ProductsTable() {
   const [activeFilters, setActiveFilters] = useState<FilterChip[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounce(searchQuery, 150);
+  const [thresholds, setThresholds] = useState<FilterThresholds>(() => {
+    try {
+      const stored = localStorage.getItem("product-filter-thresholds");
+      return stored ? JSON.parse(stored) : DEFAULT_THRESHOLDS;
+    } catch {
+      return DEFAULT_THRESHOLDS;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "product-filter-thresholds",
+      JSON.stringify(thresholds),
+    );
+  }, [thresholds]);
 
   const from = new Date(`${dateRange.from}T00:00:00+01:00`).getTime();
   const to = new Date(`${dateRange.to}T23:59:59+01:00`).getTime();
@@ -88,8 +106,8 @@ export function ProductsTable() {
       );
       return results.map((result) => result.item);
     }
-    return filterProducts(products, activeFilters);
-  }, [products, activeFilters, deferredQuery, fuse]);
+    return filterProducts(products, activeFilters, thresholds);
+  }, [products, activeFilters, deferredQuery, fuse, thresholds]);
 
   const toggleFilter = (filter: FilterChip) => {
     setActiveFilters((prev) =>
@@ -175,6 +193,7 @@ export function ProductsTable() {
             {config.label}
           </Button>
         ))}
+        <FilterSettingsModal thresholds={thresholds} onSave={setThresholds} />
         {activeFilters.length > 0 && !deferredQuery.trim() && (
           <Button
             variant="ghost"

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery as useTanstackQuery } from "@tanstack/react-query";
+import { useQuery } from "convex/react";
 import { api } from "api/convex";
 import { useAppForm } from "@/hooks/form";
 import { Effect } from "effect";
@@ -42,6 +43,7 @@ interface EmployeeFormProps {
   onOpenChange: (open: boolean) => void;
   defaultRole?: Role;
   inviteId?: Id<"magicLinks"> | null;
+  userId?: Id<"users"> | null;
 }
 
 export function EmployeeForm({
@@ -49,19 +51,41 @@ export function EmployeeForm({
   onOpenChange,
   defaultRole = "staff",
   inviteId,
+  userId,
 }: EmployeeFormProps) {
   const stores = useAppStore((state) => state.stores);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
   const user = useAppStore((state) => state.user);
 
-  const isNew = !inviteId;
+  const isNew = !inviteId && !userId;
+  const baseUrl = (
+    import.meta.env.VITE_BASE_URL || window.location.origin
+  ).replace(/\/$/, "");
 
-  const { data: existingInvite } = useQuery({
+  const existingInvite = useQuery(
+    api.magicLinks.get,
+    inviteId ? { magicLinkId: inviteId } : "skip",
+  );
+
+  const existingUser = useQuery(
+    api.users.getById,
+    userId ? { userId: userId } : "skip",
+  );
+
+  /*
+  const { data: existingInvite } = useTanstackQuery({
     queryKey: ["invite", inviteId],
     queryFn: () => convex.query(api.magicLinks.get, { magicLinkId: inviteId! }),
     enabled: !!inviteId,
   });
+
+  const { data: existingUser } = useTanstackQuery({
+    queryKey: ["user_edit", userId],
+    queryFn: () => convex.query(api.users.getById, { userId: userId! }),
+    enabled: !!userId,
+  });
+  */
 
   const defaultPermissions = useMemo(() => {
     if (existingInvite && existingInvite.permissions) {
@@ -71,15 +95,22 @@ export function EmployeeForm({
         action: p.action,
       }));
     }
+    if (existingUser && existingUser.permissions) {
+      return existingUser.permissions.map((p: any) => ({
+        storeId: p.storeId,
+        resource: p.resource,
+        action: p.action,
+      }));
+    }
     return [];
-  }, [existingInvite]);
+  }, [existingInvite, existingUser]);
 
   const defaultValues = useMemo(
     () => ({
-      role: existingInvite?.role ?? defaultRole,
+      role: (existingInvite?.role || existingUser?.role || defaultRole) as Role,
       permissions: defaultPermissions,
     }),
-    [existingInvite, defaultRole, defaultPermissions],
+    [existingInvite, existingUser, defaultRole, defaultPermissions],
   );
 
   const form = useAppForm({
@@ -94,17 +125,16 @@ export function EmployeeForm({
       }));
 
       const program = Effect.gen(function* () {
-        if (isNew) {
-          const result = yield* Effect.promise(() =>
-            convex.mutation(api.magicLinks.insert, {
+        if (userId) {
+          yield* Effect.promise(() =>
+            convex.mutation(api.users.updatePermissions, {
+              userId: userId!,
               role: value.role,
               permissions,
-              organizationId: orgId,
             }),
           );
-          const link = `${window.location.origin}/magic-link?magicLinkId=${result._id}`;
-          return link;
-        } else {
+          return null;
+        } else if (inviteId) {
           yield* Effect.promise(() =>
             convex.mutation(api.magicLinks.update, {
               invitationId: inviteId!,
@@ -112,6 +142,16 @@ export function EmployeeForm({
             }),
           );
           return null;
+        } else {
+          const result = yield* Effect.promise(() =>
+            convex.mutation(api.magicLinks.insert, {
+              role: value.role,
+              permissions,
+              organizationId: orgId,
+            }),
+          );
+          const link = `${baseUrl}/magic-link?magicLinkId=${result._id}`;
+          return link;
         }
       });
 
@@ -354,41 +394,46 @@ function PermissionBuilder({ stores, form }: { stores: any[]; form: any }) {
 
                                 return (
                                   <div className="flex gap-1 overflow-hidden border inline-flex">
-                                    {["none", "read", "write"].map((action) => {
-                                      const actionValue = action as
-                                        | "none"
-                                        | "read"
-                                        | "write";
-                                      const isSelected =
-                                        actionValue === "none"
-                                          ? !currentPerm
-                                          : currentPerm === actionValue;
+                                    {["none", "read", "write", "*"].map(
+                                      (action) => {
+                                        const actionValue = action as
+                                          | "none"
+                                          | "read"
+                                          | "write"
+                                          | "*";
+                                        const isSelected =
+                                          actionValue === "none"
+                                            ? !currentPerm
+                                            : currentPerm === actionValue;
 
-                                      return (
-                                        <button
-                                          key={action}
-                                          type="button"
-                                          onClick={() =>
-                                            setPermission(
-                                              store._id,
-                                              perm.key,
-                                              actionValue,
-                                            )
-                                          }
-                                          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                                            isSelected
-                                              ? "bg-primary text-primary-foreground"
-                                              : "bg-background hover:bg-primary/20"
-                                          }`}
-                                        >
-                                          {action === "none"
-                                            ? "Aucun"
-                                            : action === "read"
-                                              ? "Lecteur"
-                                              : "Éditeur"}
-                                        </button>
-                                      );
-                                    })}
+                                        return (
+                                          <button
+                                            key={action}
+                                            type="button"
+                                            onClick={() =>
+                                              setPermission(
+                                                store._id,
+                                                perm.key,
+                                                actionValue,
+                                              )
+                                            }
+                                            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                              isSelected
+                                                ? "bg-primary text-primary-foreground"
+                                                : "bg-background hover:bg-primary/20"
+                                            }`}
+                                          >
+                                            {action === "none"
+                                              ? "Aucun"
+                                              : action === "read"
+                                                ? "Lecteur"
+                                                : action === "write"
+                                                  ? "Éditeur"
+                                                  : "Tout"}
+                                          </button>
+                                        );
+                                      },
+                                    )}
                                   </div>
                                 );
                               }}

@@ -391,3 +391,57 @@ export const consumeSignIn = internalMutation({
     };
   },
 });
+
+export const generateSignInLinkForUser = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const adminId = await getAuthUserId(ctx);
+    if (!adminId) throw new Error("Not authenticated");
+
+    const admin = await ctx.db.get(adminId);
+    if (!admin) throw new Error("Admin not found");
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+
+    if (user.organizationId !== admin.organizationId) {
+      throw new Error("Not authorized");
+    }
+
+    const hasPermission =
+      admin.role === "founder" ||
+      admin.permissions?.some(
+        (p) =>
+          (p.resource === "employees" || p.resource === "*") &&
+          (p.action === "write" || p.action === "*"),
+      );
+
+    if (!hasPermission) throw new Error("Not authorized");
+
+    const existingLinks = await ctx.db
+      .query("signInMagicLinks")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const link of existingLinks) {
+      await ctx.db.delete(link._id);
+    }
+
+    const token = nanoid(32);
+    const expiresAt = Date.now() + TWENTY_FOUR_HOURS;
+    const createdAt = Date.now();
+
+    const signInMagicLinkId = await ctx.db.insert("signInMagicLinks", {
+      userId: user._id,
+      token,
+      expiresAt,
+      createdAt,
+      usedAt: undefined,
+      lastUpdate: createdAt,
+    });
+
+    return { _id: signInMagicLinkId, token, expiresAt, createdAt };
+  },
+});

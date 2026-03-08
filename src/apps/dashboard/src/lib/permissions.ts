@@ -3,6 +3,7 @@ import { TypeUser } from "api/types";
 export type PermissionAction = "read" | "write" | "*";
 
 export const availableResources = [
+  { key: "*", label: "TOUT", description: "Toutes les ressources" },
   { key: "products", label: "Produits", description: "Gérer les produits" },
   {
     key: "sales",

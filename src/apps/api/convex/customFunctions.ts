@@ -14,7 +14,7 @@ async function ensureAuthenticated(ctx: any, opts?: AuthOption) {
   if (userId === null) {
     throw new ConvexError("Not authenticated");
   }
-  if (!opts) return userId;
+  if (!opts?.resource || !opts.action) return userId;
 
   const { resource, action } = opts;
   const user = await ctx.db.get(userId);

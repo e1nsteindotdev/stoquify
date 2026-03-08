@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useGetCategories } from "./categories";
 import { useGetProducts } from "./products";
 import { useGetSales } from "./sales";
+import { useGetExpenses } from "./expenses";
 
 export type AnalyticsGranularity = "day" | "week" | "2weeks" | "month";
 
@@ -260,6 +261,7 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
   const { data: sales = [] } = useGetSales();
   const { data: products = [] } = useGetProducts();
   const { data: categories = [] } = useGetCategories();
+  const { data: expenses = [] } = useGetExpenses();
 
   return useMemo(() => {
     const now = Date.now();
@@ -315,6 +317,17 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       }
     }
 
+    const rangeExpenses = expenses.filter(
+      (expense: any) => expense.date >= from && expense.date <= to,
+    );
+    for (const expense of rangeExpenses) {
+      const key = formatBucketKey(expense.date, filters.granularity);
+      const bucket = bucketMap.get(key);
+      if (!bucket) continue;
+      bucket.revenue -= expense.cost;
+      bucket.profit -= expense.cost;
+    }
+
     const revenueProfitSeries = buckets.map((bucket) => {
       const data = bucketMap.get(bucket.key);
       return {
@@ -337,6 +350,18 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       previousTransactions,
       productMap,
     );
+
+    const rangeExpensesTotal = expenses
+      .filter((e: any) => e.date >= from && e.date <= to)
+      .reduce((acc: number, e: any) => acc + e.cost, 0);
+    const previousRangeExpensesTotal = expenses
+      .filter((e: any) => e.date >= from - rangeLength && e.date <= from - 1)
+      .reduce((acc: number, e: any) => acc + e.cost, 0);
+
+    rangeTotals.revenue -= rangeExpensesTotal;
+    rangeTotals.profit -= rangeExpensesTotal;
+    previousRangeTotals.revenue -= previousRangeExpensesTotal;
+    previousRangeTotals.profit -= previousRangeExpensesTotal;
 
     const todayStart = toAlgeriaDayStart(now);
     const yesterdayStart = addDays(todayStart, -1);
@@ -391,6 +416,29 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       productMap,
     );
 
+    const todayExpenses = expenses
+      .filter((e: any) => e.date >= todayStart && e.date < tomorrowStart)
+      .reduce((acc: number, e: any) => acc + e.cost, 0);
+    const yesterdayExpenses = expenses
+      .filter((e: any) => e.date >= yesterdayStart && e.date < todayStart)
+      .reduce((acc: number, e: any) => acc + e.cost, 0);
+    const monthExpenses = expenses
+      .filter((e: any) => e.date >= monthStart && e.date < nextMonthStart)
+      .reduce((acc: number, e: any) => acc + e.cost, 0);
+    const prevMonthExpenses = expenses
+      .filter((e: any) => e.date >= prevMonthStart && e.date < monthStart)
+      .reduce((acc: number, e: any) => acc + e.cost, 0);
+
+    todayTotals.revenue -= todayExpenses;
+    todayTotals.profit -= todayExpenses;
+    yesterdayTotals.revenue -= yesterdayExpenses;
+    yesterdayTotals.profit -= yesterdayExpenses;
+
+    monthTotals.revenue -= monthExpenses;
+    monthTotals.profit -= monthExpenses;
+    prevMonthTotals.revenue -= prevMonthExpenses;
+    prevMonthTotals.profit -= prevMonthExpenses;
+
     const dailySparklineStart = addDays(todayStart, -13);
     const dailyLabels = Array.from({ length: 14 }, (_, index) => {
       const ts = addDays(dailySparklineStart, index);
@@ -434,6 +482,21 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
       }
     }
 
+    for (const expense of expenses) {
+      if (expense.date < dailySparklineStart || expense.date >= tomorrowStart)
+        continue;
+      const label = new Date(
+        toAlgeriaDayStart(expense.date),
+      ).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+      });
+      const dayData = dailyMap.get(label);
+      if (!dayData) continue;
+      dayData.revenue -= expense.cost;
+      dayData.profit -= expense.cost;
+    }
+
     const dailySparkline = Array.from(dailyMap.entries())
       .sort((a, b) => a[1].timestamp - b[1].timestamp)
       .map(([label, value]) => ({
@@ -462,10 +525,13 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
         ),
         productMap,
       );
+      const monthExp = expenses
+        .filter((e: any) => e.date >= start && e.date < end)
+        .reduce((acc: number, e: any) => acc + e.cost, 0);
       return {
         label: d.toLocaleDateString("fr-FR", { month: "short" }),
-        revenue: Math.round(totals.revenue),
-        profit: Math.round(totals.profit),
+        revenue: Math.round(totals.revenue - monthExp),
+        profit: Math.round(totals.profit - monthExp),
       };
     });
 
@@ -614,8 +680,15 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
 
       const productId = String(product._id);
       const lastMovement = movementMap.get(productId) ?? 0;
-      const ageInDays =
-        lastMovement === 0 ? 9999 : Math.floor((now - lastMovement) / DAY_MS);
+
+      const creationTime = product._creationTime ?? now;
+      const productAgeInDays = Math.floor((now - creationTime) / DAY_MS);
+      const daysSinceLastSale =
+        lastMovement === 0
+          ? productAgeInDays
+          : Math.floor((now - lastMovement) / DAY_MS);
+
+      const ageInDays = Math.min(productAgeInDays, daysSinceLastSale);
 
       if (ageInDays < 30) continue;
 
@@ -827,9 +900,8 @@ export const useGetAnalytics = (filters: AnalyticsFilters): AnalyticsData => {
     }
 
     const critical = stockCoverData
-      .filter((item) => item.daysCover < 7)
       .sort((a, b) => a.daysCover - b.daysCover)
-      .slice(0, 20);
+      .slice(0, 5);
 
     const warning = stockCoverData
       .filter((item) => item.daysCover >= 7 && item.daysCover < 90)

@@ -27,8 +27,6 @@ export const insert = authedMutation({
 });
 
 export const list = authedQuery({
-  resource: "stores",
-  action: "read",
   args: {
     cursor: v.optional(v.number()),
   },

@@ -39,10 +39,6 @@ export function StockCoverCard() {
                   <span className="text-sm font-medium text-red-600 dark:text-red-400">
                     Top 5 Critiques
                   </span>
-                  <div className="h-3 w-3 rounded-none bg-orange-500 ml-2" />
-                  <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                    Autres critiques ({Math.max(0, critical.length - 5)} SKUs)
-                  </span>
                 </div>
                 <div className="space-y-2">
                   {critical.map((item, idx) => (
@@ -63,7 +59,7 @@ export function StockCoverCard() {
                         </div>
                         <div className="mt-1 h-2 w-full rounded-none bg-gray-100 dark:bg-gray-800 relative">
                           <div
-                            className={`h-full rounded-none absolute top-0 left-0 ${idx < 5 ? "bg-red-500" : "bg-orange-500"}`}
+                            className="h-full rounded-none absolute top-0 left-0 bg-red-500"
                             style={{
                               width: `${(Math.max(item.daysCover, 1) / maxDays) * 100}%`,
                             }}
@@ -71,9 +67,7 @@ export function StockCoverCard() {
                         </div>
                       </div>
                       <div className="min-w-[80px] text-right">
-                        <span
-                          className={`text-sm font-bold ${idx < 5 ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}
-                        >
+                        <span className="text-sm font-bold text-red-600 dark:text-red-400">
                           {Math.max(item.daysCover, 1)} jours
                         </span>
                         <div className="text-xs text-muted-foreground">

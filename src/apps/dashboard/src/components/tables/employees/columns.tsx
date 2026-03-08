@@ -25,8 +25,8 @@ const roleLabels: Record<string, string> = {
 };
 
 const formatPermission = (resource: string, action: string) => {
-  const formattedResource = resource === "*" ? "touts" : resource;
-  const formattedAction = action === "*" ? "touts" : action;
+  const formattedResource = resource === "*" ? "Tout" : resource;
+  const formattedAction = action === "*" ? "Tout" : action;
   return `${formattedResource}: ${formattedAction}`;
 };
 

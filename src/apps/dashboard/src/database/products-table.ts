@@ -220,10 +220,26 @@ export type FilterChip =
   | "deadStock"
   | "lowMargin";
 
+export interface FilterThresholds {
+  highPerformers: number;
+  lowStockDays: number;
+  lowStockQty: number;
+  deadStock: number;
+  lowMargin: number;
+}
+
+export const DEFAULT_THRESHOLDS: FilterThresholds = {
+  highPerformers: 70, // sellThrough > 70%
+  lowStockDays: 7, // daysOfCover < 7
+  lowStockQty: 5, // totalQuantity <= 5
+  deadStock: 30, // daysSinceLastSale > 30
+  lowMargin: 20, // margin < 20%
+};
+
 export const filterProducts = (
   products: ProductTableRow[],
   filters: FilterChip[],
-  marginThreshold: number = 20,
+  thresholds: FilterThresholds = DEFAULT_THRESHOLDS,
 ): ProductTableRow[] => {
   if (filters.length === 0) return products;
 
@@ -231,21 +247,25 @@ export const filterProducts = (
     for (const filter of filters) {
       switch (filter) {
         case "highPerformers":
-          if (product.sellThrough > 70) return true;
+          if (product.sellThrough > thresholds.highPerformers) return true;
           break;
         case "lowStock":
-          if (product.daysOfCover < 7 && product.daysOfCover !== Infinity)
+          if (
+            (product.daysOfCover < thresholds.lowStockDays &&
+              product.daysOfCover !== Infinity) ||
+            product.totalQuantity <= thresholds.lowStockQty
+          )
             return true;
           break;
         case "deadStock":
           if (
             product.daysSinceLastSale !== null &&
-            product.daysSinceLastSale > 30
+            product.daysSinceLastSale > thresholds.deadStock
           )
             return true;
           break;
         case "lowMargin":
-          if (product.margin < marginThreshold) return true;
+          if (product.margin < thresholds.lowMargin) return true;
           break;
       }
     }

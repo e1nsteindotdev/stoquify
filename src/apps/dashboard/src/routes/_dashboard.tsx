@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_dashboard")({
         useAppStore.getState().setUser(user)
       }
     } catch (e) {
-      console.log("can't signin")
+      console.log("can't signin ,", e)
     }
 
     // init stores
