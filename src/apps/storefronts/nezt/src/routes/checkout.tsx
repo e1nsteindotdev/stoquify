@@ -161,8 +161,11 @@ function OrderForm() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        path: "order:placeOrder",
-        args: data,
+        path: "sales:insert",
+        args: {
+          ...data,
+          source: "online",
+        },
         format: "json",
       }),
     });
