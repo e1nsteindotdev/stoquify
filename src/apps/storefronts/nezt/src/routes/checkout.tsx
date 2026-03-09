@@ -58,7 +58,7 @@ function RouteComponent() {
         <OrderForm />
         {/* <div className="w-[95%] mx-auto h-[1px]  bg-black order-2 lg:hidden" /> */}
         {/* summary  */}
-        {/* <div className="flex-1 flex justify-start lg:px-10 order-1">
+        <div className="flex-1 flex justify-start lg:px-10 order-1">
           <div className="w-full lg:w-[600px] lg:h-[800px] gap-40 lg:gap-0 flex flex-col justify-between px-10 lg:px-0 my-8 order-2 font-inter relative z-0">
             <div className="h-full w-[1px] bg-black absolute left-5 lg:-left-5 top-0" />
 
@@ -147,7 +147,7 @@ function RouteComponent() {
               </div>
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );
