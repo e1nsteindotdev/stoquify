@@ -2,7 +2,7 @@ type IconProps = {
   size?: number | string; // controls both width and height
   color?: string; // fill color
   stroke?: number; // stroke width (only affects stroke-based svgs)
-  className?: string,
+  className?: string;
 };
 
 export const AddToCartIcon = ({

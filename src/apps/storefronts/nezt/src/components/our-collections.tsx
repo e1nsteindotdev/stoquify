@@ -2,10 +2,8 @@ import { CollectionProduct, Product } from "./products";
 import { useCatalogStore } from "@/lib/catalog-store";
 
 export function OurCollections() {
-  let collections = useCatalogStore((state) =>
-    state.collections,
-  );
-  collections = collections.filter((c) => c.productIds?.length !== 0)
+  let collections = useCatalogStore((state) => state.collections);
+  collections = collections.filter((c) => c.productIds?.length !== 0);
   const products = useCatalogStore((state) => state.products);
 
   return (
@@ -45,18 +43,18 @@ export function OurCollections() {
                   <div className="flex overflow-x-scroll gap-4 px-3 no-scrollbar">
                     {collection_products
                       ? collection_products.map((p) => (
-                        <CollectionProduct
-                          source={{
-                            sourceType: "collections",
-                            sourceName: c.title,
-                          }}
-                          key={p?._id}
-                          data={p}
-                        />
-                      ))
+                          <CollectionProduct
+                            source={{
+                              sourceType: "collections",
+                              sourceName: c.title,
+                            }}
+                            key={p?._id}
+                            data={p}
+                          />
+                        ))
                       : Array.from({ length: 10 }).map((_) => (
-                        <Product data={undefined} />
-                      ))}
+                          <Product data={undefined} />
+                        ))}
                   </div>
                 </div>
               </div>

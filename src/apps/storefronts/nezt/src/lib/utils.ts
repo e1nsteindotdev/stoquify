@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function deepMapToObject<T>(value: T): any {
@@ -15,10 +15,10 @@ export function deepMapToObject<T>(value: T): any {
   }
 
   if (Array.isArray(value)) {
-    return value.map(item => deepMapToObject(item));
+    return value.map((item) => deepMapToObject(item));
   }
 
-  if (value !== null && typeof value === 'object') {
+  if (value !== null && typeof value === "object") {
     const obj: Record<string, any> = {};
     for (const [k, v] of Object.entries(value)) {
       obj[k] = deepMapToObject(v);

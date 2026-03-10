@@ -1,10 +1,10 @@
 type TProps = {
-  src: string
-  alt?: string
-  width?: number
-  height?: number
-  className?: string
-}
+  src: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  className?: string;
+};
 
 export function Image({ src, alt, width, height, className }: TProps) {
   return (
@@ -15,5 +15,5 @@ export function Image({ src, alt, width, height, className }: TProps) {
       height={height}
       className={className}
     />
-  )
+  );
 }

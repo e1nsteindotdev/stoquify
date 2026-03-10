@@ -1,8 +1,8 @@
 type IconProps = {
-  size?: number
-  stroke?: number
-  color?: string
-}
+  size?: number;
+  stroke?: number;
+  color?: string;
+};
 
 export default function ArrowRightIcon({
   size = 24,
@@ -24,5 +24,5 @@ export default function ArrowRightIcon({
         strokeWidth={stroke}
       />
     </svg>
-  )
+  );
 }

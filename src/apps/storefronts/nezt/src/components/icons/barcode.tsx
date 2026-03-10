@@ -39,4 +39,3 @@ export const Barcode = () => (
     <path d="M120.229 64.9629V72H119.377..." fill="currentColor" />
   </svg>
 );
-

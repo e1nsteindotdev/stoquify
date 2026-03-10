@@ -1,6 +1,6 @@
 interface IconProps {
   className?: string;
-  size?: number;   // height in px
+  size?: number; // height in px
   color?: string;
   stroke?: number; // stroke width
 }
@@ -44,4 +44,3 @@ export const MenuIcon = ({
     </svg>
   );
 };
-

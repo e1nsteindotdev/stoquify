@@ -78,17 +78,17 @@ function RouteComponent() {
   const currentSku =
     product?.stockingStrategy === "by_variants"
       ? product?.skus.find((sku) =>
-        sku.options.every((opt) => selectedOptionIds.includes(opt._id)),
-      )
+          sku.options.every((opt) => selectedOptionIds.includes(opt._id)),
+        )
       : product?.skus[0];
 
   const allOptionsSelected =
     product?.stockingStrategy === "by_variants"
       ? product?.variants && product.variants.length > 0
         ? product.variants.every((v) => {
-          const sel = selectedVariants.get(v._id);
-          return sel && sel.variantOptionId !== "";
-        })
+            const sel = selectedVariants.get(v._id);
+            return sel && sel.variantOptionId !== "";
+          })
         : true
       : true;
 
@@ -257,7 +257,7 @@ function RouteComponent() {
                       className={cn(
                         "flex flex-col w-full lg:w-auto",
                         product?.stockingStrategy === "by_variants" &&
-                        "border-white border-1",
+                          "border-white border-1",
                       )}
                     >
                       {product?.stockingStrategy === "by_variants" &&
@@ -282,11 +282,12 @@ function RouteComponent() {
                                         });
                                       }}
                                       className={`pb-[10px] pt-[13px] px-[14px] leading-[1] bg-black/1 border-[1px] text-[16px] font-[600] tracking-wider uppercase min-w-[40px]
-                                    ${selectedVariants.get(variant._id)
-                                          ?.variantOptionName === option.name
-                                          ? "text-primary border-primary bg-primary/5"
-                                          : "border-white"
-                                        } `}
+                                    ${
+                                      selectedVariants.get(variant._id)
+                                        ?.variantOptionName === option.name
+                                        ? "text-primary border-primary bg-primary/5"
+                                        : "border-white"
+                                    } `}
                                     >
                                       {option.name}
                                     </button>
@@ -468,11 +469,7 @@ function FuckingButton({
                 <p className="leading-[1] pt-1.25 font-bold">
                   Ajouter au panier
                 </p>
-                <CartIcon
-                  color="white"
-                  className="stoke-white"
-                  size={16}
-                />
+                <CartIcon color="white" className="stoke-white" size={16} />
               </div>
             )}
           </motion.div>

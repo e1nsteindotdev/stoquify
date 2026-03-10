@@ -120,17 +120,18 @@ export async function getCatalog(): Promise<Catalog> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      path: "products:getCatalog",
+      path: "products:catalog",
       args: { storeId: STORE_ID },
       format: "json",
     }),
   });
 
   if (!response.ok) {
-    console.log('catalog fetch error :', response.ok)
+    console.log("catalog fetch error :", response.ok);
     throw new Error(`Failed to fetch catalog: ${response.statusText}`);
   }
   const data = await response.json();
+  console.log("catalog response :", data);
   return data.value;
 }
 

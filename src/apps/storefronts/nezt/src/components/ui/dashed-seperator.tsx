@@ -1,5 +1,5 @@
 export function DashedSeperator() {
-  const cl = "h-[2px] w-[8px] bg-white"
+  const cl = "h-[2px] w-[8px] bg-white";
   return (
     <div className="flex gap-1.25 py-10 w-full">
       <div className={cl} />
@@ -204,5 +204,5 @@ export function DashedSeperator() {
       <div className={cl} />
       <div className={cl} />
     </div>
-  )
+  );
 }

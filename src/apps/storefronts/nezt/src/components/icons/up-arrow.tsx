@@ -11,11 +11,6 @@ export const UpArrow = () => (
       stroke="currentColor"
       strokeWidth="0.958094"
     />
-    <path
-      d="M5 1.55273V12.4819"
-      stroke="currentColor"
-      strokeWidth="0.958094"
-    />
+    <path d="M5 1.55273V12.4819" stroke="currentColor" strokeWidth="0.958094" />
   </svg>
 );
-
